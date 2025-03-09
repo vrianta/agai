@@ -46,7 +46,7 @@ func GetSessionID(r *http.Request) *string {
 }
 
 func (sh *Session) Login(uid string) {
-	WriteConsole("Attempting to Login")
+	// WriteConsole("Attempting to Login")
 	sh.Store["uid"] = uid
 	sh.Store["isLoggedIn"] = true
 	// If no valid session ID is found, create a new session
@@ -62,24 +62,24 @@ func (sh *Session) IsLoggedIn() bool {
 
 // StartSession attempts to retrieve or create a new session
 func (sh *Session) StartSession() *string {
-	WriteConsole("Attempting to start a session")
+	// WriteConsole("Attempting to start a session")
 
 	// Try to get an existing session ID from the request
 	if sessionID := GetSessionID(sh.R); sessionID != nil {
-		WriteConsole("Session ID found in request: ", *sessionID)
+		// WriteConsole("Session ID found in request: ", *sessionID)
 		if *sessionID == "expire" {
 			return sh.CreateNewSession()
 		}
 		// If the session ID doesn't match the current handler's ID, create a new session
 		if (*sessionID) != sh.ID {
-			WriteConsole("Session ID from request does not match handler's session ID. Creating a new session.", *sessionID, " : ", sh.ID)
+			// WriteConsole("Session ID from request does not match handler's session ID. Creating a new session.", *sessionID, " : ", sh.ID)
 			EndSession(sh.W, *sh.R, sh)
 			return nil
 		} else {
-			WriteConsole("Session ID from request matches the handler's session ID. Using the existing session.")
+			// WriteConsole("Session ID from request matches the handler's session ID. Using the existing session.")
 		}
 	} else {
-		WriteConsole("No session ID found in request. Creating a new session.")
+		// WriteConsole("No session ID found in request. Creating a new session.")
 	}
 
 	// If no valid session ID is found, create a new session
@@ -122,12 +122,12 @@ func EndSession(w http.ResponseWriter, r http.Request, Session *Session) {
 	sessionID := GetSessionID(&r)
 
 	if sessionID == nil {
-		WriteConsole("No active session found, cannot end session.")
+		// WriteConsole("No active session found, cannot end session.")
 		return
 	}
 
 	// Remove session data from the store
-	WriteConsole("Ending session for session ID:", *sessionID)
+	// WriteConsole("Ending session for session ID:", *sessionID)
 
 	RemoveCookie("sessionid", w, &r)
 	RemoveSession(*sessionID)
@@ -145,10 +145,10 @@ func (sh *Session) ParseRequest() {
 		// Parse multipart form data with a 10 MB limit for file uploads
 		err := sh.R.ParseMultipartForm(10 << 20) // 10 MB
 		if err != nil {
-			WriteConsole("Error parsing multipart form data: ", err)
+			// WriteConsole("Error parsing multipart form data: ", err)
 			// http.Error(sh.W, "Error parsing multipart form data", http.StatusBadRequest)
 		}
-		WriteConsole("Handling POST request")
+		// WriteConsole("Handling POST request")
 		// Handle POST form data
 		for key, values := range sh.R.PostForm {
 			sh.ProcessPostParams(key, values)
@@ -156,7 +156,7 @@ func (sh *Session) ParseRequest() {
 	}
 
 	// Log handling of query parameters for non-POST methods
-	WriteConsole("Handling non-POST request, processing query parameters")
+	// WriteConsole("Handling non-POST request, processing query parameters")
 	for key, values := range queryParams {
 		sh.ProcessQueryParams(key, values)
 	}

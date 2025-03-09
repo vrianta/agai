@@ -63,37 +63,39 @@ func (rh *RenderEngine) RenderView(view func(RenderData) string, renderData Rend
 func (rh *RenderEngine) RenderTemplate(uri string, data any) error {
 
 	var err error
-	var _html_template *template.Template
+	// var _html_template *template.Template
 	var info os.FileInfo
 
-	_template, isPresent := templateRecords[uri]
+	// _template, isPresent := templateRecords[uri]
+	WriteConsole("Rendering Template\n")
 	info, err = os.Stat(uri)
 	if err != nil {
 		return err
 	}
+	WriteConsole(info.ModTime().String())
 
-	if !isPresent { // template is not created already then we will update that in reocrd
-		if _html_template, err = template.New("").Parse(ReadFromFile(uri)); err == nil {
-			templateRecords[uri] = templates{
-				Uri:          uri,
-				LastModified: info.ModTime(),
-				Data:         *_html_template,
-			}
-		} else {
-			return err
-		}
-	} else if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
+	// if !isPresent { // template is not created already then we will update that in reocrd
+	// 	if _html_template, err = template.New("").Parse(ReadFromFile(uri)); err == nil {
+	// 		templateRecords[uri] = templates{
+	// 			Uri:          uri,
+	// 			LastModified: info.ModTime(),
+	// 			Data:         *_html_template,
+	// 		}
+	// 	} else {
+	// 		return err
+	// 	}
+	// } else if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
 
-		if _html_template, err = template.New("").Parse(ReadFromFile(uri)); err == nil {
-			_template.LastModified = info.ModTime()
-			_template.Data = *_html_template
-		} else {
-			return err
-		}
-	}
+	// 	if _html_template, err = template.New("").Parse(ReadFromFile(uri)); err == nil {
+	// 		_template.LastModified = info.ModTime()
+	// 		_template.Data = *_html_template
+	// 	} else {
+	// 		return err
+	// 	}
+	// }
 
-	_template.Data.Execute(rh.W, data)
-	_html_template = nil
+	// _template.Data.Execute(rh.W, data)
+	// _html_template = nil
 
 	return nil
 }

@@ -14,8 +14,6 @@ type Server struct {
 	Port     string
 	Routes   RoutesMap
 	Sessions map[string]Session
-
-	static_folder string // location of the static folder
 }
 
 // Global instance of the server

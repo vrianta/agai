@@ -41,13 +41,14 @@ func (s *Server) Start() error {
 		Addr: s.Host + ":" + s.Port, // Host and port
 	}
 
+	WriteConsole("Server Starting at " + s.Host + ":" + s.Port)
+
 	// Start the server
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Println("Error starting server:", err)
 		return err
 	}
 
-	WriteConsole("Server started successfully " + s.Host + ":" + s.Port)
 	return nil
 }
 

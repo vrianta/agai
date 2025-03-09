@@ -11,6 +11,8 @@ type RenderEngine struct {
 	W         http.ResponseWriter
 }
 
+type RenderData map[string]interface{}
+
 func NewRenderHandlerObj(_w http.ResponseWriter) RenderEngine {
 	return RenderEngine{
 		view:      make([]string, 0),
@@ -19,7 +21,7 @@ func NewRenderHandlerObj(_w http.ResponseWriter) RenderEngine {
 	}
 }
 
-func (rh *RenderEngine) RenderText(massages string) {
+func (rh *RenderEngine) Render(massages string) {
 	rh.view = append(rh.view, massages)
 	rh.viewCount++
 }
@@ -34,6 +36,6 @@ func (rh *RenderEngine) StartRender() {
 	rh.viewCount = 0 //  Reseting view Index
 }
 
-func (rh *RenderEngine) RenderView(view func() string) {
-	rh.W.Write([]byte(view()))
+func (rh *RenderEngine) RenderView(view func(RenderData) string, renderData RenderData) {
+	rh.W.Write([]byte(view(renderData)))
 }

@@ -4,6 +4,21 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
+	"time"
+)
+
+// Global Variables in File Scope
+var (
+	templateRecords map[string]templates // keep the reocrd of all the templated which are already templated
+)
+
+type (
+	templates struct {
+		Uri          string            // path of the template file
+		LastModified time.Time         // date when the file last modified
+		Data         template.Template // template data of the file before modified
+	}
 )
 
 type RenderEngine struct {
@@ -45,18 +60,40 @@ func (rh *RenderEngine) RenderView(view func(RenderData) string, renderData Rend
  * This function will render go default Html templating tool
  * as argument it will take String to render and data which need to be parsed
  */
-func (rh *RenderEngine) RenderTemplate(content string, data any) error {
+func (rh *RenderEngine) RenderTemplate(uri string, data any) error {
 
-	_t, err := template.New("").Parse(content)
+	var err error
+	var _html_template *template.Template
+	var info os.FileInfo
 
+	_template, isPresent := templateRecords[uri]
+	info, err = os.Stat(uri)
 	if err != nil {
 		return err
 	}
 
-	err = _t.Execute(rh.W, data)
-	if err != nil {
-		return err
+	if !isPresent { // template is not created already then we will update that in reocrd
+		if _html_template, err = template.New("").Parse(ReadFromFile(uri)); err == nil {
+			templateRecords[uri] = templates{
+				Uri:          uri,
+				LastModified: info.ModTime(),
+				Data:         *_html_template,
+			}
+		} else {
+			return err
+		}
+	} else if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
+
+		if _html_template, err = template.New("").Parse(ReadFromFile(uri)); err == nil {
+			_template.LastModified = info.ModTime()
+			_template.Data = *_html_template
+		} else {
+			return err
+		}
 	}
+
+	_template.Data.Execute(rh.W, data)
+	_html_template = nil
 
 	return nil
 }

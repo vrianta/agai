@@ -45,7 +45,7 @@ func (rh *RenderEngine) RenderView(view func(RenderData) string, renderData Rend
  * This function will render go default Html templating tool
  * as argument it will take String to render and data which need to be parsed
  */
-func (rh *RenderEngine) RenderTemplate(content string, data interface{}) error {
+func (rh *RenderEngine) RenderTemplate(content string, data any) error {
 
 	_t, err := template.New("").Parse(content)
 

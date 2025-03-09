@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 )
 
@@ -38,4 +39,24 @@ func (rh *RenderEngine) StartRender() {
 
 func (rh *RenderEngine) RenderView(view func(RenderData) string, renderData RenderData) {
 	rh.W.Write([]byte(view(renderData)))
+}
+
+/*
+ * This function will render go default Html templating tool
+ * as argument it will take String to render and data which need to be parsed
+ */
+func (rh *RenderEngine) RenderTemplate(content string, data interface{}) error {
+
+	_t, err := template.New("").Parse(content)
+
+	if err != nil {
+		return err
+	}
+
+	err = _t.Execute(rh.W, data)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

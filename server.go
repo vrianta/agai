@@ -5,53 +5,53 @@ import (
 	"net/http"
 )
 
-type ROUTETYPE map[string]func(*SessionHandler)
-type ServerHandler struct {
-	Host string
-	Port string
+// RoutesMap is a type alias for mapping routes to handlers
+type RoutesMap map[string]func(*Session)
 
-	Routes ROUTETYPE
+// Server represents the HTTP server with session management
+type Server struct {
+	Host     string
+	Port     string
+	Routes   RoutesMap
+	Sessions map[string]Session
 
-	SessionHandler map[string]SessionHandler
+	static_folder string // location of the static folder
 }
 
-var (
-	serverHandler *ServerHandler
-)
+// Global instance of the server
+var srvInstance *Server
 
-func New(host, port string, routes ROUTETYPE) *ServerHandler {
-	serverHandler = &ServerHandler{
-		Host:   host,
-		Port:   port,
-		Routes: routes,
-
-		SessionHandler: make(map[string]SessionHandler),
+// NewServer creates a new instance of the Server
+func New(host, port string, routes RoutesMap) *Server {
+	srvInstance = &Server{
+		Host:     host,
+		Port:     port,
+		Routes:   routes,
+		Sessions: make(map[string]Session),
 	}
-	return serverHandler
+	return srvInstance
 }
 
-func (sh *ServerHandler) StartServer() error {
-
-	http.HandleFunc("/", sh.routingHandler)
+// Start runs the HTTP server
+func (s *Server) Start() error {
+	http.HandleFunc("/", s.routingHandler)
 
 	// Define the server configuration
 	server := &http.Server{
-		Addr: sh.Host + ":" + sh.Port, // Host and port
+		Addr: s.Host + ":" + s.Port, // Host and port
 	}
-
-	// Log("Server is running on http://" + Host + ":" + Port)
 
 	// Start the server
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Println("Error starting server:", err)
-	} else {
 		return err
 	}
 
-	WriteConsole("Server started successfully " + sh.Host + ":" + sh.Port)
+	WriteConsole("Server started successfully " + s.Host + ":" + s.Port)
 	return nil
 }
 
-func RemoveSessionHandler(sessionID *string) {
-	delete(serverHandler.SessionHandler, *sessionID)
+// RemoveSession removes a session from the session manager
+func RemoveSession(sessionID string) {
+	delete(srvInstance.Sessions, sessionID)
 }

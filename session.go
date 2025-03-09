@@ -6,33 +6,33 @@ import (
 	"time"
 )
 
-type SESSIONTYPE map[string]interface{}
-type POSTTYPE map[string]string
-type GETTYPE map[string]string
-type SessionHandler struct {
+type SessionVars map[string]interface{}
+type PostParams map[string]string
+type GetParams map[string]string
+type Session struct {
 	ID string
 	W  http.ResponseWriter
 	R  *http.Request
 
-	POST POSTTYPE
-	GET  GETTYPE
-	VAR  SESSIONTYPE
+	POST  PostParams
+	GET   GetParams
+	Store SessionVars
 
-	Renderhandler RenderHandeler
+	RenderEngine RenderEngine
 }
 
-func NewSessionHandlerOBJ(w http.ResponseWriter, r *http.Request) *SessionHandler {
-	return &SessionHandler{
+func NewSession(w http.ResponseWriter, r *http.Request) *Session {
+	return &Session{
 		W:    w,
 		R:    r,
-		POST: make(POSTTYPE),
-		GET:  make(GETTYPE),
-		VAR: SESSIONTYPE{
+		POST: make(PostParams),
+		GET:  make(GetParams),
+		Store: SessionVars{
 			"uid":        "Guest",
 			"isLoggedIn": false,
 		},
 
-		Renderhandler: NewRenderHandlerObj(w),
+		RenderEngine: NewRenderHandlerObj(w),
 	}
 }
 
@@ -45,23 +45,23 @@ func GetSessionID(r *http.Request) *string {
 	return nil
 }
 
-func (sh *SessionHandler) Login(uid string) {
+func (sh *Session) Login(uid string) {
 	WriteConsole("Attempting to Login")
-	sh.VAR["uid"] = uid
-	sh.VAR["isLoggedIn"] = true
+	sh.Store["uid"] = uid
+	sh.Store["isLoggedIn"] = true
 	// If no valid session ID is found, create a new session
 	sh.SetSessionCookie(&sh.ID)
 }
 
-func (sh *SessionHandler) IsLoggedIn() bool {
-	if isloggedIn, ok := sh.VAR["isLoggedIn"]; ok {
+func (sh *Session) IsLoggedIn() bool {
+	if isloggedIn, ok := sh.Store["isLoggedIn"]; ok {
 		return isloggedIn.(bool)
 	}
 	return false
 }
 
 // StartSession attempts to retrieve or create a new session
-func (sh *SessionHandler) StartSession() *string {
+func (sh *Session) StartSession() *string {
 	WriteConsole("Attempting to start a session")
 
 	// Try to get an existing session ID from the request
@@ -86,15 +86,15 @@ func (sh *SessionHandler) StartSession() *string {
 	return sh.CreateNewSession()
 }
 
-func (sh *SessionHandler) UpdateSession(_w *http.ResponseWriter, _r *http.Request) {
+func (sh *Session) UpdateSession(_w *http.ResponseWriter, _r *http.Request) {
 	sh.W = *_w
 	sh.R = _r
 
-	sh.Renderhandler.W = *_w
+	sh.RenderEngine.W = *_w
 }
 
 // Creates a new session and sets cookies
-func (sh *SessionHandler) CreateNewSession() *string {
+func (sh *Session) CreateNewSession() *string {
 	// Generate a session ID
 	sessionID, err := GenerateSessionID()
 	if err != nil {
@@ -108,7 +108,7 @@ func (sh *SessionHandler) CreateNewSession() *string {
 }
 
 // Sets the session cookie in the client's browser
-func (sh *SessionHandler) SetSessionCookie(sessionID *string) {
+func (sh *Session) SetSessionCookie(sessionID *string) {
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,
@@ -118,7 +118,7 @@ func (sh *SessionHandler) SetSessionCookie(sessionID *string) {
 	AddCookie(c, sh.W, sh.R)
 }
 
-func EndSession(w http.ResponseWriter, r http.Request, sessionhandler *SessionHandler) {
+func EndSession(w http.ResponseWriter, r http.Request, Session *Session) {
 	sessionID := GetSessionID(&r)
 
 	if sessionID == nil {
@@ -130,15 +130,15 @@ func EndSession(w http.ResponseWriter, r http.Request, sessionhandler *SessionHa
 	WriteConsole("Ending session for session ID:", *sessionID)
 
 	RemoveCookie("sessionid", w, &r)
-	RemoveSessionHandler(sessionID)
+	RemoveSession(*sessionID)
 }
 
-func (sh *SessionHandler) RequestHandler() {
+func (sh *Session) ParseRequest() {
 	// Initialize queryParams once for later use
 	queryParams := sh.R.URL.Query()
 
-	sh.POST = make(POSTTYPE)
-	sh.GET = make(GETTYPE)
+	sh.POST = make(PostParams)
+	sh.GET = make(GetParams)
 
 	// Check if the request method is POST
 	if sh.R.Method == http.MethodPost {
@@ -151,19 +151,19 @@ func (sh *SessionHandler) RequestHandler() {
 		WriteConsole("Handling POST request")
 		// Handle POST form data
 		for key, values := range sh.R.PostForm {
-			sh.HandlePostParams(key, values)
+			sh.ProcessPostParams(key, values)
 		}
 	}
 
 	// Log handling of query parameters for non-POST methods
 	WriteConsole("Handling non-POST request, processing query parameters")
 	for key, values := range queryParams {
-		sh.HandleQueryParams(key, values)
+		sh.ProcessQueryParams(key, values)
 	}
 }
 
 // handleQueryParams processes parameters found in the URL query
-func (sh *SessionHandler) HandleQueryParams(key string, values []string) {
+func (sh *Session) ProcessQueryParams(key string, values []string) {
 	var err error
 	// Check for multiple values
 
@@ -180,7 +180,7 @@ func (sh *SessionHandler) HandleQueryParams(key string, values []string) {
 }
 
 // handlePostParams processes parameters found in the POST data
-func (sh *SessionHandler) HandlePostParams(key string, values []string) {
+func (sh *Session) ProcessPostParams(key string, values []string) {
 	var err error
 	// Check for multiple values
 	if len(values) > 1 {

@@ -5,11 +5,11 @@ import (
 	"fmt"
 )
 
-func WriteConsole(massages ...any) {
+func WriteLog(massages ...any) {
 	fmt.Println(massages...)
 }
 
-func WriteConsolef(massage string, args ...any) {
+func WriteLogf(massage string, args ...any) {
 	fmt.Printf(massage, args...)
 }
 

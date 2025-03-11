@@ -1,0 +1,99 @@
+package server
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
+)
+
+func (s *server) ServeConsole() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt) // Listen for Ctrl+C
+
+	go func() {
+		<-quit // Wait for interrupt signal
+		fmt.Println("\nShutting down server...")
+		s.stopServer()
+		os.Exit(0) // Exit program gracefully
+	}()
+
+	printHelp()
+
+	for {
+		var input string
+		fmt.Print(": ")
+		fmt.Scanln(&input)
+
+		switch input {
+		case "stop":
+			s.stopServer()
+		case "start":
+			s.startServer()
+		case "exit":
+			fmt.Println("Exiting...")
+			s.stopServer()
+			os.Exit(0)
+		case "r": // restart
+			fmt.Println("Restarting...")
+			s.stopServer()
+			s.startServer()
+		case "restart":
+			fmt.Println("Restarting...")
+			s.stopServer()
+			s.startServer()
+		default:
+			fmt.Println("Please Print -h to get available commands")
+			continue
+		}
+	}
+}
+
+func (s *server) startServer() {
+	if s.state {
+		fmt.Println("Server is in Starting State so skipping the process...")
+		return
+	}
+	// Define the server configuration
+	s.server = &http.Server{
+		Addr: s.Host + ":" + s.Port, // Host and port
+	}
+
+	WriteLogf("%s", "Server Starting at "+s.Host+":"+s.Port)
+
+	go s.server.ListenAndServe()
+	s.state = true
+}
+
+func (s *server) stopServer() {
+	if !s.state {
+		fmt.Println("Server is Already Stopped | can't stop it...")
+		return
+	}
+	// Create a timeout context (5 seconds)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Shutdown server gracefully
+	if err := s.server.Shutdown(ctx); err != nil {
+		fmt.Println("Shutdown Error:", err)
+	} else {
+		fmt.Println("Server shutdown successfully")
+	}
+
+	s.state = false
+}
+
+// Help function to display available commands
+func printHelp() {
+	fmt.Println("\nCommand you can Use ----------------")
+	fmt.Println(" start    - Start the server")
+	fmt.Println(" stop     - Stop the server")
+	fmt.Println(" restart  - Restart the server")
+	fmt.Println(" r        - Shortcut for restart")
+	fmt.Println(" exit     - Stop the server and exit the program")
+	fmt.Println(" -h       - Display available commands")
+	fmt.Println("------------------------------------")
+}

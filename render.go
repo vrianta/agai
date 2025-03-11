@@ -8,26 +8,26 @@ import (
 	"time"
 )
 
-// Global Variables in File Scope
-var (
-	templateRecords = make(map[string]templates) // keep the reocrd of all the templated which are already templated
-)
-
 type (
 	templates struct {
 		Uri          string            // path of the template file
 		LastModified time.Time         // date when the file last modified
 		Data         template.Template // template data of the file before modified
 	}
+
+	RenderEngine struct {
+		view      []byte
+		viewCount int
+		W         http.ResponseWriter
+	}
+
+	RenderData map[string]interface{}
 )
 
-type RenderEngine struct {
-	view      []byte
-	viewCount int
-	W         http.ResponseWriter
-}
-
-type RenderData map[string]interface{}
+// Global Variables in File Scope
+var (
+	templateRecords = make(map[string]templates) // keep the reocrd of all the templated which are already templated
+)
 
 func NewRenderHandlerObj(_w http.ResponseWriter) RenderEngine {
 	return RenderEngine{

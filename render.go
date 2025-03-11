@@ -60,15 +60,17 @@ func (rh *RenderEngine) RenderTemplate(uri string, data any) error {
 	var _html_template *template.Template
 	var info os.FileInfo
 
+	full_template_path := srvInstance.Config.Views_folder + "/" + uri
+
 	_template, isPresent := templateRecords[uri]
-	info, err = os.Stat(uri)
+	info, err = os.Stat(full_template_path)
 	if err != nil {
 		return err
 	}
 
 	if !isPresent { // template is not created already then we will update that in reocrd
-		// WriteConsole("First Time Creating the Template")
-		if _html_template, err = template.New("").Parse(ReadFromFile(srvInstance.Config.Views_folder + "/" + uri)); err == nil {
+		// WriteLogf("Trying to fid the View %s/%s", srvInstance.Config.Views_folder, uri)
+		if _html_template, err = template.New("").Parse(ReadFromFile(full_template_path)); err == nil {
 			templateRecords[uri] = templates{
 				Uri:          uri,
 				LastModified: info.ModTime(),
@@ -80,7 +82,7 @@ func (rh *RenderEngine) RenderTemplate(uri string, data any) error {
 		}
 	} else if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
 		// WriteConsole("File Has been Modified")
-		if _html_template, err = template.New("").Parse(ReadFromFile(uri)); err == nil {
+		if _html_template, err = template.New("").Parse(ReadFromFile(full_template_path)); err == nil {
 			_template.LastModified = info.ModTime()
 			_template.Data = *_html_template
 		} else {

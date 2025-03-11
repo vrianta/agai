@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net/http"
@@ -21,11 +22,12 @@ func (s *server) ServeConsole() {
 	}()
 
 	printHelp()
+	handleOutput() // Start prompt handler for consistent `: ` prompt
 
-	for {
-		var input string
-		fmt.Print(": ")
-		fmt.Scanln(&input)
+	// Command input loop
+	scanner := bufio.NewScanner(os.Stdin)
+	for ; scanner.Scan(); fmt.Print(": ") {
+		input := scanner.Text()
 
 		switch input {
 		case "stop":
@@ -84,6 +86,23 @@ func (s *server) stopServer() {
 	}
 
 	s.state = false
+}
+
+// Function to ensure `:` appears after every print
+func handleOutput() {
+	r, w, _ := os.Pipe()
+	oldStdout := os.Stdout
+	os.Stdout = w
+
+	fmt.Fprint(oldStdout, ": ")
+	scanner := bufio.NewScanner(r)
+	go func() {
+		for scanner.Scan() {
+			text := scanner.Text()
+			fmt.Fprintln(oldStdout, text) // Original content
+			fmt.Fprint(oldStdout, ": ")   // Always show `:` prompt after print
+		}
+	}()
 }
 
 // Help function to display available commands

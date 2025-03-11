@@ -68,7 +68,7 @@ func (rh *RenderEngine) RenderTemplate(uri string, data any) error {
 
 	if !isPresent { // template is not created already then we will update that in reocrd
 		// WriteConsole("First Time Creating the Template")
-		if _html_template, err = template.New("").Parse(ReadFromFile(uri)); err == nil {
+		if _html_template, err = template.New("").Parse(ReadFromFile(srvInstance.Config.Views_folder + "/" + uri)); err == nil {
 			templateRecords[uri] = templates{
 				Uri:          uri,
 				LastModified: info.ModTime(),

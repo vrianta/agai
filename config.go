@@ -6,11 +6,13 @@ package server
 type Config struct {
 	Http          bool
 	Static_folder string
+	Views_folder  string
 }
 
 var config = Config{
 	Http:          false,
 	Static_folder: "Static",
+	Views_folder:  "Views",
 }
 
 func newConfig(_config *Config) Config {
@@ -19,10 +21,14 @@ func newConfig(_config *Config) Config {
 		return config
 	}
 
+	config.Http = _config.Http
 	if _config.Static_folder != "" {
 		config.Static_folder = _config.Static_folder
 	}
-	config.Http = _config.Http
+
+	if _config.Views_folder != "" {
+		config.Views_folder = _config.Views_folder
+	}
 
 	return config
 }

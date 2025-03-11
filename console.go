@@ -86,6 +86,7 @@ func (s *server) stopServer() {
 	}
 
 	s.state = false
+	s.Sessions = map[string]Session{}
 }
 
 // Function to ensure `:` appears after every print

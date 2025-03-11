@@ -1,26 +1,21 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 )
 
 // var storeMutex
 
 func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
-	// WriteConsole(r.Header)
-	// Log the incoming request URL
-	// WriteConsole("Received request for URL: ", r.URL.Path)
 
 	sessionID := GetSessionID(r)
-	if sessionID == nil { // means no session has been established with the user
-		// WriteConsole("No session found, starting a new session")
+	if sessionID == nil { // means user does not have any session with the server so creating a new clean guest session with the server
 		Session := NewSession(w, r)
 		sessionID = Session.StartSession()
 		if sessionID != nil { // Successfuly started a New session without any error
-			// WriteConsolef("New session started with ID: %s \n", *sessionID)
 			sh.Sessions[(*sessionID)] = *Session
 			if value, ok := sh.Routes[r.URL.Path]; ok {
-				// WriteConsolef("Route found for URL: %s, calling handler \n", r.URL.Path)
 				Session.UpdateSession(&w, r)
 				Session.ParseRequest()
 				value(Session)
@@ -30,51 +25,36 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "404 Error : Route not found ", 404)
 			}
 		} else {
-			// WriteConsole("Failed to start session")
-			renderhandeler := NewRenderHandlerObj(w)
-			renderhandeler.Render(GetResponse("RELOGIN", "Server is not have the session anymore need to relogin the session", false))
-			renderhandeler.StartRender()
-			return
+			http.Error(w, "Server Error * Failed to Create the Session for the user", 500)
 		}
-	} else {
-		// WriteConsolef("Session ID found: %s \n", *sessionID)
+	} else { // User has a session ID to begin with
+		// checking if the session is valid or not means it is checking if the server also has the session or not
+		// if the session is valid then it will just update the session with the latest value
+		fmt.Println("Session cookie found with value:", *sessionID)
 
-		if Session, ok := sh.Sessions[(*sessionID)]; ok { // session is already created
+		if Session, ok := sh.Sessions[(*sessionID)]; ok {
 			if value, ok := sh.Routes[r.URL.Path]; ok {
-				// WriteConsolef("Route found for URL: %s, calling handler\n", r.URL.Path)
 				Session.UpdateSession(&w, r)
 				Session.ParseRequest()
 				value(&Session)
 				Session.RenderEngine.StartRender()
 			} else {
-				// WriteConsolef("Route not found for URL: %s\n", r.URL.Path)
 				http.Error(w, "404 Error : Route not found ", 404)
 			}
-
-		} else {
-			// WriteConsole("Session does not exist in Session, creating a new one")
-
+		} else { // server is not holding the session any more so creating a new guest session for the user
 			Session := NewSession(w, r)
 			sessionID = Session.StartSession()
 			if sessionID != nil {
-				// WriteConsolef("New session started with ID: %s\n", *sessionID)
 				sh.Sessions[(*sessionID)] = *Session
-
-				if value, ok := sh.Routes[r.URL.Path]; ok {
-					// WriteConsolef("Route found for URL: %s, calling handler\n", r.URL.Path)
+				if controller, ok := sh.Routes[r.URL.Path]; ok {
 					Session.ParseRequest()
-					value(Session)
+					controller(Session)
 					Session.RenderEngine.StartRender()
 				} else {
-					// WriteConsolef("Route not found for URL: %s\n", r.URL.Path)
 					http.Error(w, "404 Error : Route not found ", 404)
 				}
 			} else {
-				// WriteConsole("Failed to start session")
-				renderhandeler := NewRenderHandlerObj(w)
-				renderhandeler.Render(GetResponse("RELOGIN", "Server is not have the session anymore need to relogin the session", false))
-				renderhandeler.StartRender()
-				return
+				http.Error(w, "Server Error * Failed to Create the Session for the user", 500)
 			}
 		}
 	}

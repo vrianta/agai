@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 )
@@ -39,7 +38,6 @@ func NewSession(w http.ResponseWriter, r *http.Request) *Session {
 func GetSessionID(r *http.Request) *string {
 	cookie := GetCookie("sessionid", r)
 	if cookie != nil {
-		fmt.Println("Session cookie found with value:", cookie.Value)
 		return &cookie.Value
 	}
 	return nil
@@ -53,6 +51,10 @@ func (sh *Session) Login(uid string) {
 	sh.SetSessionCookie(&sh.ID)
 }
 
+/*
+ * Checking if the user is logged in
+ * @return false -> if the user is not logged in
+ */
 func (sh *Session) IsLoggedIn() bool {
 	if isloggedIn, ok := sh.Store["isLoggedIn"]; ok {
 		return isloggedIn.(bool)
@@ -62,24 +64,15 @@ func (sh *Session) IsLoggedIn() bool {
 
 // StartSession attempts to retrieve or create a new session
 func (sh *Session) StartSession() *string {
-	// WriteConsole("Attempting to start a session")
 
-	// Try to get an existing session ID from the request
 	if sessionID := GetSessionID(sh.R); sessionID != nil {
-		// WriteConsole("Session ID found in request: ", *sessionID)
 		if *sessionID == "expire" {
 			return sh.CreateNewSession()
 		}
 		// If the session ID doesn't match the current handler's ID, create a new session
 		if (*sessionID) != sh.ID {
-			// WriteConsole("Session ID from request does not match handler's session ID. Creating a new session.", *sessionID, " : ", sh.ID)
 			EndSession(sh.W, *sh.R, sh)
-			return nil
-		} else {
-			// WriteConsole("Session ID from request matches the handler's session ID. Using the existing session.")
 		}
-	} else {
-		// WriteConsole("No session ID found in request. Creating a new session.")
 	}
 
 	// If no valid session ID is found, create a new session

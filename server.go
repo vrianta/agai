@@ -63,7 +63,7 @@ func (s *server) Start() {
 		Addr: s.Host + ":" + s.Port, // Host and port
 	}
 
-	WriteLogf("%s", "Server Starting at "+s.Host+":"+s.Port)
+	WriteLogf("Server Starting at : %s:%s", s.Host, s.Port)
 
 	go s.server.ListenAndServe()
 	s.ServeConsole()
@@ -95,6 +95,7 @@ func (s *server) ServeConsole() {
 			s.startServer()
 		case "exit":
 			fmt.Println("Exiting...")
+			s.stopServer()
 			os.Exit(0)
 		}
 	}

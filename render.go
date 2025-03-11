@@ -88,7 +88,7 @@ func (rh *RenderEngine) RenderTemplate(uri string, data any) error {
 		}
 	}
 
-	_template.Data.Execute(rh.W, data)
+	// _template.Data.Execute(rh.W, data)
 	var buf bytes.Buffer
 	err = _template.Data.Execute(&buf, data)
 	if err != nil {

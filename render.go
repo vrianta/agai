@@ -7,11 +7,6 @@ import (
 	"os"
 )
 
-// Global Variables in File Scope
-var (
-	templateRecords = make(map[string]templates) // keep the reocrd of all the templated which are already templated
-)
-
 func NewRenderHandlerObj(_w http.ResponseWriter) RenderEngine {
 	return RenderEngine{
 		view:      make([]byte, 0),
@@ -37,7 +32,7 @@ func (rh *RenderEngine) RenderView(view func(RenderData) string, renderData Rend
  * This function will render go default Html templating tool
  * as argument it will take String to render and data which need to be parsed
  */
-func (rh *RenderEngine) RenderTemplate(uri string, data any) error {
+func (rh *RenderEngine) RenderTemplate(uri string, templateData any) error {
 
 	var err error
 	var _html_template *template.Template
@@ -73,9 +68,8 @@ func (rh *RenderEngine) RenderTemplate(uri string, data any) error {
 		}
 	}
 
-	// _template.Data.Execute(rh.W, data)
 	var buf bytes.Buffer
-	err = _template.Data.Execute(&buf, data)
+	err = _template.Data.Execute(&buf, templateData)
 	if err != nil {
 		return err
 	}

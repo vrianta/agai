@@ -96,32 +96,33 @@ func (sh *Session) Login(uid string) {
 	sh.SetSessionCookie(&sh.ID)
 }
 
+func (s *Session) Logout() {
+	s.EndSession()
+}
+
 /*
  * Checking if the user is logged in
  * @return false -> if the user is not logged in
  */
-func (sh *Session) IsLoggedIn() bool {
-	if isloggedIn, ok := sh.Store["isLoggedIn"]; ok {
-		return isloggedIn.(bool)
-	}
-	return false
+func (s *Session) IsLoggedIn() bool {
+	return s.Store["isLoggedIn"].(bool)
 }
 
 // StartSession attempts to retrieve or create a new session
-func (sh *Session) StartSession() *string {
+func (s *Session) StartSession() *string {
 
-	if sessionID := GetSessionID(sh.r); sessionID != nil {
+	if sessionID := GetSessionID(s.r); sessionID != nil {
 		if *sessionID == "expire" {
-			return sh.CreateNewSession()
+			return s.CreateNewSession()
 		}
 		// If the session ID doesn't match the current handler's ID, create a new session
-		if (*sessionID) != sh.ID {
-			EndSession(sh.w, *sh.r, sh)
+		if (*sessionID) != s.ID {
+			s.EndSession()
 		}
 	}
 
 	// If no valid session ID is found, create a new session
-	return sh.CreateNewSession()
+	return s.CreateNewSession()
 }
 
 func (sh *Session) UpdateSession(_w *http.ResponseWriter, _r *http.Request) {
@@ -156,19 +157,14 @@ func (sh *Session) SetSessionCookie(sessionID *string) {
 	AddCookie(c, sh.w, sh.r)
 }
 
-func EndSession(w http.ResponseWriter, r http.Request, Session *Session) {
-	sessionID := GetSessionID(&r)
+func (s *Session) EndSession() {
 
-	if sessionID == nil {
-		// WriteConsole("No active session found, cannot end session.")
+	if s.ID == "" {
 		return
 	}
 
-	// Remove session data from the store
-	// WriteConsole("Ending session for session ID:", *sessionID)
-
-	RemoveCookie("sessionid", w, &r)
-	RemoveSession(*sessionID)
+	RemoveCookie("sessionid", s.w, s.r)
+	RemoveSession(s.ID)
 }
 
 func (sh *Session) ParseRequest() {

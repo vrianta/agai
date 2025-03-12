@@ -4,27 +4,6 @@ import (
 	"net/http"
 )
 
-// RoutesMap is a type alias for mapping routes to handlers
-type RoutesMap map[string]func(*Session)
-
-// Server represents the HTTP server with session management
-type server struct {
-	Host     string
-	Port     string
-	Routes   RoutesMap
-	Config   Config
-	Sessions map[string]Session
-
-	server *http.Server
-
-	state bool // hold 0 or 1 to ensure if the server is runnning or not
-}
-
-// Global instance of the server
-var (
-	srvInstance *server
-)
-
 /*
  * server.New(hostname, port, routes, _config) -> function to create a instance of the server
  * @return -> it will return a pointer to the server with default

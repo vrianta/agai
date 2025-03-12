@@ -5,21 +5,6 @@ import (
 	"time"
 )
 
-type SessionVars map[string]interface{}
-type PostParams map[string]string
-type GetParams map[string]string
-type Session struct {
-	ID string
-	W  http.ResponseWriter
-	R  *http.Request
-
-	POST  PostParams
-	GET   GetParams
-	Store SessionVars
-
-	RenderEngine RenderEngine
-}
-
 func NewSession(w http.ResponseWriter, r *http.Request) *Session {
 	return &Session{
 		W:    w,

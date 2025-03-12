@@ -96,8 +96,16 @@ func (sh *Session) Login(uid string) {
 	sh.SetSessionCookie(&sh.ID)
 }
 
-func (s *Session) Logout() {
-	s.EndSession()
+func (s *Session) Logout(_redirect_uri string) {
+	s.Store["uid"] = ""
+	s.Store["isLoggedIn"] = false
+
+	WriteLog("Loggingout")
+	s.w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	s.w.Header().Set("Pragma", "no-cache")
+	s.w.Header().Set("Expires", "0")
+	s.RedirectWithCode(Uri(_redirect_uri), ResponseCodes.SeeOther)
+
 }
 
 /*
@@ -158,13 +166,9 @@ func (sh *Session) SetSessionCookie(sessionID *string) {
 }
 
 func (s *Session) EndSession() {
-
-	if s.ID == "" {
-		return
-	}
-
 	RemoveCookie("sessionid", s.w, s.r)
-	RemoveSession(s.ID)
+	// defer RemoveSession(s.ID)
+	s = NewSession(s.w, s.r)
 }
 
 func (sh *Session) ParseRequest() {
@@ -239,4 +243,11 @@ func (ss *Session) IsGetMethod() bool {
  */
 func (ss *Session) IsDeleteMethod() bool {
 	return ss.r.Method == http.MethodDelete
+}
+
+/*
+ * Disable the Caching on Local Machine For certain pages to make
+ */
+func (s *Session) EnableCaching() {
+
 }

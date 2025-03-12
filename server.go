@@ -51,5 +51,5 @@ func (s *server) Start() {
 
 // RemoveSession removes a session from the session manager
 func RemoveSession(sessionID string) {
-	delete(srvInstance.Sessions, sessionID)
+	defer delete(srvInstance.Sessions, sessionID)
 }

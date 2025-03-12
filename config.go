@@ -7,8 +7,8 @@ func newConfig(_config *Config) Config {
 	}
 
 	config.Http = _config.Http
-	if _config.Static_folder != "" {
-		config.Static_folder = _config.Static_folder
+	if _config.Static_folders != nil {
+		config.Static_folders = _config.Static_folders
 	}
 
 	if _config.Views_folder != "" {

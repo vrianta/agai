@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -30,14 +29,12 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 	} else { // User has a session ID to begin with
 		// checking if the session is valid or not means it is checking if the server also has the session or not
 		// if the session is valid then it will just update the session with the latest value
-		fmt.Println("Session cookie found with value:", *sessionID)
 
 		if Session, ok := sh.Sessions[(*sessionID)]; ok {
 			if controller, ok := sh.Routes[r.URL.Path]; ok {
 				Session.UpdateSession(&w, r)
 				Session.ParseRequest()
 				controller(&Session)
-				WriteLog("leaving the Controller Calling", r.URL.Path)
 				Session.RenderEngine.StartRender()
 			} else {
 				http.Error(w, "404 Error : Route not found ", 404)
@@ -59,8 +56,19 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
 
-	// w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-	// w.Header().Set("Pragma", "no-cache")
-	// w.Header().Set("Expires", "0")
+/*
+ * Handling the Requests coming for the CSS Files specially
+ */
+func (s *server) CSSHandlers(session *Session) {
+	WriteLog("looking for Css file")
+}
+
+/*
+ * Handling the Requests coming for the Js Files specially
+ */
+func (s *server) JsHandler(session *Session) {
+	WriteLog("Looking for js file")
+
 }

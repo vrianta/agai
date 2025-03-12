@@ -26,12 +26,11 @@ func New(host, port string, routes RoutesMap, _config *Config) *server {
 // Start runs the HTTP server
 func (s *server) Start() {
 
-	// Create a file server handler
-	fs := http.FileServer(http.Dir(s.Config.Static_folder))
+	s.setup_static_folders()
+	s.setup_css_folder()
+	s.setup_js_folder()
 
-	// Serve static files from the /static/ URL path
-	http.Handle("/Static/", http.StripPrefix("/Static/", fs))
-
+	// setting up the Custom Routing Handler for the syste
 	http.HandleFunc("/", s.routingHandler)
 
 	// Define the server configuration
@@ -45,8 +44,27 @@ func (s *server) Start() {
 	s.state = true
 	s.ServeConsole()
 
-	// s.server.
+}
 
+func (s *server) setup_static_folders() {
+	// Create a file server handler
+	for static_folder := range s.Config.Static_folders {
+		fs := http.FileServer(http.Dir(static_folder))
+		WriteLog("setting Up Static Folder : ", static_folder)
+		http.Handle("/"+s.Config.Static_folders[static_folder]+"/", http.StripPrefix("/"+s.Config.Static_folders[static_folder]+"/", fs))
+	}
+}
+
+func (s *server) setup_css_folder() {
+	for css_folder := range s.Config.CSS_Folders {
+		s.Routes["/"+s.Config.CSS_Folders[css_folder]] = s.CSSHandlers
+	}
+}
+
+func (s *server) setup_js_folder() {
+	for folder := range s.Config.JS_Folders {
+		s.Routes["/"+s.Config.CSS_Folders[folder]] = s.CSSHandlers
+	}
 }
 
 // RemoveSession removes a session from the session manager

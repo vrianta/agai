@@ -49,21 +49,24 @@ func (s *server) Start() {
 func (s *server) setup_static_folders() {
 	// Create a file server handler
 	for static_folder := range s.Config.Static_folders {
-		fs := http.FileServer(http.Dir(static_folder))
+		fs := http.FileServer(http.Dir(s.Config.Static_folders[static_folder]))
 		WriteLog("setting Up Static Folder : ", static_folder)
 		http.Handle("/"+s.Config.Static_folders[static_folder]+"/", http.StripPrefix("/"+s.Config.Static_folders[static_folder]+"/", fs))
 	}
 }
 
+// Generating Creating Routes for the Css Folders
 func (s *server) setup_css_folder() {
 	for css_folder := range s.Config.CSS_Folders {
-		s.Routes["/"+s.Config.CSS_Folders[css_folder]] = s.CSSHandlers
+		http.HandleFunc("/"+s.Config.CSS_Folders[css_folder]+"/", s.CSSHandlers)
+		// s.Routes["/"+s.Config.CSS_Folders[css_folder]] = s.CSSHandlers
 	}
 }
 
 func (s *server) setup_js_folder() {
 	for folder := range s.Config.JS_Folders {
-		s.Routes["/"+s.Config.CSS_Folders[folder]] = s.CSSHandlers
+		http.HandleFunc("/"+s.Config.JS_Folders[folder]+"/", s.JsHandler)
+		// s.Routes["/"+s.Config.CSS_Folders[folder]] = s.CSSHandlers
 	}
 }
 

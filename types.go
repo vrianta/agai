@@ -35,6 +35,12 @@ type (
 		Data         template.Template // template data of the file before modified
 	}
 
+	FileInfo struct {
+		Uri          string    // path of the template file
+		LastModified time.Time // date when the file last modified
+		Data         string    // template data of the file before modified
+	}
+
 	RenderEngine struct {
 		view []byte
 		W    http.ResponseWriter

@@ -2,9 +2,12 @@ package server
 
 import (
 	"net/http"
+	"os"
 )
 
-// var storeMutex
+var (
+	fileInfo = map[string]FileInfo{}
+)
 
 func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -61,14 +64,68 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 /*
  * Handling the Requests coming for the CSS Files specially
  */
-func (s *server) CSSHandlers(session *Session) {
-	WriteLog("looking for Css file")
+func (s *server) CSSHandlers(w http.ResponseWriter, r *http.Request) {
+
+	_file_path := "." + r.URL.Path // path of the file
+
+	_file_record, file_record_ok := fileInfo[_file_path]
+
+	info, err := os.Stat(_file_path)
+	if err != nil {
+		WriteLog(err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/css; charset=utf-8")
+
+	if file_record_ok && _file_record.LastModified.Compare(info.ModTime()) != 0 { // file has not been updated so alreay no not make it do extra work
+
+		w.Write([]byte(fileInfo[_file_path].Data))
+		return
+	}
+
+	_file_data := ReadFromFile(_file_path)
+
+	fileInfo[_file_path] = FileInfo{
+		Uri:          _file_path,
+		LastModified: info.ModTime(),
+		Data:         _file_data,
+	}
+
+	w.Write([]byte(fileInfo[_file_path].Data))
+
 }
 
 /*
  * Handling the Requests coming for the Js Files specially
  */
-func (s *server) JsHandler(session *Session) {
-	WriteLog("Looking for js file")
+func (s *server) JsHandler(w http.ResponseWriter, r *http.Request) {
+	_file_path := "." + r.URL.Path // path of the file
+
+	_file_record, file_record_ok := fileInfo[_file_path]
+
+	info, err := os.Stat(_file_path)
+	if err != nil {
+		WriteLog(err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/css; charset=utf-8")
+
+	if file_record_ok && _file_record.LastModified.Compare(info.ModTime()) != 0 { // file has not been updated so alreay no not make it do extra work
+
+		w.Write([]byte(fileInfo[_file_path].Data))
+		return
+	}
+
+	_file_data := ReadFromFile(_file_path)
+
+	fileInfo[_file_path] = FileInfo{
+		Uri:          _file_path,
+		LastModified: info.ModTime(),
+		Data:         _file_data,
+	}
+
+	w.Write([]byte(fileInfo[_file_path].Data))
 
 }

@@ -54,8 +54,8 @@ type (
 
 	Session struct {
 		ID string
-		W  http.ResponseWriter
-		R  *http.Request
+		w  http.ResponseWriter
+		r  *http.Request
 
 		POST  PostParams
 		GET   GetParams

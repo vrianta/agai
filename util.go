@@ -53,7 +53,7 @@ func GenerateSessionID() (string, error) {
 }
 
 // stringToJson converts a slice of strings to a JSON-encoded string
-func StringArrayToJson(data []string) (string, error) {
+func JsonToString(data []string) (string, error) {
 	// Marshal the slice of strings into a JSON-encoded byte slice
 	jsonData, err := json.Marshal(data)
 	if err != nil {

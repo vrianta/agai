@@ -12,43 +12,43 @@ var (
 		Views_folder:  "Views",
 	}
 
-	// ResponseCodes holds standard HTTP response codes
+	// ResponseCodes holds standard HTTP ResponseCode codes
 	ResponseCodes = struct {
 		// 1xx - Informational
-		Continue           Response
-		SwitchingProtocols Response
-		Processing         Response
-		EarlyHints         Response
+		Continue           ResponseCode
+		SwitchingProtocols ResponseCode
+		Processing         ResponseCode
+		EarlyHints         ResponseCode
 
 		// 2xx - Success
-		OK        Response
-		Created   Response
-		Accepted  Response
-		NoContent Response
+		OK        ResponseCode
+		Created   ResponseCode
+		Accepted  ResponseCode
+		NoContent ResponseCode
 
 		// 3xx - Redirection
-		MovedPermanently  Response
-		Found             Response
-		SeeOther          Response
-		NotModified       Response
-		TemporaryRedirect Response
-		PermanentRedirect Response
+		MovedPermanently  ResponseCode
+		Found             ResponseCode
+		SeeOther          ResponseCode
+		NotModified       ResponseCode
+		TemporaryRedirect ResponseCode
+		PermanentRedirect ResponseCode
 
 		// 4xx - Client Errors
-		BadRequest       Response
-		Unauthorized     Response
-		Forbidden        Response
-		NotFound         Response
-		MethodNotAllowed Response
-		Conflict         Response
-		TooManyRequests  Response
+		BadRequest       ResponseCode
+		Unauthorized     ResponseCode
+		Forbidden        ResponseCode
+		NotFound         ResponseCode
+		MethodNotAllowed ResponseCode
+		Conflict         ResponseCode
+		TooManyRequests  ResponseCode
 
 		// 5xx - Server Errors
-		InternalServerError Response
-		NotImplemented      Response
-		BadGateway          Response
-		ServiceUnavailable  Response
-		GatewayTimeout      Response
+		InternalServerError ResponseCode
+		NotImplemented      ResponseCode
+		BadGateway          ResponseCode
+		ServiceUnavailable  ResponseCode
+		GatewayTimeout      ResponseCode
 	}{
 		// 1xx
 		Continue:           100,

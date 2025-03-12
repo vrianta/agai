@@ -183,10 +183,8 @@ func (sh *Session) ParseRequest() {
 		// Parse multipart form data with a 10 MB limit for file uploads
 		err := sh.r.ParseMultipartForm(10 << 20) // 10 MB
 		if err != nil {
-			// WriteConsole("Error parsing multipart form data: ", err)
 			// http.Error(sh.w, "Error parsing multipart form data", http.StatusBadRequest)
 		}
-		// WriteConsole("Handling POST request")
 		// Handle POST form data
 		for key, values := range sh.r.PostForm {
 			sh.ProcessPostParams(key, values)
@@ -194,7 +192,6 @@ func (sh *Session) ParseRequest() {
 	}
 
 	// Log handling of query parameters for non-POST methods
-	// WriteConsole("Handling non-POST request, processing query parameters")
 	for key, values := range queryParams {
 		sh.ProcessQueryParams(key, values)
 	}
@@ -206,30 +203,25 @@ func (sh *Session) ProcessQueryParams(key string, values []string) {
 	// Check for multiple values
 
 	if len(values) > 1 {
-		if sh.GET[key], err = StringArrayToJson(values); err != nil {
-			// WriteConsole("Failed to convert multiple values of key '", key, "' to JSON: ", key, err)
+		if sh.GET[key], err = JsonToString(values); err != nil {
 			http.Error(sh.w, "Failed to convert data to JSON", http.StatusMethodNotAllowed)
 
 		}
 	} else {
 		sh.GET[key] = values[0] // Store single value as a string
 	}
-	// WriteConsole("Handled query parameter - key: ", key, ", value: ", sh.GET[key])
 }
 
 // handlePostParams processes parameters found in the POST data
 func (sh *Session) ProcessPostParams(key string, values []string) {
 	var err error
-	// Check for multiple values
 	if len(values) > 1 {
-		if sh.POST[key], err = StringArrayToJson(values); err != nil {
-			// WriteConsole("Failed to convert multiple values of key '", key, "' to JSON: ", err)
+		if sh.POST[key], err = JsonToString(values); err != nil {
 			http.Error(sh.w, "Failed to convert data to JSON", http.StatusMethodNotAllowed)
 		}
 	} else {
 		sh.POST[key] = values[0] // Store single value as a string
 	}
-	// WriteConsole("Handled POST parameter - key: ", key, ", value: ", sh.POST[key])
 }
 
 /*

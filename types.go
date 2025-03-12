@@ -7,8 +7,8 @@ import (
 )
 
 type (
-	Response int // server response codes
-	Uri      string
+	ResponseCode int // server response codes
+	Uri          string
 
 	// RoutesMap is a type alias for mapping routes to handlers
 	RoutesMap   map[string]func(*Session)
@@ -36,9 +36,8 @@ type (
 	}
 
 	RenderEngine struct {
-		view      []byte
-		viewCount int
-		W         http.ResponseWriter
+		view []byte
+		W    http.ResponseWriter
 	}
 
 	RenderData map[string]interface{}

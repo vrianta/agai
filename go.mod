@@ -1,4 +1,4 @@
-module vrianta.in/golang/server
+module packages.vrianta.in/golang/server
 
 go 1.24.1
 

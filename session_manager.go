@@ -113,7 +113,14 @@ func (s *Session) Logout(_redirect_uri string) {
  * @return false -> if the user is not logged in
  */
 func (s *Session) IsLoggedIn() bool {
-	return s.Store["isLoggedIn"].(bool)
+	if _is_loggedin, present := s.Store["isLoggedIn"]; !present {
+		return false
+	} else {
+		// WriteLog("sending is loggedinclear")
+		// WriteLog(_is_loggedin.(bool))
+		return _is_loggedin.(bool)
+	}
+
 }
 
 // StartSession attempts to retrieve or create a new session

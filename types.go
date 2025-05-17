@@ -14,7 +14,7 @@ type (
 	Routes map[string]interface {
 		GET(*Session)
 		POST(*Session)
-		Delete(*Session)
+		DELETE(*Session)
 	}
 	SessionVars map[string]interface{}
 	PostParams  map[string]string

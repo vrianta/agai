@@ -25,7 +25,7 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 				} else if Session.IsPostMethod() {
 					controller.POST(Session)
 				} else if Session.IsDeleteMethod() {
-					controller.Delete(Session)
+					controller.DELETE(Session)
 				}
 				Session.RenderEngine.StartRender()
 			} else {
@@ -48,7 +48,7 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 				} else if Session.IsPostMethod() {
 					controller.POST(&Session)
 				} else if Session.IsDeleteMethod() {
-					controller.Delete(&Session)
+					controller.DELETE(&Session)
 				}
 				Session.RenderEngine.StartRender()
 			} else {
@@ -66,7 +66,7 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 					} else if Session.IsPostMethod() {
 						controller.POST(Session)
 					} else if Session.IsDeleteMethod() {
-						controller.Delete(Session)
+						controller.DELETE(Session)
 					}
 					Session.RenderEngine.StartRender()
 				} else {

@@ -108,7 +108,7 @@ import (
 )
 
 func main() {
-    serverInstance := server.New("localhost", "8080", server.ROUTETYPE{
+    serverInstance := server.New("localhost", "8080", server.Routes{
         "/":              handlers.Home,
         "/get-token":     handlers.GetToken,
         "/validate-token": handlers.ValidateToken,

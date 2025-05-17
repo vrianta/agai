@@ -1,4 +1,4 @@
-module github.com/vrianta/Server
+module github.com/vrianta/Server/v2
 
 go 1.24.1
 

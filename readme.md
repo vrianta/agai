@@ -24,7 +24,7 @@ import "path/to/your/server/package"
 You can create a new server by calling the `New` function with the desired host, port, and routes.
 
 ```go
-_s := server.New("", "8080", server.ROUTETYPE{
+_s := server.New("", "8080", server.Routes{
     "/":               src.Home,
     "/get-token":      token.GetToken,
     "/validate-token": token.ValidateToken,
@@ -203,45 +203,29 @@ Here’s a simple demonstration of using the server package to handle routing, s
 
 ```go
 
-func Home(sessionHandler *server.SessionHandler) {
-    sessionHandler.Renderhandler.Render(server.GetResponse("CONNECTION", "Connection succeeded successfully", true))
+package controllers
+
+import (
+	server "github.com/vrianta/Server"
+)
+
+type home struct{}
+
+var Home home
+
+// Loading function for the Home Struct
+func (h *home) GET(Session *server.Session) {
+	// Session.RenderEngine.Render(views.Home())
 }
 
-func Get(sessionHandler *server.SessionHandler) {
-    if !sessionHandler.IsLoggedIn() {
-        sessionHandler.Renderhandler.Render(server.GetResponse("NOPOSTMETHOD", "Did not receive the request on POST method", false))
-        return
-    }
+// Loading function for the Home Struct
+func (h *home) POST(Session *server.Session) {
+	// Session.RenderEngine.Render(views.Home())
+}
 
-    uid, uidExists := sessionHandler.POST["uid"]
-    token, tokenExists := sessionHandler.POST["token"]
-
-    if !uidExists || !tokenExists {
-        missing := []string{}
-        if !uidExists {
-            missing = append(missing, "UID")
-        }
-        if !tokenExists {
-            missing = append(missing, "token")
-        }
-        server.WriteConsole(fmt.Sprintf("Missing required fields: %v", missing))
-        sessionHandler.Renderhandler.Render(server.GetResponse("MissingCredentials", strings.Join(missing, ", "), false))
-        return
-    }
-
-    if uid != sessionHandler.VAR["uid"].(string) {
-        server.WriteConsole("User ID is not matching")
-        sessionHandler.Renderhandler.Render(server.GetResponse("WORNGUID", "Wrong User ID passed", false))
-        return
-    }
-
-    if token != sessionHandler.VAR["token"].(string) {
-        server.WriteConsole("Token is not matching")
-        sessionHandler.Renderhandler.Render(server.GetResponse("WRONGTOKEN", "Wrong token passed", false))
-        return
-    }
-
-    // Handle further logic...
+// Loading function for the Home Struct
+func (h *home) DELETE(Session *server.Session) {
+	// Session.RenderEngine.Render(views.Home())
 }
 
 ```

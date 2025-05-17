@@ -17,13 +17,19 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 		sessionID = Session.StartSession()
 		if sessionID != nil { // Successfuly started a New session without any error
 			sh.Sessions[(*sessionID)] = *Session
-			if value, ok := sh.Routes[r.URL.Path]; ok {
+			if controller, ok := sh.Routes[r.URL.Path]; ok {
 				Session.UpdateSession(&w, r)
 				Session.ParseRequest()
-				value(Session)
+				if Session.IsGetMethod() {
+					controller.GET(Session)
+				} else if Session.IsPostMethod() {
+					controller.POST(Session)
+				} else if Session.IsDeleteMethod() {
+					controller.Delete(Session)
+				}
 				Session.RenderEngine.StartRender()
 			} else {
-				// WriteConsolef("Route not found for URL: %s \n", r.URL.Path)
+				// WriteConsolef("Route not found for URL: %s \n", r.URL.Path)ss
 				http.Error(w, "404 Error : Route not found ", 404)
 			}
 		} else {
@@ -37,7 +43,13 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 			if controller, ok := sh.Routes[r.URL.Path]; ok {
 				Session.UpdateSession(&w, r)
 				Session.ParseRequest()
-				controller(&Session)
+				if Session.IsGetMethod() {
+					controller.GET(&Session)
+				} else if Session.IsPostMethod() {
+					controller.POST(&Session)
+				} else if Session.IsDeleteMethod() {
+					controller.Delete(&Session)
+				}
 				Session.RenderEngine.StartRender()
 			} else {
 				http.Error(w, "404 Error : Route not found ", 404)
@@ -49,7 +61,13 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 				sh.Sessions[(*sessionID)] = *Session
 				if controller, ok := sh.Routes[r.URL.Path]; ok {
 					Session.ParseRequest()
-					controller(Session)
+					if Session.IsGetMethod() {
+						controller.GET(Session)
+					} else if Session.IsPostMethod() {
+						controller.POST(Session)
+					} else if Session.IsDeleteMethod() {
+						controller.Delete(Session)
+					}
 					Session.RenderEngine.StartRender()
 				} else {
 					http.Error(w, "404 Error : Route not found ", 404)

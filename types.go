@@ -11,7 +11,11 @@ type (
 	Uri          string
 
 	// RoutesMap is a type alias for mapping routes to handlers
-	RoutesMap   map[string]func(*Session)
+	Routes map[string]interface {
+		GET(*Session)
+		POST(*Session)
+		Delete(*Session)
+	}
 	SessionVars map[string]interface{}
 	PostParams  map[string]string
 	GetParams   map[string]string
@@ -20,7 +24,7 @@ type (
 	server struct {
 		Host     string
 		Port     string
-		Routes   RoutesMap
+		Routes   Routes
 		Config   Config
 		Sessions map[string]Session
 

@@ -12,7 +12,7 @@ import (
  * route ->  routes configaration which tells the
  * _config -> send the config of the server can be send nill if default is fine for you
  */
-func New(host, port string, routes RoutesMap, _config *Config) *server {
+func New(host, port string, routes Routes, _config *Config) *server {
 	srvInstance = &server{
 		Host:     host,
 		Port:     port,

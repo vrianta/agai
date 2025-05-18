@@ -127,7 +127,7 @@ func PHPToGoTemplate(phpTemplate string) string {
 // Returns:
 //   - A string representing the equivalent Go template expression.
 
-func convertPHPExprToGo(expr string) string {
+func convertPHPExprToGoOld(expr string) string {
 	// Handle function calls
 	functionCallPattern := regexp.MustCompile(`(\w+)\((.*?)\)`)
 	expr = functionCallPattern.ReplaceAllStringFunc(expr, func(match string) string {
@@ -136,7 +136,7 @@ func convertPHPExprToGo(expr string) string {
 		args := parts[2]
 
 		// Convert PHP variables in arguments to Go template syntax
-		fmt.Println(args)
+		// fmt.Println(args)
 		args = convertPHPVarsToGo(args)
 
 		// Map common PHP functions to Go equivalents
@@ -163,14 +163,54 @@ func convertPHPExprToGo(expr string) string {
 	})
 
 	// Handle variables
-	fmt.Printf("166 - %s\n", expr)
+	fmt.Printf("-- 166 - %s\n", expr)
 	return convertPHPVarsToGo(expr)
+}
+
+func convertPHPExprToGo(expr string) string {
+	// Step 1: Replace -> with . for property access
+	expr = strings.ReplaceAll(expr, "->", ".")
+
+	// Step 2: Handle function calls first
+	functionCallPattern := regexp.MustCompile(`(\w+)\((.*?)\)`)
+	expr = functionCallPattern.ReplaceAllStringFunc(expr, func(match string) string {
+		parts := functionCallPattern.FindStringSubmatch(match)
+		funcName := parts[1]
+		args := convertPHPVarsToGo(parts[2])
+
+		switch funcName {
+		case "strtoupper":
+			return fmt.Sprintf("upper %s", args)
+		case "strtolower":
+			return fmt.Sprintf("lower %s", args)
+		case "strlen", "count":
+			return fmt.Sprintf("(len %s)", args)
+		case "htmlspecialchars":
+			return fmt.Sprintf("html %s", args)
+		case "isset":
+			return fmt.Sprintf("ne %s nil", args)
+		case "empty":
+			return fmt.Sprintf("eq %s \"\"", args)
+		default:
+			return fmt.Sprintf("call .%s %s", funcName, args)
+		}
+	})
+
+	// Step 3: Replace PHP-style vars like $x or $$x with .x or .x (same scope)
+	expr = convertPHPVarsToGo(expr)
+
+	// Step 4: Optional cleanup (for readability)
+	expr = strings.ReplaceAll(expr, "&&", "and")
+	expr = strings.ReplaceAll(expr, "||", "or")
+	expr = strings.ReplaceAll(expr, "!", "not ")
+
+	return expr
 }
 
 // convertPHPVarsToGo converts PHP-style variable expressions into Go template syntax.
 //
 // It handles the following transformations:
-// - Object properties:         $object->property        -> $object.property
+// - Object properties:         $$object->property        -> $object.property
 // - Array (map) access:        $array['key']            -> array.key
 // - Indexed arrays:            $array[0]                -> index array 0
 // - Simple variables:          $var                     -> .var
@@ -187,14 +227,24 @@ func convertPHPExprToGo(expr string) string {
 
 func convertPHPVarsToGo(expr string) string {
 	// Convert object property access: $object->property -> $object.property
-	fmt.Printf("190 - %s\n", expr)
+	// fmt.Printf("190 - %s\n", expr)
+	objPropPattern_doubledollar := regexp.MustCompile(`\$\$(\w+)->(\w+)`)
+	if objPropPattern_doubledollar.MatchString(expr) {
+		matches := objPropPattern_doubledollar.FindStringSubmatch(expr)
+		if len(matches) > 2 {
+			objName := matches[1]
+			propName := matches[2]
+			// fmt.Printf("197 - $%s.%s\n", objName, propName)
+			return fmt.Sprintf(".%s.%s", objName, propName)
+		}
+	}
 	objPropPattern := regexp.MustCompile(`\$(\w+)->(\w+)`)
 	if objPropPattern.MatchString(expr) {
 		matches := objPropPattern.FindStringSubmatch(expr)
 		if len(matches) > 2 {
 			objName := matches[1]
 			propName := matches[2]
-			fmt.Printf("197 - $%s.%s\n", objName, propName)
+			// fmt.Printf("197 - $%s.%s\n", objName, propName)
 			return fmt.Sprintf("$%s.%s", objName, propName)
 		}
 	}
@@ -209,11 +259,11 @@ func convertPHPVarsToGo(expr string) string {
 
 	// Step 1: Temporarily replace $$var with a placeholder like __DOLLAR_VAR_var__
 	doubleDollarPattern := regexp.MustCompile(`\$\$(\w+)`)
-	expr = doubleDollarPattern.ReplaceAllString(expr, `@@${1}`)
+	expr = doubleDollarPattern.ReplaceAllString(expr, `.${1}`)
 
 	// Step 2: Convert $var to .var
 	simpleVarPattern := regexp.MustCompile(`\$(\w+)`)
-	expr = simpleVarPattern.ReplaceAllString(expr, ".${1}")
+	expr = simpleVarPattern.ReplaceAllString(expr, "$$${1}")
 
 	restorePlaceholderPattern := regexp.MustCompile(`@@(\w+)`)
 	expr = restorePlaceholderPattern.ReplaceAllString(expr, `$$$1`)
@@ -257,26 +307,27 @@ func convertPHPVarsToGo(expr string) string {
 func convertPHPBlockToGo(code string) string {
 	// Handle foreach loops
 	if strings.HasPrefix(code, "foreach") {
-		foreachPattern := regexp.MustCompile(`foreach\s*\(\s*\$(\w+)\s+as\s+\$(\w+)(?:\s*=>\s*\$(\w+))?\s*\)(?:\s*:)?`)
+		// fmt.Println("Found Foreach 270", code)
+		foreachPattern := regexp.MustCompile(`foreach\s*\(\s*(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*(?:->\w+)*)\s+as\s+(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*)(?:\s*=>\s*(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*))?\s*\)\s*:?`)
 		matches := foreachPattern.FindStringSubmatch(code)
 		if len(matches) >= 3 {
 			collection := matches[1]
-			// iterVar := matches[2]
 
-			// return fmt.Sprintf("{{ range $%s, $%s := .%s }}", keyVar, valueVar, collection)
 			// Check if this is a key-value foreach
 			if len(matches) > 3 && matches[3] != "" {
 				// Key-value foreach ($array as $key => $value)
 				keyVar := matches[2]
 				valueVar := matches[3]
 				// In Go templates, the convention is to use $ prefix for variables in range
-				return fmt.Sprintf("{{ range $%s, $%s := .%s }}", keyVar, valueVar, collection)
+				// fmt.Printf("-- {{ range %s, %s := %s }}", convertPHPVarsToGo(keyVar), convertPHPVarsToGo(valueVar), convertPHPVarsToGo(collection))
+				return fmt.Sprintf("{{ range %s, %s := %s }}", convertPHPVarsToGo(keyVar), convertPHPVarsToGo(valueVar), convertPHPVarsToGo(collection))
 			} else {
 				// Simple foreach ($array as $item)
 				// Use the iterVar as a named variable in the range loop
-				return fmt.Sprintf("{{ range .%s }}", collection)
+				return fmt.Sprintf("{{ range %s }}", convertPHPVarsToGo(collection))
 			}
 		}
+
 	}
 
 	// Handle endforeach
@@ -286,11 +337,11 @@ func convertPHPBlockToGo(code string) string {
 
 	// Handle if statements
 	if strings.HasPrefix(code, "if") {
-		ifPattern := regexp.MustCompile(`if\s*\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)(?:\s*:)?`)
+		ifPattern := regexp.MustCompile(`if\s*\(((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*)\)\s*:??`)
 		matches := ifPattern.FindStringSubmatch(code)
 		if len(matches) > 1 {
 			condition := convertPHPExprToGo(matches[1])
-			// fmt.Println(matches[1])
+			fmt.Printf("304 - %s - %s\n", matches[1], condition)
 			return fmt.Sprintf("{{ if %s }}", condition)
 		}
 	}

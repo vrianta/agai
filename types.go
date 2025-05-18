@@ -16,9 +16,10 @@ type (
 		POST(*Session)
 		DELETE(*Session)
 	}
-	SessionVars map[string]interface{}
-	PostParams  map[string]string
-	GetParams   map[string]string
+	SessionVars  map[string]interface{}
+	TemplateData map[string]interface{}
+	PostParams   map[string]string
+	GetParams    map[string]string
 
 	// Server represents the HTTP server with session management
 	server struct {

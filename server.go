@@ -42,7 +42,7 @@ func (s *server) Start() {
 
 	go s.server.ListenAndServe()
 	s.state = true
-	s.ServeConsole()
+	// s.ServeConsole()
 
 }
 

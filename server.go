@@ -40,12 +40,12 @@ func (s *server) Start() {
 
 	WriteLogf("Server Starting at : %s:%s", s.Host, s.Port)
 
-	go s.server.ListenAndServe()
-	s.state = true
-	s.ServeConsole()
+	s.server.ListenAndServe()
+	// s.state = true
+	// s.ServeConsole()
 
-	for s.state {
-	}
+	// for s.state {
+	// }
 
 }
 

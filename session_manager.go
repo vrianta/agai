@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -66,6 +67,7 @@ import (
  */
 
 func NewSession(w http.ResponseWriter, r *http.Request) *Session {
+	fmt.Println("Creating New Session")
 	return &Session{
 		w:    w,
 		r:    r,

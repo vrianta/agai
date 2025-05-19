@@ -97,7 +97,7 @@ func PHPToGoTemplate(phpTemplate string) string {
 		return convertPHPBlockToGo(code)
 	})
 
-	fmt.Println(phpTemplate)
+	// fmt.Println(phpTemplate)
 	return phpTemplate
 }
 
@@ -163,7 +163,7 @@ func convertPHPExprToGoOld(expr string) string {
 	})
 
 	// Handle variables
-	fmt.Printf("-- 166 - %s\n", expr)
+	// fmt.Printf("-- 166 - %s\n", expr)
 	return convertPHPVarsToGo(expr)
 }
 
@@ -341,7 +341,7 @@ func convertPHPBlockToGo(code string) string {
 		matches := ifPattern.FindStringSubmatch(code)
 		if len(matches) > 1 {
 			condition := convertPHPExprToGo(matches[1])
-			fmt.Printf("304 - %s - %s\n", matches[1], condition)
+			// fmt.Printf("304 - %s - %s\n", matches[1], condition)
 			return fmt.Sprintf("{{ if %s }}", condition)
 		}
 	}

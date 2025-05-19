@@ -65,7 +65,7 @@ func (s *server) startServer() {
 
 	WriteLogf("%s", "Server Starting at "+s.Host+":"+s.Port)
 
-	go s.server.ListenAndServe()
+	s.server.ListenAndServe()
 	s.state = true
 }
 

@@ -192,9 +192,10 @@ func (sh *Session) ParseRequest() {
 		// Parse multipart form data with a 10 MB limit for file uploads
 		err := sh.r.ParseMultipartForm(10 << 20) // 10 MB
 		if err != nil {
-			// http.Error(sh.w, "Error parsing multipart form data", http.StatusBadRequest)
+			http.Error(sh.w, "Error parsing multipart form data", http.StatusBadRequest)
 		}
 		// Handle POST form data
+		fmt.Println(sh.r.PostForm)
 		for key, values := range sh.r.PostForm {
 			sh.ProcessPostParams(key, values)
 		}

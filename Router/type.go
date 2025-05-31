@@ -1,17 +1,17 @@
 package Router
 
 import (
+	"sync"
 	"time"
 
 	"github.com/vrianta/Server/Controller"
-	Session "github.com/vrianta/Server/Session"
 )
 
 type (
 	Type map[string]Controller.Struct
 
 	Struct struct {
-		sessions map[string]Session.Struct
+		sessions sync.Map
 		routes   Type
 	}
 

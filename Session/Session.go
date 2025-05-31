@@ -146,11 +146,11 @@ func (s *Struct) StartSession() *string {
 	return s.CreateNewSession()
 }
 
-func (sh *Struct) UpdateSession(_w *http.ResponseWriter, _r *http.Request) {
-	sh.W = *_w
+func (sh *Struct) UpdateSession(_w http.ResponseWriter, _r *http.Request) {
+	sh.W = _w
 	sh.R = _r
 
-	sh.RenderEngine.W = *_w
+	sh.RenderEngine.W = _w
 }
 
 // Creates a new session and sets cookies

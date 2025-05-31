@@ -63,12 +63,14 @@ func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) er
 		} else {
 			return err
 		}
-	} else if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
-		if _html_template, err = template.New(uri).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
-			_template.LastModified = info.ModTime()
-			_template.Data = *_html_template
-		} else {
-			return err
+	} else if !Config.Build {
+		if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
+			if _html_template, err = template.New(uri).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
+				_template.LastModified = info.ModTime()
+				_template.Data = *_html_template
+			} else {
+				return err
+			}
 		}
 	}
 

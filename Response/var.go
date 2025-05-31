@@ -1,9 +1,5 @@
 package Response
 
-type (
-	Code int // server response codes
-)
-
 var (
 
 	// Codes holds standard HTTP Code codes

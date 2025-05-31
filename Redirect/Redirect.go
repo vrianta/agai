@@ -9,13 +9,6 @@ import (
 
 // This file into impliment the code to redirect to the desired URI
 
-type (
-	response struct {
-		uri     string
-		session *Session.Struct
-	}
-)
-
 func New(_Uri string, session *Session.Struct) *response {
 	return &response{
 		uri:     _Uri,

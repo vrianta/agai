@@ -71,24 +71,6 @@ import (
 * Date: [Current Date]
  */
 
-type (
-	SessionVars map[string]any
-	PostParams  map[string]string
-	GetParams   map[string]string
-
-	Struct struct {
-		ID string
-		W  http.ResponseWriter
-		R  *http.Request
-
-		POST  PostParams
-		GET   GetParams
-		Store SessionVars
-
-		RenderEngine RenderEngine.Struct
-	}
-)
-
 func New(w http.ResponseWriter, r *http.Request) *Struct {
 	fmt.Println("Creating New Session")
 	return &Struct{

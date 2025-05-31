@@ -15,20 +15,6 @@ import (
 	"github.com/vrianta/Server/Utils"
 )
 
-type (
-	Struct struct {
-		view []byte
-		W    http.ResponseWriter
-	}
-
-	RenderData map[string]interface{}
-)
-
-var (
-	templateRecords = make(map[string]Template.Struct) // keep the reocrd of all the templated which are already templated
-
-)
-
 func New(_w http.ResponseWriter) Struct {
 	return Struct{
 		view: make([]byte, 0),

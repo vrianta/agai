@@ -3,31 +3,10 @@ package Router
 import (
 	"net/http"
 	"os"
-	"time"
 
-	"github.com/vrianta/Server/Controller"
 	"github.com/vrianta/Server/Log"
 	Session "github.com/vrianta/Server/Session"
 	"github.com/vrianta/Server/Utils"
-)
-
-type (
-	Type map[string]Controller.Struct
-
-	Struct struct {
-		sessions map[string]Session.Struct
-		routes   Type
-	}
-
-	FileInfo struct {
-		Uri          string    // path of the template file
-		LastModified time.Time // date when the file last modified
-		Data         string    // template data of the file before modified
-	}
-)
-
-var (
-	fileInfo = map[string]FileInfo{}
 )
 
 // Constructor for Router

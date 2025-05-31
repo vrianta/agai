@@ -28,6 +28,8 @@ func New(host, port string, routes Routes) *_Struct {
 // Start runs the HTTP server
 func (s *_Struct) Start() {
 
+	Config.New() // Load the Configurations
+
 	s.setup_static_folders()
 	s.setup_css_folder()
 	s.setup_js_folder()
@@ -47,17 +49,17 @@ func (s *_Struct) Start() {
 
 func (s *_Struct) setup_static_folders() {
 	// Create a file server handler
-	for static_folder := range Config.StaticFolder {
-		fs := http.FileServer(http.Dir(Config.StaticFolder[static_folder]))
+	for static_folder := range Config.StaticFolders {
+		fs := http.FileServer(http.Dir(Config.StaticFolders[static_folder]))
 		Log.WriteLog("setting Up Static Folder : ", static_folder)
-		http.Handle("/"+Config.StaticFolder[static_folder]+"/", http.StripPrefix("/"+Config.StaticFolder[static_folder]+"/", fs))
+		http.Handle("/"+Config.StaticFolders[static_folder]+"/", http.StripPrefix("/"+Config.StaticFolders[static_folder]+"/", fs))
 	}
 }
 
 // Generating Creating Routes for the Css Folders
 func (s *_Struct) setup_css_folder() {
-	for css_folder := range Config.CssFolder {
-		http.HandleFunc("/"+Config.CssFolder[css_folder]+"/", s.Router.CSSHandlers)
+	for css_folder := range Config.CssFolders {
+		http.HandleFunc("/"+Config.CssFolders[css_folder]+"/", s.Router.CSSHandlers)
 		// s.Routes["/"+s.Config.CSS_Folders[css_folder]] = s.CSSHandlers
 	}
 }

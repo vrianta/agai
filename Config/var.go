@@ -3,12 +3,12 @@ package Config
 // Config package provides configuration settings for the server
 
 var (
-	Http         = false
-	Build        = false
-	StaticFolder = []string{
+	Http          = false
+	Build         = false
+	StaticFolders = []string{
 		"Static",
 	}
-	CssFolder = []string{
+	CssFolders = []string{
 		"Css",
 	}
 	JsFolders = []string{

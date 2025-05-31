@@ -18,6 +18,12 @@ func New(_routes Type) *Struct {
 	}
 }
 
+// Handler processes incoming HTTP requests and manages user sessions.
+// It checks if the user has an existing session and handles session creation or validation.
+// Based on the session and route, it invokes the appropriate controller method.
+// Parameters:
+// - w: The HTTP response writer.
+// - r: The HTTP request.
 func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := Session.GetSessionID(r)
@@ -80,6 +86,13 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// StaticFileHandler serves static files with caching support.
+// It checks if the file exists in the cache and serves it directly if the cache is valid.
+// Otherwise, it reads the file from disk, caches it, and serves it.
+// Parameters:
+// - contentType: The MIME type of the file being served.
+// Returns:
+// - http.HandlerFunc: A handler function for serving static files.
 func (s *Struct) StaticFileHandler(contentType string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_filePath := "." + r.URL.Path
@@ -115,7 +128,10 @@ func (s *Struct) StaticFileHandler(contentType string) http.HandlerFunc {
 	}
 }
 
-// RemoveSession removes a session from the session manager
+// RemoveSession removes a session from the session manager.
+// It ensures the session is deleted after use.
+// Parameters:
+// - sessionID: The ID of the session to be removed.
 func (r *Struct) RemoveSession(sessionID string) {
 	defer r.sessions.Delete(sessionID) // Ensure the session is deleted after use
 }

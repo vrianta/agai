@@ -27,7 +27,7 @@ func RegisterTemplate(uri string) error {
 		templateRecords[uri] = Template.Struct{
 			Uri:          full_template_path,
 			LastModified: info.ModTime(),
-			Data:         *_html_template,
+			Data:         _html_template,
 		}
 	} else {
 		return err

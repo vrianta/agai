@@ -78,7 +78,7 @@ func (s *_Struct) setup_views() {
 				Log.WriteLogf("Error registering template %s: %v", route.View, err)
 				os.Exit(1)
 			} else {
-				Log.WriteLogf("Template registered: %s", route.View)
+				Log.WriteLogf("Template registered: %s\n", route.View)
 			} // Register the template with the RenderEngine
 		}
 	}

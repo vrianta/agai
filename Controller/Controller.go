@@ -17,8 +17,9 @@ This file will store the local method for Controller which will be by default an
  * Example: if the Method is GET then it will call Get Method if The Method is POST then it will call Post Method
  * This will be used in the routingHandler to call the correct method of the controller
  */
-func (c *Struct) CallMethod() *Template.Response {
-	switch c.Session.R.Method {
+func (c *Struct) CallMethod(session *Session.Struct) *Template.Response {
+	c.assignSession(session) // Assign the session to the controller
+	switch session.R.Method {
 	case "GET":
 		return c.isMethodNull(c.GET)
 	case "POST":
@@ -50,7 +51,7 @@ func (c *Struct) isMethodNull(method _Func) *Template.Response {
 }
 
 // Function to Assign the Session in the Controller
-func (c *Struct) AssignSession(session *Session.Struct) {
+func (c *Struct) assignSession(session *Session.Struct) {
 	c.Session = session
 }
 

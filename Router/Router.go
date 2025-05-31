@@ -29,8 +29,7 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 			if _controller, ok := router.routes[r.URL.Path]; ok {
 				Session.UpdateSession(w, r)
 				Session.ParseRequest()
-				_controller.AssignSession(Session) // Assign the session to the controller
-				response := _controller.CallMethod()
+				response := _controller.CallMethod(Session)
 				if err := Session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
 					Log.WriteLog("Error rendering template: " + err.Error())
 					panic(err) // Panic if there is an error rendering the template
@@ -51,8 +50,7 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 				sessionPtr := __session.(Session.Struct)
 				sessionPtr.UpdateSession(w, r)
 				sessionPtr.ParseRequest()
-				_controller.AssignSession(&sessionPtr) // Assign the session to the controller
-				response := _controller.CallMethod()
+				response := _controller.CallMethod(&sessionPtr)
 				if err := sessionPtr.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
 					Log.WriteLog("Error rendering template: " + err.Error())
 					panic(err) // Panic if there is an error rendering the template
@@ -67,8 +65,7 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 				router.sessions.Store((*sessionID), *__session)
 				if _controller, ok := router.routes[r.URL.Path]; ok {
 					__session.ParseRequest()
-					_controller.AssignSession(__session) // Assign the session to the controller
-					response := _controller.CallMethod()
+					response := _controller.CallMethod(__session)
 					if err := __session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
 						Log.WriteLog("Error rendering template: " + err.Error())
 						panic(err) // Panic if there is an error rendering the template

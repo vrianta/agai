@@ -28,14 +28,13 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 			if _controller, ok := router.routes[r.URL.Path]; ok {
 				Session.UpdateSession(&w, r)
 				Session.ParseRequest()
-				if Session.IsGetMethod() {
-					_controller.GET(Session)
-				} else if Session.IsPostMethod() {
-					_controller.POST(Session)
-				} else if Session.IsDeleteMethod() {
-					_controller.DELETE(Session)
+				response := _controller.CallMethod(Session)
+				if err := Session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
+					Log.WriteLog("Error rendering template: " + err.Error())
+					panic(err) // Panic if there is an error rendering the template
+				} else {
+					Session.RenderEngine.StartRender()
 				}
-				Session.RenderEngine.StartRender()
 			} else {
 				// WriteConsolef("Route not found for URL: %s \n", r.URL.Path)ss
 				http.Error(w, "404 Error : Route not found ", 404)
@@ -48,17 +47,16 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 		// if the session is valid then it will just update the session with the latest value
 
 		if __session, ok := router.sessions[(*sessionID)]; ok {
-			if controller, ok := router.routes[r.URL.Path]; ok {
+			if _controller, ok := router.routes[r.URL.Path]; ok {
 				__session.UpdateSession(&w, r)
 				__session.ParseRequest()
-				if __session.IsGetMethod() {
-					controller.GET(&__session)
-				} else if __session.IsPostMethod() {
-					controller.POST(&__session)
-				} else if __session.IsDeleteMethod() {
-					controller.DELETE(&__session)
+				response := _controller.CallMethod(&__session)
+				if err := __session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
+					Log.WriteLog("Error rendering template: " + err.Error())
+					panic(err) // Panic if there is an error rendering the template
+				} else {
+					__session.RenderEngine.StartRender()
 				}
-				__session.RenderEngine.StartRender()
 			} else {
 				http.Error(w, "404 Error : Route not found ", 404)
 			}
@@ -67,16 +65,15 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 			sessionID = __session.StartSession()
 			if sessionID != nil {
 				router.sessions[(*sessionID)] = *__session
-				if controller, ok := router.routes[r.URL.Path]; ok {
+				if _controller, ok := router.routes[r.URL.Path]; ok {
 					__session.ParseRequest()
-					if __session.IsGetMethod() {
-						controller.GET(__session)
-					} else if __session.IsPostMethod() {
-						controller.POST(__session)
-					} else if __session.IsDeleteMethod() {
-						controller.DELETE(__session)
+					response := _controller.CallMethod(__session)
+					if err := __session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
+						Log.WriteLog("Error rendering template: " + err.Error())
+						panic(err) // Panic if there is an error rendering the template
+					} else {
+						__session.RenderEngine.StartRender()
 					}
-					__session.RenderEngine.StartRender()
 				} else {
 					http.Error(w, "404 Error : Route not found ", 404)
 				}

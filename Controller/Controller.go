@@ -17,8 +17,8 @@ This file will store the local method for Controller which will be by default an
  * Example: if the Method is GET then it will call Get Method if The Method is POST then it will call Post Method
  * This will be used in the routingHandler to call the correct method of the controller
  */
-func (c *Struct) CallMethod(method string, session *Session.Struct) *Template.Response {
-	switch method {
+func (c *Struct) CallMethod(session *Session.Struct) *Template.Response {
+	switch session.R.Method {
 	case "GET":
 		return c.isMethodNull(c.GET, session)
 	case "POST":
@@ -53,5 +53,4 @@ func (c *Struct) Validate() {
 	if c.View == "" {
 		panic(fmt.Errorf("view is not defined for the controller %T", c))
 	}
-
 }

@@ -2,9 +2,11 @@ package Server
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Log"
+	"github.com/vrianta/Server/RenderEngine"
 	"github.com/vrianta/Server/Router"
 )
 
@@ -31,6 +33,7 @@ func (s *_Struct) Start() {
 	s.setup_static_folders()
 	s.setup_css_folder()
 	s.setup_js_folder()
+	s.setup_views() // Register all the views with the RenderEngine
 
 	// setting up the Custom Routing Handler for the syste
 	http.HandleFunc("/", s.Router.Handler)
@@ -64,4 +67,20 @@ func (s *_Struct) setup_js_folder() {
 	for _, folder := range Config.JsFolders {
 		http.HandleFunc("/"+folder+"/", s.Router.StaticFileHandler("application/javascript; charset=utf-8"))
 	}
+}
+
+// function to go through all the routes and register their Views and create templates
+func (s *_Struct) setup_views() {
+	routes := s.Router.Get()
+	for _, route := range *routes {
+		if route.View != "" {
+			if err := RenderEngine.RegisterTemplate(route.View); err != nil {
+				Log.WriteLogf("Error registering template %s: %v", route.View, err)
+				os.Exit(1)
+			} else {
+				Log.WriteLogf("Template registered: %s", route.View)
+			} // Register the template with the RenderEngine
+		}
+	}
+	Log.WriteLog("Views setup completed")
 }

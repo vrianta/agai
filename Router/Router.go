@@ -135,3 +135,8 @@ func (s *Struct) StaticFileHandler(contentType string) http.HandlerFunc {
 func (r *Struct) RemoveSession(sessionID string) {
 	defer r.sessions.Delete(sessionID) // Ensure the session is deleted after use
 }
+
+// Get Function to return all the Routes
+func (r *Struct) Get() *Type {
+	return &r.routes
+}

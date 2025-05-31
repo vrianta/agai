@@ -1,8 +1,9 @@
 package Config
 
 import (
+	_ "embed"
 	"encoding/json"
-	"fmt"
+	"os"
 
 	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/Utils"
@@ -11,7 +12,9 @@ import (
 func New() {
 	__config := class{}
 	if err := json.Unmarshal([]byte(Utils.ReadFromFile("Config.json")), &__config); err != nil {
-		fmt.Errorf("Error Loading Config File: %v", err)
+		Log.WriteLogf("Error Loading Config File: %s", err.Error())
+		os.Exit(1)
+		return
 	}
 
 	Log.WriteLog("Config Of the Server Loaded Successfully: ", __config)

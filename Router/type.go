@@ -8,7 +8,7 @@ import (
 )
 
 type (
-	Type map[string]*Controller.Struct
+	Type map[string]*Controller.Struct // Type for routes, mapping URL paths to Controller structs
 
 	Struct struct {
 		sessions sync.Map

@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Response"
@@ -74,13 +75,20 @@ func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) er
 		}
 	}
 
-	var buf bytes.Buffer
-	if err = _template.Data.Execute(&buf, *templateData); err != nil {
+	// Use a sync.Pool for bytes.Buffer to reduce allocations
+	var bufPool = sync.Pool{
+		New: func() interface{} { return new(bytes.Buffer) },
+	}
+
+	// Use buffer pool for rendering
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufPool.Put(buf)
+
+	if err = _template.Data.Execute(buf, *templateData); err != nil {
 		return err
 	}
-	// rh.view = append(rh.view, buf.Bytes()...)
 	rh.W.Write(buf.Bytes())
-	_html_template = nil
 
 	return nil
 }

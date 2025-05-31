@@ -55,7 +55,7 @@ Create a new server by calling [`server.New`](server.go):
 
 ```go
 srv := server.New("", "8080", server.Routes{
-    "/": controllers.Home,
+    "/": &controllers.Home{},
     // Add more routes here
 }, nil) // Pass nil for default config or provide a *server.Config
 ```

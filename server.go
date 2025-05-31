@@ -16,10 +16,10 @@ import (
  * route ->  routes configaration which tells the
  * _config -> send the config of the server can be send nill if default is fine for you
  */
-func New(host, port string, routes Routes) *_Struct {
+func New(routes Routes) *_Struct {
+	Config.Init() // Load the Configurations
+
 	srvInstance = &_Struct{
-		Host:   host,
-		Port:   port,
 		Router: Router.New(Router.Type(routes)),
 	}
 	return srvInstance
@@ -27,8 +27,6 @@ func New(host, port string, routes Routes) *_Struct {
 
 // Start runs the HTTP server
 func (s *_Struct) Start() {
-
-	Config.New() // Load the Configurations
 
 	s.setup_static_folders()
 	s.setup_css_folder()
@@ -39,10 +37,10 @@ func (s *_Struct) Start() {
 
 	// Define the server configuration
 	s.server = &http.Server{
-		Addr: s.Host + ":" + s.Port, // Host and port
+		Addr: Config.Host + ":" + Config.Port, // Host and port
 	}
 
-	Log.WriteLogf("Server Starting at : %s:%s", s.Host, s.Port)
+	Log.WriteLogf("Server Starting at : http://%s:%s", Config.Host, Config.Port)
 
 	s.server.ListenAndServe()
 }

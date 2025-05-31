@@ -10,8 +10,6 @@ type (
 	Routes Router.Type
 	// Server represents the HTTP server with session management
 	_Struct struct {
-		Host   string
-		Port   string
 		Router *Router.Struct
 		server *http.Server
 

@@ -9,7 +9,7 @@ import (
 	"github.com/vrianta/Server/Utils"
 )
 
-func New() {
+func Init() {
 	__config := class{}
 	if err := json.Unmarshal([]byte(Utils.ReadFromFile("Config.json")), &__config); err != nil {
 		Log.WriteLogf("Error Loading Config File: %s", err.Error())
@@ -18,19 +18,24 @@ func New() {
 	}
 
 	Log.WriteLog("Config Of the Server Loaded Successfully: ", __config)
+
+	if __config.Port != "" {
+		Port = __config.Port
+	}
+	if __config.Host != "" {
+		Host = __config.Host
+	}
 	Http = __config.Http
 	Build = __config.Build
 	if __config.StaticFolders != nil {
 		StaticFolders = __config.StaticFolders
 	}
-
 	if __config.CssFolders != nil {
 		CssFolders = __config.CssFolders
 	}
 	if __config.JsFolders != nil {
 		JsFolders = __config.JsFolders
 	}
-
 	if __config.ViewFolder != "" {
 		ViewFolder = __config.ViewFolder
 	}

@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Log"
 )
 
@@ -62,10 +63,10 @@ func (s *_Struct) startServer() {
 	}
 	// Define the server configuration
 	s.server = &http.Server{
-		Addr: s.Host + ":" + s.Port, // Host and port
+		Addr: Config.Host + ":" + Config.Port, // Host and port
 	}
 
-	Log.WriteLogf("%s", "Server Starting at "+s.Host+":"+s.Port)
+	Log.WriteLogf("%s", "Server Starting at "+Config.Host+":"+Config.Port)
 
 	s.server.ListenAndServe()
 	s.state = true

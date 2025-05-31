@@ -72,7 +72,7 @@ import (
  */
 
 func New(w http.ResponseWriter, r *http.Request) *Struct {
-	fmt.Println("Creating New Session")
+	// fmt.Println("Creating New Session")
 	return &Struct{
 		W:    w,
 		R:    r,

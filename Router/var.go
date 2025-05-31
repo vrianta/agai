@@ -1,5 +1,7 @@
 package Router
 
+import "sync"
+
 var (
-	fileInfo = map[string]FileInfo{}
+	fileInfo sync.Map // map[string]FileInfo
 )

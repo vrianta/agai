@@ -47,24 +47,21 @@ func (s *_Struct) Start() {
 
 func (s *_Struct) setup_static_folders() {
 	// Create a file server handler
-	for static_folder := range Config.StaticFolders {
-		fs := http.FileServer(http.Dir(Config.StaticFolders[static_folder]))
-		Log.WriteLog("setting Up Static Folder : ", static_folder)
-		http.Handle("/"+Config.StaticFolders[static_folder]+"/", http.StripPrefix("/"+Config.StaticFolders[static_folder]+"/", fs))
+	for _, folder := range Config.StaticFolders {
+		fs := http.FileServer(http.Dir(folder))
+		http.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", fs))
 	}
 }
 
 // Generating Creating Routes for the Css Folders
 func (s *_Struct) setup_css_folder() {
-	for css_folder := range Config.CssFolders {
-		http.HandleFunc("/"+Config.CssFolders[css_folder]+"/", s.Router.CSSHandlers)
-		// s.Routes["/"+s.Config.CSS_Folders[css_folder]] = s.CSSHandlers
+	for _, folder := range Config.CssFolders {
+		http.HandleFunc("/"+folder+"/", s.Router.StaticFileHandler("text/css; charset=utf-8"))
 	}
 }
 
 func (s *_Struct) setup_js_folder() {
-	for folder := range Config.JsFolders {
-		http.HandleFunc("/"+Config.JsFolders[folder]+"/", s.Router.JsHandler)
-		// s.Routes["/"+s.Config.CSS_Folders[folder]] = s.CSSHandlers
+	for _, folder := range Config.JsFolders {
+		http.HandleFunc("/"+folder+"/", s.Router.StaticFileHandler("application/javascript; charset=utf-8"))
 	}
 }

@@ -80,73 +80,39 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-/*
- * Handling the Requests coming for the CSS Files specially
- */
-func (s *Struct) CSSHandlers(w http.ResponseWriter, r *http.Request) {
+func (s *Struct) StaticFileHandler(contentType string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_filePath := "." + r.URL.Path
 
-	_file_path := "." + r.URL.Path // path of the file
+		// Attempt to load from cache
+		val, _ := fileInfo.Load(_filePath)
+		cached, ok := val.(FileInfo)
 
-	_file_record, file_record_ok := fileInfo[_file_path]
+		info, err := os.Stat(_filePath)
+		if err != nil {
+			Log.WriteLog(err.Error())
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
 
-	info, err := os.Stat(_file_path)
-	if err != nil {
-		Log.WriteLog(err.Error())
-		return
+		w.Header().Set("Content-Type", contentType)
+
+		// If cached data exists and mod time matches then serve from cache
+		if ok && cached.LastModified.Equal(info.ModTime()) {
+			w.Write([]byte(cached.Data))
+			return
+		}
+
+		// Read file from disk and cache it
+		_fileData := Utils.ReadFromFile(_filePath)
+		newRecord := FileInfo{
+			Uri:          _filePath,
+			LastModified: info.ModTime(),
+			Data:         _fileData,
+		}
+		fileInfo.Store(_filePath, newRecord)
+		w.Write([]byte(_fileData))
 	}
-
-	w.Header().Set("Content-Type", "text/css; charset=utf-8")
-
-	if file_record_ok && _file_record.LastModified.Compare(info.ModTime()) != 0 { // file has not been updated so alreay no not make it do extra work
-
-		w.Write([]byte(fileInfo[_file_path].Data))
-		return
-	}
-
-	_file_data := Utils.ReadFromFile(_file_path)
-
-	fileInfo[_file_path] = FileInfo{
-		Uri:          _file_path,
-		LastModified: info.ModTime(),
-		Data:         _file_data,
-	}
-
-	w.Write([]byte(fileInfo[_file_path].Data))
-
-}
-
-/*
- * Handling the Requests coming for the Js Files specially
- */
-func (s *Struct) JsHandler(w http.ResponseWriter, r *http.Request) {
-	_file_path := "." + r.URL.Path // path of the file
-
-	_file_record, file_record_ok := fileInfo[_file_path]
-
-	info, err := os.Stat(_file_path)
-	if err != nil {
-		Log.WriteLog(err.Error())
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/css; charset=utf-8")
-
-	if file_record_ok && _file_record.LastModified.Compare(info.ModTime()) != 0 { // file has not been updated so alreay no not make it do extra work
-
-		w.Write([]byte(fileInfo[_file_path].Data))
-		return
-	}
-
-	_file_data := Utils.ReadFromFile(_file_path)
-
-	fileInfo[_file_path] = FileInfo{
-		Uri:          _file_path,
-		LastModified: info.ModTime(),
-		Data:         _file_data,
-	}
-
-	w.Write([]byte(fileInfo[_file_path].Data))
-
 }
 
 // RemoveSession removes a session from the session manager

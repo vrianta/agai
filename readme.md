@@ -1,217 +1,281 @@
-# Go Server Package
+# Go Server Framework - Complete User Guide
 
-This Go server package provides a flexible way to create and start a web server with configurable routes, session management, static file serving, and more.
+Welcome to the Go Server Framework! This guide will help you set up, configure, and use every feature of your server, including advanced PHP-style template parsing, session management, static file serving, and more.
+
+---
+
+## Table of Contents
+1. [Features](#features)
+2. [Installation](#installation)
+3. [Project Structure](#project-structure)
+4. [Configuration (`Config.json`)](#configuration-configjson)
+5. [Server Creation & Routing](#server-creation--routing)
+6. [Session Management](#session-management)
+7. [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
+8. [SMTP/Email Support](#smtpemail-support)
+9. [Console Commands](#console-commands)
+10. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
+11. [API Reference](#api-reference)
+12. [License](#license)
+
+---
 
 ## Features
+- **Configurable Routing**: Map URLs to handler structs with GET, POST, DELETE methods.
+- **Session Handling**: Secure session management with cookies and server-side storage.
+- **Static File Serving**: Serve static, CSS, and JS files from configurable folders.
+- **Advanced Template Engine**: Write templates in PHP-style syntax, auto-converted to Go templates.
+- **SMTP Support**: Send emails using built-in SMTP client.
+- **Interactive Console**: Start, stop, and restart the server interactively.
+- **Extensible**: Add your own controllers, logic, and templates easily.
 
-- **Configurable Routes**: Map URLs to handler structs with GET, POST, DELETE methods.
-- **Session Handling**: Built-in session management with secure session IDs and cookie handling.
-- **Static, CSS, and JS File Serving**: Serve static assets from configurable folders.
-- **Template Rendering**: Render HTML templates with caching and auto-reload on file changes.
-- **Customizable**: Extend the server with your own handlers and logic.
-- **Console Control**: Start, stop, and restart the server interactively.
+---
 
 ## Installation
 
-Import the package into your Go project:
+1. Clone the repository or add it to your Go project:
+   ```sh
+   go get github.com/vrianta/Server
+   ```
+2. Import the package:
+   ```go
+   import "github.com/vrianta/Server"
+   ```
 
-```go
-import "github.com/vrianta/Server"
+---
+
+## Project Structure
+
+```
+.
+├── Config/           # Configuration loader (Config.go, type.go, var.go)
+├── Controller/       # Route handler logic (Controller.go, type.go, var.go)
+├── Cookies/          # Cookie utilities (Cookies.go, type.go, var.go)
+├── Log/              # Logging utilities (Write.go, type.go, var.go)
+├── Redirect/         # HTTP redirects (Redirect.go, type.go)
+├── RenderEngine/     # Template engine (PHP-like syntax) (RenderEngine.go, type.go, var.go)
+├── Response/         # Response codes/types (type.go, var.go)
+├── Router/           # HTTP router (Router.go, type.go, var.go)
+├── Session/          # Session management (Session.go, type.go)
+├── smtp/             # SMTP client (client.go)
+├── Template/         # Template helpers (template.go)
+├── Utils/            # File and utility helpers (file.handler.go, util.go)
+├── console.go        # Interactive console
+├── server.go         # Server entry point
+├── types.go          # Core types
+├── vars.go           # Global variables
+└── readme.md         # This guide
 ```
 
-## Usage
+---
 
-### Step 1: Define Route Handlers
+## Configuration (`Config.json`)
 
-Each route handler should be a struct with `GET`, `POST`, and/or `DELETE` methods that accept a `*server.Session`:
+Create a `Config.json` file in your project root. Example:
+```json
+{
+  "Http": true,
+  "Static_folders": ["Static"],
+  "CSS_Folders": ["Css"],
+  "JS_Folders": ["Js"],
+  "Views_folder": "Views",
+  "Build": false
+}
+```
+- **Http**: Enable HTTP server
+- **Static_folders**: List of folders for static files
+- **CSS_Folders**: List of folders for CSS
+- **JS_Folders**: List of folders for JS
+- **Views_folder**: Folder for HTML/PHP templates
+- **Build**: Enable/disable template caching
 
+---
+
+## Server Creation & Routing
+
+### 1. Define Route Handlers
+
+Each handler is a Go package (usually in `Controller/`) that exports a variable of type `Controller.Struct` with fields for the view and HTTP methods. Methods are functions that receive a pointer to the controller struct and return a `*Template.Response` (for GET) or handle logic for POST/DELETE.
+
+Example:
 ```go
-package controllers
+package Home
 
 import (
-    server "github.com/vrianta/Server"
+	components "github.com/pritam-is-next/resume/Components"
+	Controller "github.com/vrianta/Server/Controller"
+	"github.com/vrianta/Server/Session"
+	"github.com/vrianta/Server/Template"
 )
 
-type home struct{}
-
-var Home home
-
-func (h *home) GET(Session *server.Session) {
-    Session.RenderEngine.Render("Welcome to Home Page!")
+var Home = Controller.Struct{
+	View: "home.php",
+	GET:  func(self *Controller.Struct) *Template.Response {
+	response := &Template.Response{
+		"Title":          "Pritam Dutta",
+		"Heading":        "Pritam Dutta",
+		"NavItems":       components.NavItems,
+		"Hero":           components.Hero,
+		"AboutMe":        components.AboutMe,
+		"Skills":         components.Skills,
+		"Experiences":    components.Experiences,
+		"Projects":       components.Projects,
+		"ContactDetails": components.ContactDetails,
+	}
+	return response
+},
 }
 
-func (h *home) POST(Session *server.Session) {
-    Session.RenderEngine.Render("POST request received!")
-}
-
-func (h *home) DELETE(Session *server.Session) {
-    Session.RenderEngine.Render("DELETE request received!")
-}
 ```
 
-### Step 2: Create a New Server Instance
+- The `View` field specifies the template to render (e.g., `home.php`).
+- The `GET`, `POST`, and `DELETE` fields are function handlers for each HTTP method.
+- The `GET` handler returns a `*Template.Response` (a map of data for the template).
+- You can import and use components or data as needed.
 
-Create a new server by calling [`server.New`](server.go):
-
-```go
-srv := server.New("", "8080", server.Routes{
-    "/": &controllers.Home{},
-    // Add more routes here
-}, nil) // Pass nil for default config or provide a *server.Config
-```
-
-### Step 3: Start the Server
-
-Start the server with:
-
-```go
-srv.Start()
-```
-
-This will also launch the interactive console for start/stop/restart commands.
+---
 
 ## Session Management
 
-Sessions are managed via the [`Session`](types.go) struct. You can access POST/GET data, store session variables, and check login status:
+Session data and helpers are accessed via the `self.Session` variable inside your controller methods.
 
-```go
-func (h *home) GET(Session *server.Session) {
-    if Session.IsLoggedIn() {
-        Session.RenderEngine.Render("Welcome, " + Session.Store["uid"].(string))
-    } else {
-        Session.RenderEngine.Render("Please log in.")
-    }
-}
-```
+- Access POST/GET data:
+  ```go
+  uid := self.Session.POST["uid"]
+  token := self.Session.GET["token"]
+  ```
+- Store/retrieve session variables:
+  ```go
+  self.Session.Store["uid"] = "user123"
+  user := self.Session.Store["uid"]
+  ```
+- Login/logout:
+  ```go
+  self.Session.Login("user123")
+  self.Session.Logout("/login")
+  if self.Session.IsLoggedIn() { /* ... */ }
+  ```
 
-### Accessing POST and GET Data
+---
 
-```go
-uid, uidExists := Session.POST["uid"]
-token, tokenExists := Session.POST["token"]
-```
+## Static, CSS, and JS File Serving
 
-### Setting and Checking Login
+- Place static files in folders listed in `Config.json`.
+- Access them via `/Static/filename.ext`, `/Css/style.css`, etc.
+- Files are cached for performance.
 
-```go
-Session.Login("user123")
-if Session.IsLoggedIn() {
-    // User is logged in
-}
-Session.Logout("/login")
-```
+---
 
-## Rendering Responses
+## SMTP/Email Support
 
-Use the [`RenderEngine`](types.go) to send responses:
-
-```go
-Session.RenderEngine.Render("Hello World")
-Session.RenderEngine.StartRender()
-```
-
-To render HTML templates (from the `Views` folder):
-
-```go
-err := Session.RenderEngine.RenderTemplate("home.html", map[string]interface{}{
-    "Title": "Home",
-    "User":  Session.Store["uid"],
-})
-if err != nil {
-    Session.RenderEngine.RenderError("Template error", server.ResponseCodes.InternalServerError)
-}
-Session.RenderEngine.StartRender()
-```
-
-## Static, CSS, and JS Files
-
-Configure static, CSS, and JS folders in the [`Config`](types.go):
-
-```go
-cfg := &server.Config{
-    Http: true,
-    Static_folders: []string{"Static"},
-    CSS_Folders:    []string{"Css"},
-    JS_Folders:     []string{"Js"},
-    Views_folder:   "Views",
-}
-srv := server.New("", "8080", routes, cfg)
-```
-
-Files in these folders are served automatically.
-
-## SMTP Client
-
-Send emails using the SMTP client in [`smtp/client.go`](smtp/client.go):
-
+Send emails easily:
 ```go
 import "github.com/vrianta/Server/smtp"
-
 smtp.Client.InitSMTPClient("smtp.example.com", 587, "user", "pass")
 err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
-if err != nil {
-    // handle error
-}
 ```
+
+---
 
 ## Console Commands
 
-When the server is running, you can use the following commands in the console:
-
+When the server is running, use these commands in the console:
 - `start`    - Start the server
 - `stop`     - Stop the server
 - `restart`  - Restart the server
 - `r`        - Shortcut for restart
-- `exit`     - Stop the server and exit the program
-- `-h`       - Display available commands
-
-## Example Project Structure
-
-```
-.
-├── config.go
-├── console.go
-├── cookies.go
-├── file.handler.go
-├── go.mod
-├── LICENSE
-├── log.go
-├── readme.md
-├── redirect.go
-├── render.go
-├── routing.go
-├── server.go
-├── session_manager.go
-├── types.go
-├── util.go
-├── vars.go
-└── smtp/
-    └── client.go
-```
-
-## API Reference
-
-- [`server.New`](server.go): Create a new server instance.
-- [`server.Start`](server.go): Start the server.
-- [`Session`](types.go): Session object for each request.
-- [`Session.RenderEngine`](types.go): For rendering responses.
-- [`Session.Login`](session_manager.go): Log in a user.
-- [`Session.Logout`](session_manager.go): Log out a user.
-- [`Session.IsLoggedIn`](session_manager.go): Check login status.
-- [`Session.ParseRequest`](session_manager.go): Parse GET/POST data.
-- [`Session.POST`](types.go): POST parameters.
-- [`Session.GET`](types.go): GET parameters.
-- [`Session.Store`](types.go): Session variables.
-- [`server.RemoveSession`](server.go): Remove a session by ID.
-
-For more details, see the source files:
-- [server.go](server.go)
-- [session_manager.go](session_manager.go)
-- [types.go](types.go)
-- [render.go](render.go)
-- [smtp/client.go](smtp/client.go)
+- `exit`     - Stop and exit
+- `-h`       - Help
 
 ---
 
-**License:**  
+## Template Engine & PHP Parsing Syntax
+
+### Write Templates in PHP-Style!
+- Place templates in the `Views` folder (or as configured).
+- Use `.php` or `.html` extensions.
+
+#### Supported Syntax
+- **Echo:** `<?= $var ?>` → `{{ .var }}`
+- **PHP Block:** `<?php ... ?>` for logic
+- **Variables:**
+  - `$$var` refers to variables passed from your Go controller as part of the `Template.Response` (the data map returned from your handler).
+  - `$var` refers to variables created and used locally within the PHP template file itself (e.g., inside a foreach or assigned in the template logic).
+  - You can also use `$obj->prop`, `$arr['key']`, `$arr[0]` for object and array access.
+- **If/Else:**
+  ```php
+  <?php if ($user): ?>
+    Hello, <?= $user ?>
+  <?php elseif ($guest): ?>
+    Welcome, Guest!
+  <?php else: ?>
+    Please log in.
+  <?php endif; ?>
+  ```
+- **Loops:**
+  ```php
+  <?php foreach ($items as $item): ?>
+    <?= $item ?>
+  <?php endforeach; ?>
+  ```
+- **Function Calls:**
+  - `strtoupper($var)` → `upper .var`
+  - `strtolower($var)` → `lower .var`
+  - `strlen($var)`/`count($arr)` → `len .arr`
+  - `isset($var)` → `ne .var nil`
+  - `empty($var)` → `eq .var ""`
+- **Operators:**
+  - `==` → `eq`, `!=` → `ne`, `<` → `lt`, `>` → `gt`, `<=` → `le`, `>=` → `ge`
+  - `&&` → `and`, `||` → `or`, `!` → `not`
+- **Comments:** `// comment` inside `<?php ... ?>` blocks
+
+#### Example Template
+```php
+<!-- Views/home.php -->
+<h1>Welcome</h1>
+<?php if ($user): ?>
+  <p>Hello, <?= $user ?>!</p>
+<?php else: ?>
+  <p>Please log in.</p>
+<?php endif; ?>
+<ul>
+<?php foreach ($items as $item): ?>
+  <li><?= $item ?></li>
+<?php endforeach; ?>
+</ul>
+```
+
+#### How It Works
+- The server automatically parses PHP-style templates and converts them to Go's `html/template` syntax.
+- You can use all Go template features in addition to the PHP-like syntax.
+
+---
+
+## API Reference
+
+- `server.New(host, port, routes, config)` - Create a new server instance. `host` and `port` specify the address, `routes` is a map of URL paths to controller structs, and `config` is a pointer to your configuration (or nil for default).
+- `server.Start()` - Start the server and launch the interactive console.
+- `Controller.Struct` - The base struct for all controllers. Fields include:
+  - `View`: The template file to render (e.g., `home.php`).
+  - `GET`, `POST`, `DELETE`: Function handlers for each HTTP method.
+  - `Session`: The session object for the current request.
+- `self.Session` - Access session data and helpers inside controller methods.
+  - `.POST` / `.GET`: Maps for POST/GET parameters.
+  - `.Store`: Map for session variables (persisted across requests).
+  - `.Login(userID)`, `.Logout(redirectURL)`, `.IsLoggedIn()`: Session authentication helpers.
+- `Session.RenderEngine` - For rendering responses and templates.
+  - `.Render(str)`: Write a string to the response.
+  - `.RenderTemplate(view, data)`: Render a template with data.
+  - `.RenderError(msg, code)`: Render an error response.
+  - `.StartRender()`: Flush the response buffer.
+- `server.RemoveSession(sessionID)` - Remove a session by its ID.
+- `smtp.Client` - Built-in SMTP client for sending emails.
+  - `.InitSMTPClient(host, port, user, pass)`
+  - `.SendMail(to, subject, body)`
+
+For more details, see the source files in each package (Controller, Session, RenderEngine, etc.).
+
+---
+
+## License
 See [LICENSE](LICENSE) for GPLv3 license details.

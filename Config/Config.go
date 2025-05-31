@@ -1,33 +1,32 @@
 package Config
 
-func New(
-	Http bool,
-	__Views_folder string,
-	__Static_folders []string,
-	__CSS_Folders []string,
-	__JS_Folders []string,
-) Class {
+import (
+	"encoding/json"
 
-	config.Http = Http
-	if __Static_folders != nil {
-		config.Static_folders = __Static_folders
+	"github.com/vrianta/Server/Utils"
+)
+
+func New() {
+	__config := class{}
+	if err := json.Unmarshal([]byte(Utils.ReadFromFile("Config.json")), &__config); err != nil {
+		panic(err)
+
 	}
 
-	if __Views_folder != "" {
-		config.Views_folder = __Views_folder
+	Http = __config.Http
+	Build = __config.Build
+	if __config.StaticFolder != nil {
+		StaticFolder = __config.StaticFolder
 	}
 
-	if __CSS_Folders != nil {
-		config.CSS_Folders = __CSS_Folders
+	if __config.CssFolders != nil {
+		CssFolder = __config.CssFolders
+	}
+	if __config.JsFolders != nil {
+		JsFolders = __config.JsFolders
 	}
 
-	if __JS_Folders != nil {
-		config.JS_Folders = __JS_Folders
+	if __config.ViewFolder != "" {
+		ViewFolder = __config.ViewFolder
 	}
-
-	return config
-}
-
-func Get() *Class {
-	return &config
 }

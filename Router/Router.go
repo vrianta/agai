@@ -32,8 +32,6 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 				if err := Session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
 					Log.WriteLog("Error rendering template: " + err.Error())
 					panic(err) // Panic if there is an error rendering the template
-				} else {
-					Session.RenderEngine.StartRender()
 				}
 			} else {
 				// WriteConsolef("Route not found for URL: %s \n", r.URL.Path)ss
@@ -54,8 +52,6 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 				if err := __session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
 					Log.WriteLog("Error rendering template: " + err.Error())
 					panic(err) // Panic if there is an error rendering the template
-				} else {
-					__session.RenderEngine.StartRender()
 				}
 			} else {
 				http.Error(w, "404 Error : Route not found ", 404)
@@ -71,8 +67,6 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 					if err := __session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
 						Log.WriteLog("Error rendering template: " + err.Error())
 						panic(err) // Panic if there is an error rendering the template
-					} else {
-						__session.RenderEngine.StartRender()
 					}
 				} else {
 					http.Error(w, "404 Error : Route not found ", 404)

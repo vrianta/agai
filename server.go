@@ -3,7 +3,7 @@ package Server
 import (
 	"net/http"
 
-	Config "github.com/vrianta/Server/Config"
+	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/Router"
 )
@@ -16,12 +16,11 @@ import (
  * route ->  routes configaration which tells the
  * _config -> send the config of the server can be send nill if default is fine for you
  */
-func New(host, port string, routes Routes, _config *Config.Class) *_Struct {
+func New(host, port string, routes Routes) *_Struct {
 	srvInstance = &_Struct{
 		Host:   host,
 		Port:   port,
 		Router: Router.New(Router.Type(routes)),
-		Config: Config.New(_config.Http, _config.Views_folder, _config.Static_folders, _config.CSS_Folders, _config.JS_Folders),
 	}
 	return srvInstance
 }
@@ -44,34 +43,28 @@ func (s *_Struct) Start() {
 	Log.WriteLogf("Server Starting at : %s:%s", s.Host, s.Port)
 
 	s.server.ListenAndServe()
-	// s.state = true
-	// s.ServeConsole()
-
-	// for s.state {
-	// }
-
 }
 
 func (s *_Struct) setup_static_folders() {
 	// Create a file server handler
-	for static_folder := range s.Config.Static_folders {
-		fs := http.FileServer(http.Dir(s.Config.Static_folders[static_folder]))
+	for static_folder := range Config.StaticFolder {
+		fs := http.FileServer(http.Dir(Config.StaticFolder[static_folder]))
 		Log.WriteLog("setting Up Static Folder : ", static_folder)
-		http.Handle("/"+s.Config.Static_folders[static_folder]+"/", http.StripPrefix("/"+s.Config.Static_folders[static_folder]+"/", fs))
+		http.Handle("/"+Config.StaticFolder[static_folder]+"/", http.StripPrefix("/"+Config.StaticFolder[static_folder]+"/", fs))
 	}
 }
 
 // Generating Creating Routes for the Css Folders
 func (s *_Struct) setup_css_folder() {
-	for css_folder := range s.Config.CSS_Folders {
-		http.HandleFunc("/"+s.Config.CSS_Folders[css_folder]+"/", s.Router.CSSHandlers)
+	for css_folder := range Config.CssFolder {
+		http.HandleFunc("/"+Config.CssFolder[css_folder]+"/", s.Router.CSSHandlers)
 		// s.Routes["/"+s.Config.CSS_Folders[css_folder]] = s.CSSHandlers
 	}
 }
 
 func (s *_Struct) setup_js_folder() {
-	for folder := range s.Config.JS_Folders {
-		http.HandleFunc("/"+s.Config.JS_Folders[folder]+"/", s.Router.JsHandler)
+	for folder := range Config.JsFolders {
+		http.HandleFunc("/"+Config.JsFolders[folder]+"/", s.Router.JsHandler)
 		// s.Routes["/"+s.Config.CSS_Folders[folder]] = s.CSSHandlers
 	}
 }

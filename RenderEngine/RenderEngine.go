@@ -44,7 +44,7 @@ func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) er
 	var _html_template *template.Template
 	var info os.FileInfo
 
-	full_template_path := Config.Get().Views_folder + "/" + uri
+	full_template_path := Config.ViewFolder + "/" + uri
 
 	_template, isPresent := templateRecords[uri]
 	info, err = os.Stat(full_template_path)
@@ -53,7 +53,7 @@ func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) er
 	}
 
 	if !isPresent { // template is not created already then we will update that in reocrd
-		if _html_template, err = template.New("").Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
+		if _html_template, err = template.New(uri).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
 			templateRecords[uri] = Template.Struct{
 				Uri:          full_template_path,
 				LastModified: info.ModTime(),
@@ -64,7 +64,7 @@ func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) er
 			return err
 		}
 	} else if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
-		if _html_template, err = template.New("").Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
+		if _html_template, err = template.New(uri).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
 			_template.LastModified = info.ModTime()
 			_template.Data = *_html_template
 		} else {
@@ -76,7 +76,8 @@ func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) er
 	if err = _template.Data.Execute(&buf, *templateData); err != nil {
 		return err
 	}
-	rh.view = append(rh.view, buf.Bytes()...)
+	// rh.view = append(rh.view, buf.Bytes()...)
+	rh.W.Write(buf.Bytes())
 	_html_template = nil
 
 	return nil

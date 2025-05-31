@@ -1,4 +1,4 @@
-package server
+package RenderEngine
 
 import (
 	"bytes"
@@ -8,28 +8,43 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/vrianta/Server/Config"
+	"github.com/vrianta/Server/Response"
+	"github.com/vrianta/Server/Template"
+	"github.com/vrianta/Server/Utils"
 )
 
-func NewRenderHandlerObj(_w http.ResponseWriter) RenderEngine {
-	return RenderEngine{
+type (
+	Struct struct {
+		view []byte
+		W    http.ResponseWriter
+	}
+
+	RenderData map[string]interface{}
+)
+
+var (
+	templateRecords = make(map[string]Template.Struct) // keep the reocrd of all the templated which are already templated
+
+)
+
+func New(_w http.ResponseWriter) Struct {
+	return Struct{
 		view: make([]byte, 0),
 		W:    _w,
 	}
 }
 
-func (rh *RenderEngine) Render(massages string) {
+func (rh *Struct) Render(massages string) {
 	rh.view = append(rh.view, []byte(massages)...)
 }
 
-func (rh *RenderEngine) StartRender() {
+func (rh *Struct) StartRender() {
 	rh.W.Write(rh.view)
 }
 
-func (rh *RenderEngine) RenderGothtml(view func(RenderData) string, renderData RenderData) {
-	rh.W.Write([]byte(view(renderData)))
-}
-
-func (r *RenderEngine) RenderError(_massage string, _response_code ResponseCode) {
+func (r *Struct) RenderError(_massage string, _response_code Response.Code) {
 	http.Error(r.W, _massage, int(_response_code))
 }
 
@@ -37,13 +52,13 @@ func (r *RenderEngine) RenderError(_massage string, _response_code ResponseCode)
  * This function will render go default Html templating tool
  * as argument it will take String to render and data which need to be parsed
  */
-func (rh *RenderEngine) RenderTemplate(uri string, templateData TemplateData) error {
+func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) error {
 
 	var err error
 	var _html_template *template.Template
 	var info os.FileInfo
 
-	full_template_path := srvInstance.Config.Views_folder + "/" + uri
+	full_template_path := Config.Get().Views_folder + "/" + uri
 
 	_template, isPresent := templateRecords[uri]
 	info, err = os.Stat(full_template_path)
@@ -52,8 +67,8 @@ func (rh *RenderEngine) RenderTemplate(uri string, templateData TemplateData) er
 	}
 
 	if !isPresent { // template is not created already then we will update that in reocrd
-		if _html_template, err = template.New("").Delims("{{", "}}").Parse(PHPToGoTemplate(ReadFromFile(full_template_path))); err == nil {
-			templateRecords[uri] = templates{
+		if _html_template, err = template.New("").Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
+			templateRecords[uri] = Template.Struct{
 				Uri:          full_template_path,
 				LastModified: info.ModTime(),
 				Data:         *_html_template,
@@ -63,7 +78,7 @@ func (rh *RenderEngine) RenderTemplate(uri string, templateData TemplateData) er
 			return err
 		}
 	} else if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
-		if _html_template, err = template.New("").Parse(PHPToGoTemplate(ReadFromFile(full_template_path))); err == nil {
+		if _html_template, err = template.New("").Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
 			_template.LastModified = info.ModTime()
 			_template.Data = *_html_template
 		} else {
@@ -72,7 +87,7 @@ func (rh *RenderEngine) RenderTemplate(uri string, templateData TemplateData) er
 	}
 
 	var buf bytes.Buffer
-	if err = _template.Data.Execute(&buf, templateData); err != nil {
+	if err = _template.Data.Execute(&buf, *templateData); err != nil {
 		return err
 	}
 	rh.view = append(rh.view, buf.Bytes()...)

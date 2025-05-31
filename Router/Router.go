@@ -1,31 +1,60 @@
-package server
+package Router
 
 import (
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/vrianta/Server/Controller"
+	"github.com/vrianta/Server/Log"
+	Session "github.com/vrianta/Server/Session"
+	"github.com/vrianta/Server/Utils"
+)
+
+type (
+	Type map[string]Controller.Struct
+
+	Struct struct {
+		sessions map[string]Session.Struct
+		routes   Type
+	}
+
+	FileInfo struct {
+		Uri          string    // path of the template file
+		LastModified time.Time // date when the file last modified
+		Data         string    // template data of the file before modified
+	}
 )
 
 var (
 	fileInfo = map[string]FileInfo{}
 )
 
-func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
+// Constructor for Router
+func New(_routes Type) *Struct {
+	return &Struct{
+		sessions: make(map[string]Session.Struct),
+		routes:   _routes,
+	}
+}
 
-	sessionID := GetSessionID(r)
+func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
+
+	sessionID := Session.GetSessionID(r)
 	if sessionID == nil { // means user does not have any session with the server so creating a new clean guest session with the server
-		Session := NewSession(w, r)
+		Session := Session.New(w, r)
 		sessionID = Session.StartSession()
 		if sessionID != nil { // Successfuly started a New session without any error
-			sh.Sessions[(*sessionID)] = *Session
-			if controller, ok := sh.Routes[r.URL.Path]; ok {
+			router.sessions[(*sessionID)] = *Session
+			if _controller, ok := router.routes[r.URL.Path]; ok {
 				Session.UpdateSession(&w, r)
 				Session.ParseRequest()
 				if Session.IsGetMethod() {
-					controller.GET(Session)
+					_controller.GET(Session)
 				} else if Session.IsPostMethod() {
-					controller.POST(Session)
+					_controller.POST(Session)
 				} else if Session.IsDeleteMethod() {
-					controller.DELETE(Session)
+					_controller.DELETE(Session)
 				}
 				Session.RenderEngine.StartRender()
 			} else {
@@ -39,36 +68,36 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 		// checking if the session is valid or not means it is checking if the server also has the session or not
 		// if the session is valid then it will just update the session with the latest value
 
-		if Session, ok := sh.Sessions[(*sessionID)]; ok {
-			if controller, ok := sh.Routes[r.URL.Path]; ok {
-				Session.UpdateSession(&w, r)
-				Session.ParseRequest()
-				if Session.IsGetMethod() {
-					controller.GET(&Session)
-				} else if Session.IsPostMethod() {
-					controller.POST(&Session)
-				} else if Session.IsDeleteMethod() {
-					controller.DELETE(&Session)
+		if __session, ok := router.sessions[(*sessionID)]; ok {
+			if controller, ok := router.routes[r.URL.Path]; ok {
+				__session.UpdateSession(&w, r)
+				__session.ParseRequest()
+				if __session.IsGetMethod() {
+					controller.GET(&__session)
+				} else if __session.IsPostMethod() {
+					controller.POST(&__session)
+				} else if __session.IsDeleteMethod() {
+					controller.DELETE(&__session)
 				}
-				Session.RenderEngine.StartRender()
+				__session.RenderEngine.StartRender()
 			} else {
 				http.Error(w, "404 Error : Route not found ", 404)
 			}
 		} else { // server is not holding the session any more so creating a new guest session for the user
-			Session := NewSession(w, r)
-			sessionID = Session.StartSession()
+			__session := Session.New(w, r)
+			sessionID = __session.StartSession()
 			if sessionID != nil {
-				sh.Sessions[(*sessionID)] = *Session
-				if controller, ok := sh.Routes[r.URL.Path]; ok {
-					Session.ParseRequest()
-					if Session.IsGetMethod() {
-						controller.GET(Session)
-					} else if Session.IsPostMethod() {
-						controller.POST(Session)
-					} else if Session.IsDeleteMethod() {
-						controller.DELETE(Session)
+				router.sessions[(*sessionID)] = *__session
+				if controller, ok := router.routes[r.URL.Path]; ok {
+					__session.ParseRequest()
+					if __session.IsGetMethod() {
+						controller.GET(__session)
+					} else if __session.IsPostMethod() {
+						controller.POST(__session)
+					} else if __session.IsDeleteMethod() {
+						controller.DELETE(__session)
 					}
-					Session.RenderEngine.StartRender()
+					__session.RenderEngine.StartRender()
 				} else {
 					http.Error(w, "404 Error : Route not found ", 404)
 				}
@@ -82,7 +111,7 @@ func (sh *server) routingHandler(w http.ResponseWriter, r *http.Request) {
 /*
  * Handling the Requests coming for the CSS Files specially
  */
-func (s *server) CSSHandlers(w http.ResponseWriter, r *http.Request) {
+func (s *Struct) CSSHandlers(w http.ResponseWriter, r *http.Request) {
 
 	_file_path := "." + r.URL.Path // path of the file
 
@@ -90,7 +119,7 @@ func (s *server) CSSHandlers(w http.ResponseWriter, r *http.Request) {
 
 	info, err := os.Stat(_file_path)
 	if err != nil {
-		WriteLog(err.Error())
+		Log.WriteLog(err.Error())
 		return
 	}
 
@@ -102,7 +131,7 @@ func (s *server) CSSHandlers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_file_data := ReadFromFile(_file_path)
+	_file_data := Utils.ReadFromFile(_file_path)
 
 	fileInfo[_file_path] = FileInfo{
 		Uri:          _file_path,
@@ -117,14 +146,14 @@ func (s *server) CSSHandlers(w http.ResponseWriter, r *http.Request) {
 /*
  * Handling the Requests coming for the Js Files specially
  */
-func (s *server) JsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Struct) JsHandler(w http.ResponseWriter, r *http.Request) {
 	_file_path := "." + r.URL.Path // path of the file
 
 	_file_record, file_record_ok := fileInfo[_file_path]
 
 	info, err := os.Stat(_file_path)
 	if err != nil {
-		WriteLog(err.Error())
+		Log.WriteLog(err.Error())
 		return
 	}
 
@@ -136,7 +165,7 @@ func (s *server) JsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_file_data := ReadFromFile(_file_path)
+	_file_data := Utils.ReadFromFile(_file_path)
 
 	fileInfo[_file_path] = FileInfo{
 		Uri:          _file_path,
@@ -146,4 +175,9 @@ func (s *server) JsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte(fileInfo[_file_path].Data))
 
+}
+
+// RemoveSession removes a session from the session manager
+func (r *Struct) RemoveSession(sessionID string) {
+	defer delete(r.sessions, sessionID)
 }

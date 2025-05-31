@@ -1,4 +1,4 @@
-package server
+package Server
 
 import (
 	"bufio"
@@ -8,9 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/vrianta/Server/Log"
 )
 
-func (s *server) ServeConsole() {
+func (s *_Struct) ServeConsole() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt) // Listen for Ctrl+C
 
@@ -53,7 +55,7 @@ func (s *server) ServeConsole() {
 	}
 }
 
-func (s *server) startServer() {
+func (s *_Struct) startServer() {
 	if s.state {
 		fmt.Println("Server is in Starting State so skipping the process...")
 		return
@@ -63,13 +65,13 @@ func (s *server) startServer() {
 		Addr: s.Host + ":" + s.Port, // Host and port
 	}
 
-	WriteLogf("%s", "Server Starting at "+s.Host+":"+s.Port)
+	Log.WriteLogf("%s", "Server Starting at "+s.Host+":"+s.Port)
 
 	s.server.ListenAndServe()
 	s.state = true
 }
 
-func (s *server) stopServer() {
+func (s *_Struct) stopServer() {
 	if !s.state {
 		fmt.Println("Server is Already Stopped | can't stop it...")
 		return
@@ -86,7 +88,7 @@ func (s *server) stopServer() {
 	}
 
 	s.state = false
-	s.Sessions = map[string]Session{}
+	// s.Sessions = map[string]Session{}
 }
 
 // Function to ensure `:` appears after every print

@@ -1,82 +1,23 @@
-package server
+package Server
 
 import (
-	"html/template"
 	"net/http"
-	"time"
+
+	Config "github.com/vrianta/Server/Config"
+	"github.com/vrianta/Server/Router"
 )
 
 type (
-	ResponseCode int // server response codes
-	Uri          string
-
-	// RoutesMap is a type alias for mapping routes to handlers
-	Routes map[string]interface {
-		GET(*Session)
-		POST(*Session)
-		DELETE(*Session)
-	}
-	SessionVars  map[string]interface{}
-	TemplateData map[string]interface{}
-	PostParams   map[string]string
-	GetParams    map[string]string
-
+	Routes Router.Type
 	// Server represents the HTTP server with session management
-	server struct {
-		Host     string
-		Port     string
-		Routes   Routes
-		Config   Config
-		Sessions map[string]Session
+	_Struct struct {
+		Host   string
+		Port   string
+		Router *Router.Struct
+		Config Config.Class
 
 		server *http.Server
 
 		state bool // hold 0 or 1 to ensure if the server is runnning or not
-	}
-
-	templates struct {
-		Uri          string            // path of the template file
-		LastModified time.Time         // date when the file last modified
-		Data         template.Template // template data of the file before modified
-	}
-
-	FileInfo struct {
-		Uri          string    // path of the template file
-		LastModified time.Time // date when the file last modified
-		Data         string    // template data of the file before modified
-	}
-
-	RenderEngine struct {
-		view []byte
-		W    http.ResponseWriter
-	}
-
-	RenderData map[string]interface{}
-
-	// Flaggs for Server Config where it will care of the config of the server
-	// http ->  is to tell server if it need to load https or http server for example http enabled mean it will load http server else by default it will be https
-	// By Default the Static Files will be in /Static and can be accessed in html by Static/files_path
-	Config struct {
-		Http           bool
-		Static_folders []string // static folders list which comes with a list of scrigs for all the static folder which needs to be in file server
-		// list of folder where the CSS files will be keep that in mind that Static folder also can have
-		// the Css files but image sure keep Css file only in CSS folders is good idea because it make this system faster no randome file checks needed
-		// Remember this CSS file will be auto loaded and will be updated once you update them in the local better for development and build system
-		// when we will introduce build systems
-		CSS_Folders  []string
-		JS_Folders   []string
-		Views_folder string
-	}
-
-	Session struct {
-		ID string
-		w  http.ResponseWriter
-		r  *http.Request
-
-		POST  PostParams
-		GET   GetParams
-		Store SessionVars
-
-		RenderEngine RenderEngine
 	}
 )

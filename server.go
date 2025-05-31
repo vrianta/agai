@@ -1,7 +1,11 @@
-package server
+package Server
 
 import (
 	"net/http"
+
+	Config "github.com/vrianta/Server/Config"
+	"github.com/vrianta/Server/Log"
+	"github.com/vrianta/Server/Router"
 )
 
 /*
@@ -12,33 +16,32 @@ import (
  * route ->  routes configaration which tells the
  * _config -> send the config of the server can be send nill if default is fine for you
  */
-func New(host, port string, routes Routes, _config *Config) *server {
-	srvInstance = &server{
-		Host:     host,
-		Port:     port,
-		Routes:   routes,
-		Config:   newConfig(_config),
-		Sessions: make(map[string]Session),
+func New(host, port string, routes Routes, _config *Config.Class) *_Struct {
+	srvInstance = &_Struct{
+		Host:   host,
+		Port:   port,
+		Router: Router.New(Router.Type(routes)),
+		Config: Config.New(_config.Http, _config.Views_folder, _config.Static_folders, _config.CSS_Folders, _config.JS_Folders),
 	}
 	return srvInstance
 }
 
 // Start runs the HTTP server
-func (s *server) Start() {
+func (s *_Struct) Start() {
 
 	s.setup_static_folders()
 	s.setup_css_folder()
 	s.setup_js_folder()
 
 	// setting up the Custom Routing Handler for the syste
-	http.HandleFunc("/", s.routingHandler)
+	http.HandleFunc("/", s.Router.Handler)
 
 	// Define the server configuration
 	s.server = &http.Server{
 		Addr: s.Host + ":" + s.Port, // Host and port
 	}
 
-	WriteLogf("Server Starting at : %s:%s", s.Host, s.Port)
+	Log.WriteLogf("Server Starting at : %s:%s", s.Host, s.Port)
 
 	s.server.ListenAndServe()
 	// s.state = true
@@ -49,31 +52,26 @@ func (s *server) Start() {
 
 }
 
-func (s *server) setup_static_folders() {
+func (s *_Struct) setup_static_folders() {
 	// Create a file server handler
 	for static_folder := range s.Config.Static_folders {
 		fs := http.FileServer(http.Dir(s.Config.Static_folders[static_folder]))
-		WriteLog("setting Up Static Folder : ", static_folder)
+		Log.WriteLog("setting Up Static Folder : ", static_folder)
 		http.Handle("/"+s.Config.Static_folders[static_folder]+"/", http.StripPrefix("/"+s.Config.Static_folders[static_folder]+"/", fs))
 	}
 }
 
 // Generating Creating Routes for the Css Folders
-func (s *server) setup_css_folder() {
+func (s *_Struct) setup_css_folder() {
 	for css_folder := range s.Config.CSS_Folders {
-		http.HandleFunc("/"+s.Config.CSS_Folders[css_folder]+"/", s.CSSHandlers)
+		http.HandleFunc("/"+s.Config.CSS_Folders[css_folder]+"/", s.Router.CSSHandlers)
 		// s.Routes["/"+s.Config.CSS_Folders[css_folder]] = s.CSSHandlers
 	}
 }
 
-func (s *server) setup_js_folder() {
+func (s *_Struct) setup_js_folder() {
 	for folder := range s.Config.JS_Folders {
-		http.HandleFunc("/"+s.Config.JS_Folders[folder]+"/", s.JsHandler)
+		http.HandleFunc("/"+s.Config.JS_Folders[folder]+"/", s.Router.JsHandler)
 		// s.Routes["/"+s.Config.CSS_Folders[folder]] = s.CSSHandlers
 	}
-}
-
-// RemoveSession removes a session from the session manager
-func RemoveSession(sessionID string) {
-	defer delete(srvInstance.Sessions, sessionID)
 }

@@ -1,9 +1,14 @@
-package server
+package Session
 
 import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/vrianta/Server/Cookies"
+	"github.com/vrianta/Server/Log"
+	"github.com/vrianta/Server/RenderEngine"
+	"github.com/vrianta/Server/Utils"
 )
 
 /*
@@ -66,11 +71,29 @@ import (
 * Date: [Current Date]
  */
 
-func NewSession(w http.ResponseWriter, r *http.Request) *Session {
+type (
+	SessionVars map[string]any
+	PostParams  map[string]string
+	GetParams   map[string]string
+
+	Struct struct {
+		ID string
+		W  http.ResponseWriter
+		R  *http.Request
+
+		POST  PostParams
+		GET   GetParams
+		Store SessionVars
+
+		RenderEngine RenderEngine.Struct
+	}
+)
+
+func New(w http.ResponseWriter, r *http.Request) *Struct {
 	fmt.Println("Creating New Session")
-	return &Session{
-		w:    w,
-		r:    r,
+	return &Struct{
+		W:    w,
+		R:    r,
 		POST: make(PostParams),
 		GET:  make(GetParams),
 		Store: SessionVars{
@@ -78,19 +101,19 @@ func NewSession(w http.ResponseWriter, r *http.Request) *Session {
 			"isLoggedIn": false,
 		},
 
-		RenderEngine: NewRenderHandlerObj(w),
+		RenderEngine: RenderEngine.New(w),
 	}
 }
 
 func GetSessionID(r *http.Request) *string {
-	cookie := GetCookie("sessionid", r)
+	cookie := Cookies.GetCookie("sessionid", r)
 	if cookie != nil {
 		return &cookie.Value
 	}
 	return nil
 }
 
-func (sh *Session) Login(uid string) {
+func (sh *Struct) Login(uid string) {
 	// WriteConsole("Attempting to Login")
 	sh.Store["uid"] = uid
 	sh.Store["isLoggedIn"] = true
@@ -98,15 +121,14 @@ func (sh *Session) Login(uid string) {
 	sh.SetSessionCookie(&sh.ID)
 }
 
-func (s *Session) Logout(_redirect_uri string) {
+func (s *Struct) Logout() {
 	s.Store["uid"] = ""
 	s.Store["isLoggedIn"] = false
 
-	WriteLog("Loggingout")
-	s.w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-	s.w.Header().Set("Pragma", "no-cache")
-	s.w.Header().Set("Expires", "0")
-	s.RedirectWithCode(Uri(_redirect_uri), ResponseCodes.SeeOther)
+	Log.WriteLog("Loggingout")
+	s.W.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	s.W.Header().Set("Pragma", "no-cache")
+	s.W.Header().Set("Expires", "0")
 
 }
 
@@ -114,7 +136,7 @@ func (s *Session) Logout(_redirect_uri string) {
  * Checking if the user is logged in
  * @return false -> if the user is not logged in
  */
-func (s *Session) IsLoggedIn() bool {
+func (s *Struct) IsLoggedIn() bool {
 	if _is_loggedin, present := s.Store["isLoggedIn"]; !present {
 		return false
 	} else {
@@ -126,9 +148,9 @@ func (s *Session) IsLoggedIn() bool {
 }
 
 // StartSession attempts to retrieve or create a new session
-func (s *Session) StartSession() *string {
+func (s *Struct) StartSession() *string {
 
-	if sessionID := GetSessionID(s.r); sessionID != nil {
+	if sessionID := GetSessionID(s.R); sessionID != nil {
 		if *sessionID == "expire" {
 			return s.CreateNewSession()
 		}
@@ -142,17 +164,17 @@ func (s *Session) StartSession() *string {
 	return s.CreateNewSession()
 }
 
-func (sh *Session) UpdateSession(_w *http.ResponseWriter, _r *http.Request) {
-	sh.w = *_w
-	sh.r = _r
+func (sh *Struct) UpdateSession(_w *http.ResponseWriter, _r *http.Request) {
+	sh.W = *_w
+	sh.R = _r
 
 	sh.RenderEngine.W = *_w
 }
 
 // Creates a new session and sets cookies
-func (sh *Session) CreateNewSession() *string {
+func (sh *Struct) CreateNewSession() *string {
 	// Generate a session ID
-	sessionID, err := GenerateSessionID()
+	sessionID, err := Utils.GenerateSessionID()
 	if err != nil {
 		return nil
 	}
@@ -164,39 +186,39 @@ func (sh *Session) CreateNewSession() *string {
 }
 
 // Sets the session cookie in the client's browser
-func (sh *Session) SetSessionCookie(sessionID *string) {
+func (sh *Struct) SetSessionCookie(sessionID *string) {
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,
 		HttpOnly: true,
 		Expires:  time.Now().Add(30 * time.Minute).UTC(),
 	}
-	AddCookie(c, sh.w, sh.r)
+	Cookies.AddCookie(c, sh.W, sh.R)
 }
 
-func (s *Session) EndSession() {
-	RemoveCookie("sessionid", s.w, s.r)
+func (s *Struct) EndSession() {
+	Cookies.RemoveCookie("sessionid", s.W, s.R)
 	// defer RemoveSession(s.ID)
-	s = NewSession(s.w, s.r)
+	s = New(s.W, s.R)
 }
 
-func (sh *Session) ParseRequest() {
+func (sh *Struct) ParseRequest() {
 	// Initialize queryParams once for later use
-	queryParams := sh.r.URL.Query()
+	queryParams := sh.R.URL.Query()
 
 	sh.POST = make(PostParams)
 	sh.GET = make(GetParams)
 
 	// Check if the request method is POST
-	if sh.r.Method == http.MethodPost {
+	if sh.R.Method == http.MethodPost {
 		// Parse multipart form data with a 10 MB limit for file uploads
-		err := sh.r.ParseMultipartForm(10 << 20) // 10 MB
+		err := sh.R.ParseMultipartForm(10 << 20) // 10 MB
 		if err != nil {
-			http.Error(sh.w, "Error parsing multipart form data", http.StatusBadRequest)
+			http.Error(sh.W, "Error parsing multipart form data", http.StatusBadRequest)
 		}
 		// Handle POST form data
-		fmt.Println(sh.r.PostForm)
-		for key, values := range sh.r.PostForm {
+		fmt.Println(sh.R.PostForm)
+		for key, values := range sh.R.PostForm {
 			sh.ProcessPostParams(key, values)
 		}
 	}
@@ -208,13 +230,13 @@ func (sh *Session) ParseRequest() {
 }
 
 // handleQueryParams processes parameters found in the URL query
-func (sh *Session) ProcessQueryParams(key string, values []string) {
+func (sh *Struct) ProcessQueryParams(key string, values []string) {
 	var err error
 	// Check for multiple values
 
 	if len(values) > 1 {
-		if sh.GET[key], err = JsonToString(values); err != nil {
-			http.Error(sh.w, "Failed to convert data to JSON", http.StatusMethodNotAllowed)
+		if sh.GET[key], err = Utils.JsonToString(values); err != nil {
+			http.Error(sh.W, "Failed to convert data to JSON", http.StatusMethodNotAllowed)
 
 		}
 	} else {
@@ -223,11 +245,11 @@ func (sh *Session) ProcessQueryParams(key string, values []string) {
 }
 
 // handlePostParams processes parameters found in the POST data
-func (sh *Session) ProcessPostParams(key string, values []string) {
+func (sh *Struct) ProcessPostParams(key string, values []string) {
 	var err error
 	if len(values) > 1 {
-		if sh.POST[key], err = JsonToString(values); err != nil {
-			http.Error(sh.w, "Failed to convert data to JSON", http.StatusMethodNotAllowed)
+		if sh.POST[key], err = Utils.JsonToString(values); err != nil {
+			http.Error(sh.W, "Failed to convert data to JSON", http.StatusMethodNotAllowed)
 		}
 	} else {
 		sh.POST[key] = values[0] // Store single value as a string
@@ -237,27 +259,27 @@ func (sh *Session) ProcessPostParams(key string, values []string) {
 /*
  * Return True if the connection established is a post connection
  */
-func (ss *Session) IsPostMethod() bool {
-	return ss.r.Method == http.MethodPost
+func (ss *Struct) IsPostMethod() bool {
+	return ss.R.Method == http.MethodPost
 }
 
 /*
  * Return True if the connection established is a Get connection
  */
-func (ss *Session) IsGetMethod() bool {
-	return ss.r.Method == http.MethodGet
+func (ss *Struct) IsGetMethod() bool {
+	return ss.R.Method == http.MethodGet
 }
 
 /*
  * Return True if the connection established is a DELET connection
  */
-func (ss *Session) IsDeleteMethod() bool {
-	return ss.r.Method == http.MethodDelete
+func (ss *Struct) IsDeleteMethod() bool {
+	return ss.R.Method == http.MethodDelete
 }
 
 /*
  * Disable the Caching on Local Machine For certain pages to make
  */
-func (s *Session) EnableCaching() {
+func (s *Struct) EnableCaching() {
 
 }

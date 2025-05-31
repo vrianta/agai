@@ -68,8 +68,8 @@ func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) er
 		}
 	}
 
-	templateExecuteErr := rh.ExecuteTemplate(&_template, templateData)
-	return templateExecuteErr
+	err := rh.ExecuteTemplate(&_template, templateData)
+	return err
 
 }
 

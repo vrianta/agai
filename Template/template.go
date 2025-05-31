@@ -14,3 +14,8 @@ type (
 		Data         template.Template // template data of the file before modified
 	}
 )
+
+var (
+	EmptyResponse = Response{}
+	NoResponse    = Response{}
+)

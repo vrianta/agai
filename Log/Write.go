@@ -7,6 +7,7 @@ import (
 
 func WriteLog(massages ...any) {
 	fmt.Println(massages...)
+
 }
 
 func WriteLogf(massage string, args ...any) {

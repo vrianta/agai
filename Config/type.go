@@ -13,7 +13,7 @@ type (
 		Port string `json:"Port"` // Port is the port number the server will listen to, default is 1080
 		Host string `json:"Host"` // Host is the hostname of the server, default is empty which means it will listen to all interfaces
 
-		Http          bool     `json:"Http"`          // http is to tell server if it need to load https or http server for example http enabled mean it will load http server else
+		Https         bool     `json:"Https"`         // http is to tell server if it need to load https or http server for example http enabled mean it will load http server else
 		Build         bool     `json:"Build"`         // Build is to tell server if it need to load build system or not
 		StaticFolders []string `json:"StaticFolders"` // static folders list which comes with a list of scrigs for all the static folder which needs to be in file server
 		// list of folder where the CSS files will be keep that in mind that Static folder also can have

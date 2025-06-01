@@ -25,7 +25,7 @@ func Init() {
 	if __config.Host != "" {
 		Host = __config.Host
 	}
-	Http = __config.Http
+	Http = __config.Https
 	Build = __config.Build
 	if __config.StaticFolders != nil {
 		StaticFolders = __config.StaticFolders

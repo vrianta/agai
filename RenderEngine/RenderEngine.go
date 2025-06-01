@@ -37,40 +37,44 @@ func (r *Struct) RenderError(_massage string, _response_code Response.Code) {
  * as argument it will take String to render and data which need to be parsed
  */
 func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) error {
-
 	if Config.Build {
-		if templateRecord, ok := templateRecords[uri]; ok {
-			err := rh.ExecuteTemplate(&templateRecord, templateData)
-			return err
+		templateRecordsMutex.RLock()
+		templateRecord, ok := templateRecords[uri]
+		templateRecordsMutex.RUnlock()
+		if ok {
+			return rh.ExecuteTemplate(&templateRecord, templateData)
 		} else {
 			return fmt.Errorf("template %s not found in records", uri)
 		}
 	}
 
 	var _html_template *template.Template
-
 	full_template_path := Config.ViewFolder + "/" + uri
 
+	templateRecordsMutex.RLock()
 	_template, isPresent := templateRecords[uri]
+	templateRecordsMutex.RUnlock()
+
 	if info, err := os.Stat(full_template_path); err != nil {
 		return err
 	} else {
-		if !isPresent { // template is not created already then we will update that in reocrd
+		if !isPresent {
 			return fmt.Errorf("template %s not found in records", uri)
 		}
-		if _template.LastModified.Compare(info.ModTime()) != 0 { // template already present do other stupid stuff
+		if _template.LastModified.Compare(info.ModTime()) != 0 {
 			if _html_template, err = template.New(uri).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_template_path))); err == nil {
 				_template.LastModified = info.ModTime()
 				_template.Data = _html_template
+				templateRecordsMutex.Lock()
+				templateRecords[uri] = _template
+				templateRecordsMutex.Unlock()
 			} else {
 				return err
 			}
 		}
 	}
 
-	err := rh.ExecuteTemplate(&_template, templateData)
-	return err
-
+	return rh.ExecuteTemplate(&_template, templateData)
 }
 
 func (rh *Struct) ExecuteTemplate(_template *Template.Struct, templateData *Template.Response) error {

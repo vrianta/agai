@@ -3,7 +3,6 @@ package Router
 import (
 	"net/http"
 	"os"
-	"sync"
 
 	"github.com/vrianta/Server/Log"
 	Session "github.com/vrianta/Server/Session"
@@ -13,7 +12,7 @@ import (
 // Constructor for Router
 func New(_routes Type) *Struct {
 	return &Struct{
-		sessions: sync.Map{}, // Initialize the session map
+		sessions: make(map[string]*Session.Struct), // Use a regular map for sessions
 		routes:   _routes,
 	}
 }
@@ -25,13 +24,14 @@ func New(_routes Type) *Struct {
 // - w: The HTTP response writer.
 // - r: The HTTP request.
 func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
-
 	sessionID := Session.GetSessionID(r)
 	if sessionID == nil { // means user does not have any session with the server so creating a new clean guest session with the server
 		Session := Session.New(w, r)
 		sessionID = Session.StartSession()
 		if sessionID != nil { // Successfuly started a New session without any error
-			router.sessions.Store((*sessionID), *Session)
+			router.sessionMutex.Lock()
+			router.sessions[*sessionID] = Session
+			router.sessionMutex.Unlock()
 			if _controller, ok := router.routes[r.URL.Path]; ok {
 				Session.UpdateSession(w, r)
 				Session.ParseRequest()
@@ -51,13 +51,16 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 		// checking if the session is valid or not means it is checking if the server also has the session or not
 		// if the session is valid then it will just update the session with the latest value
 
-		if __session, ok := router.sessions.Load((*sessionID)); ok {
+		router.sessionMutex.RLock()
+		__session, ok := router.sessions[*sessionID]
+		router.sessionMutex.RUnlock()
+
+		if ok {
 			if _controller, ok := router.routes[r.URL.Path]; ok {
-				sessionPtr := __session.(Session.Struct)
-				sessionPtr.UpdateSession(w, r)
-				sessionPtr.ParseRequest()
-				response := _controller.CallMethod(&sessionPtr)
-				if err := sessionPtr.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
+				__session.UpdateSession(w, r)
+				__session.ParseRequest()
+				response := _controller.CallMethod(__session)
+				if err := __session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
 					Log.WriteLog("Error rendering template: " + err.Error())
 					panic(err) // Panic if there is an error rendering the template
 				}
@@ -68,7 +71,9 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 			__session := Session.New(w, r)
 			sessionID = __session.StartSession()
 			if sessionID != nil {
-				router.sessions.Store((*sessionID), *__session)
+				router.sessionMutex.Lock()
+				router.sessions[*sessionID] = __session
+				router.sessionMutex.Unlock()
 				if _controller, ok := router.routes[r.URL.Path]; ok {
 					__session.ParseRequest()
 					response := _controller.CallMethod(__session)
@@ -133,7 +138,9 @@ func (s *Struct) StaticFileHandler(contentType string) http.HandlerFunc {
 // Parameters:
 // - sessionID: The ID of the session to be removed.
 func (r *Struct) RemoveSession(sessionID string) {
-	defer r.sessions.Delete(sessionID) // Ensure the session is deleted after use
+	r.sessionMutex.Lock()
+	defer r.sessionMutex.Unlock()
+	delete(r.sessions, sessionID)
 }
 
 // Get Function to return all the Routes

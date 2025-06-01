@@ -16,6 +16,11 @@ import (
 
 // function to Register and init the Templates from the file name
 func RegisterTemplate(uri string) error {
+
+	if uri == "" { // leave it user do not want any View to be present for the package
+		return nil
+	}
+
 	full_template_path := Config.ViewFolder + "/" + uri
 	info, err := os.Stat(full_template_path)
 	if err != nil {

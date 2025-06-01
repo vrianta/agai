@@ -37,6 +37,9 @@ func (r *Struct) RenderError(_massage string, _response_code Response.Code) {
  * as argument it will take String to render and data which need to be parsed
  */
 func (rh *Struct) RenderTemplate(uri string, templateData *Template.Response) error {
+	if uri == "" {
+		return nil // leave it user do not want to pass any Template for the package
+	}
 	if Config.Build {
 		templateRecordsMutex.RLock()
 		templateRecord, ok := templateRecords[uri]

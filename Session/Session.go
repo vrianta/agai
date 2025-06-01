@@ -153,13 +153,14 @@ func Set(sessionID *string, session *Struct) {
 func StartSessionHandler() {
 	for {
 		if all == nil {
-			time.Sleep(30 * time.Minute) // Sleep for a minute if no sessions are found
+			time.Sleep(30 * time.Minute) // Sleep if no sessions are found
 			continue
 		}
+
 		mutex.Lock()
 		var minExpiry *Struct
 		for _, sess := range all {
-			if sess.Expiry.Before(minExpiry.Expiry) || minExpiry == nil {
+			if minExpiry == nil || sess.Expiry.Before(minExpiry.Expiry) {
 				minExpiry = sess
 			}
 		}
@@ -173,7 +174,7 @@ func StartSessionHandler() {
 		if minExpiry != nil {
 			time.Sleep(time.Until(minExpiry.Expiry))
 		} else {
-			time.Sleep(30 * time.Minute) // Sleep for a minute if no sessions are found
+			time.Sleep(30 * time.Minute)
 		}
 	}
 }

@@ -7,7 +7,7 @@ var (
 	Host string = ""     // Default host for the server
 
 	// Flaggs for Server Config where it will care of the config of the server
-	Http          = false
+	Https         = false
 	Build         = false
 	StaticFolders = []string{
 		"Static",

@@ -268,7 +268,7 @@ func (sh *Struct) SetSessionCookie(sessionID *string) {
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,
-		HttpOnly: Config.Http,
+		HttpOnly: Config.Https,
 		Expires:  sh.Expiry,
 	}
 

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -77,4 +78,13 @@ func HashPassword(password string) (string, error) {
 func CheckPassword(hashedPassword, plainPassword string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
 	return err == nil // Returns true if passwords match
+}
+
+// GetEnvString returns the value of the environment variable as a *string, or nil if not set
+func GetEnvString(key string) *string {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		return nil
+	}
+	return &val
 }

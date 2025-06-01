@@ -83,6 +83,7 @@ Create a `Config.json` file in your project root. Example:
 }
 ```
 - **Http**: Enable HTTP server
+- **Build**: Ensure if it is a Build Version or not
 - **Static_folders**: List of folders for static files
 - **CSS_Folders**: List of folders for CSS
 - **JS_Folders**: List of folders for JS

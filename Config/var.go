@@ -18,5 +18,6 @@ var (
 	JsFolders = []string{
 		"Js",
 	}
-	ViewFolder = "Views"
+	ViewFolder      = "Views"
+	MaxSessionCount = 50000 // Default value
 )

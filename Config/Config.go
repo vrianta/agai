@@ -3,6 +3,7 @@ package Config
 import (
 	_ "embed"
 	"encoding/json"
+	"strconv"
 
 	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/Utils"
@@ -36,6 +37,15 @@ func Init() {
 		Build = *envBuild == "true"
 	} else {
 		Build = __config.Build
+	}
+
+	// MaxSessionCount: environment variable takes precedence
+	if envMax := Utils.GetEnvString("MAX_SESSION_COUNT"); envMax != nil && *envMax != "" {
+		if v, err := strconv.Atoi(*envMax); err == nil {
+			MaxSessionCount = v
+		}
+	} else if __config.MaxSessionCount > 0 {
+		MaxSessionCount = __config.MaxSessionCount
 	}
 
 	if __config.StaticFolders != nil {

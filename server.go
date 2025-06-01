@@ -36,6 +36,7 @@ func (s *_Struct) Start() {
 
 	// Starting Session Handler to Manage Session Expiry
 	go Session.StartSessionHandler()
+	go Session.StartLRUHandler() // Start the LRU handler for session management
 
 	// setting up the Custom Routing Handler for the syste
 	http.HandleFunc("/", Router.Handler)

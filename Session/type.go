@@ -23,6 +23,7 @@ type (
 
 		RenderEngine RenderEngine.Struct
 
-		Expiry time.Time // Expiry time for the session
+		Expiry   time.Time // Expiry time for the session
+		LastUsed time.Time // Last access time for LRU
 	}
 )

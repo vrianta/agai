@@ -116,34 +116,55 @@ func Get(sessionID *string) (*Struct, bool) {
 	if sessionID == nil {
 		return nil, false
 	}
-
-	// Lock the mutex for reading
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	// Retrieve the session from the map
-	session, exists := all[(*sessionID)]
+	mutex.Lock()
+	defer mutex.Unlock()
+	session, exists := all[*sessionID]
 	if !exists {
-		return nil, false // Session not found
+		return nil, false
 	}
-
+	// Move to front in LRU
+	if elem, ok := lruMap[*sessionID]; ok {
+		lruList.MoveToFront(elem)
+	}
+	session.LastUsed = time.Now()
 	return session, true
 }
 
-// Function to Set the Session using Session ID in
-// the request, if it exists
 func Store(sessionID *string, session *Struct) {
 	if sessionID == nil || session == nil {
 		return
 	}
 	mutex.Lock()
+	if len(all) >= Config.MaxSessionCount {
+		evictLRUSession()
+	}
+	session.LastUsed = time.Now()
 	all[*sessionID] = session
 	mutex.Unlock()
-	// Wake up the session handler if needed
+
+	// Send LRU update (non-blocking)
+	select {
+	case lruUpdateChan <- lruUpdate{SessionID: *sessionID, Op: "move"}:
+	default:
+		// Drop if channel is full to avoid blocking
+	}
+
 	select {
 	case sessionWakeupChan <- struct{}{}:
 	default:
 	}
+}
+
+func evictLRUSession() {
+	// Remove from the back of the list (least recently used)
+	elem := lruList.Back()
+	if elem == nil {
+		return
+	}
+	sessionID := elem.Value.(string)
+	delete(all, sessionID)
+	delete(lruMap, sessionID)
+	lruList.Remove(elem)
 }
 
 // Function to keep checking the session expiry to remve them.
@@ -189,6 +210,29 @@ func StartSessionHandler() {
 		case <-sessionWakeupChan:
 			// New session or expiry update, re-evaluate minExpiry
 		}
+	}
+}
+
+// Function to handle LRU updates in a separate goroutine
+// This function listens for updates on the lruUpdateChan channel and processes them
+// It handles two operations: "move" to move an existing session to the front of the LRU list
+// and "insert" to add a new session to the LRU list if it doesn't already exist.
+
+func StartLRUHandler() {
+	for update := range lruUpdateChan {
+		mutex.Lock()
+		switch update.Op {
+		case "move":
+			if elem, ok := lruMap[update.SessionID]; ok {
+				lruList.MoveToFront(elem)
+			}
+		case "insert":
+			if _, ok := lruMap[update.SessionID]; !ok {
+				elem := lruList.PushFront(update.SessionID)
+				lruMap[update.SessionID] = elem
+			}
+		}
+		mutex.Unlock()
 	}
 }
 
@@ -242,6 +286,8 @@ func (sh *Struct) UpdateSession(_w http.ResponseWriter, _r *http.Request) {
 	sh.W = _w
 	sh.R = _r
 
+	sh.LastUsed = time.Now()
+
 	sh.RenderEngine.W = _w
 }
 
@@ -275,17 +321,7 @@ func (sh *Struct) SetSessionCookie(sessionID *string) {
 	Cookies.AddCookie(c, sh.W, sh.R)
 }
 
-// Not Used or Sure Function
-// func (s *Struct) EndSession() {
-// 	Cookies.RemoveCookie("sessionid", s.W, s.R)
-// 	s.Expiry = time.Time{} // Reset expiry time
-
-// 	defer RemoveSession(&s.ID) // Remove session from the map
-// }
-
 func (sh *Struct) ParseRequest() {
-	// Initialize queryParams once for later use
-	// queryParams := sh.R.URL.Query()
 
 	sh.POST = make(PostParams)
 	sh.GET = make(GetParams)

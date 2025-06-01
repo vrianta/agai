@@ -25,69 +25,49 @@ func New(_routes Type) *Struct {
 // - r: The HTTP request.
 func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := Session.GetSessionID(r)
-	if sessionID == nil { // means user does not have any session with the server so creating a new clean guest session with the server
-		Session := Session.New(w, r)
-		sessionID = Session.StartSession()
-		if sessionID != nil { // Successfuly started a New session without any error
-			router.sessionMutex.Lock()
-			router.sessions[*sessionID] = Session
-			router.sessionMutex.Unlock()
-			if _controller, ok := router.routes[r.URL.Path]; ok {
-				Session.UpdateSession(w, r)
-				Session.ParseRequest()
-				response := _controller.CallMethod(Session)
-				if err := Session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
-					Log.WriteLog("Error rendering template: " + err.Error())
-					panic(err) // Panic if there is an error rendering the template
-				}
-			} else {
-				// WriteConsolef("Route not found for URL: %s \n", r.URL.Path)ss
-				http.Error(w, "404 Error : Route not found ", 404)
-			}
-		} else {
-			http.Error(w, "Server Error * Failed to Create the Session for the user", 500)
-		}
-	} else { // User has a session ID to begin with
-		// checking if the session is valid or not means it is checking if the server also has the session or not
-		// if the session is valid then it will just update the session with the latest value
+	var sess *Session.Struct
+	var ok bool
 
+	if sessionID == nil {
+		// No session, create a new one
+		sess = Session.New(w, r)
+		sessionID = sess.StartSession()
+		if sessionID == nil {
+			http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
+			return
+		}
+		router.sessionMutex.Lock()
+		router.sessions[*sessionID] = sess
+		router.sessionMutex.Unlock()
+	} else {
 		router.sessionMutex.RLock()
-		__session, ok := router.sessions[*sessionID]
+		sess, ok = router.sessions[*sessionID]
 		router.sessionMutex.RUnlock()
-
-		if ok {
-			if _controller, ok := router.routes[r.URL.Path]; ok {
-				__session.UpdateSession(w, r)
-				__session.ParseRequest()
-				response := _controller.CallMethod(__session)
-				if err := __session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
-					Log.WriteLog("Error rendering template: " + err.Error())
-					panic(err) // Panic if there is an error rendering the template
-				}
-			} else {
-				http.Error(w, "404 Error : Route not found ", 404)
+		if !ok {
+			// Session not found, create a new one
+			sess = Session.New(w, r)
+			sessionID = sess.StartSession()
+			if sessionID == nil {
+				http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
+				return
 			}
-		} else { // server is not holding the session any more so creating a new guest session for the user
-			__session := Session.New(w, r)
-			sessionID = __session.StartSession()
-			if sessionID != nil {
-				router.sessionMutex.Lock()
-				router.sessions[*sessionID] = __session
-				router.sessionMutex.Unlock()
-				if _controller, ok := router.routes[r.URL.Path]; ok {
-					__session.ParseRequest()
-					response := _controller.CallMethod(__session)
-					if err := __session.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
-						Log.WriteLog("Error rendering template: " + err.Error())
-						panic(err) // Panic if there is an error rendering the template
-					}
-				} else {
-					http.Error(w, "404 Error : Route not found ", 404)
-				}
-			} else {
-				http.Error(w, "Server Error * Failed to Create the Session for the user", 500)
-			}
+			router.sessionMutex.Lock()
+			router.sessions[*sessionID] = sess
+			router.sessionMutex.Unlock()
 		}
+	}
+
+	// At this point, sess is valid
+	if _controller, found := router.routes[r.URL.Path]; found {
+		sess.UpdateSession(w, r)
+		sess.ParseRequest()
+		response := _controller.CallMethod(sess)
+		if err := sess.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
+			Log.WriteLog("Error rendering template: " + err.Error())
+			panic(err)
+		}
+	} else {
+		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
 	}
 }
 

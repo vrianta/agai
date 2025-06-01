@@ -21,13 +21,19 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 ---
 
 ## Features
-- **Configurable Routing**: Map URLs to handler structs with GET, POST, DELETE methods.
-- **Session Handling**: Secure session management with cookies and server-side storage.
-- **Static File Serving**: Serve static, CSS, and JS files from configurable folders.
-- **Advanced Template Engine**: Write templates in PHP-style syntax, auto-converted to Go templates.
-- **SMTP Support**: Send emails using built-in SMTP client.
-- **Interactive Console**: Start, stop, and restart the server interactively.
-- **Extensible**: Add your own controllers, logic, and templates easily.
+- **Custom HTTP Server**: Easily start and stop the server with interactive console commands. Configurable via `Config.json` (HTTP/HTTPS, static/view folders, build mode).
+- **Routing System**: Map URL paths to controller structs. Supports GET, POST, DELETE HTTP methods. Dynamic handler invocation based on request method.
+- **Controller Architecture**: Modular controller packages. Each controller defines its own view and HTTP method handlers. Handlers return data for templates or perform logic.
+- **Session Management**: Secure, cookie-based session tracking. Session creation, retrieval, update, and destruction. Session variables (`Store` map) for user data. Login/logout helpers and authentication checks. Session expiry and cleanup mechanism.
+- **Static File Serving**: Serve static, CSS, and JS files from configurable folders. Static file caching with last-modified checks. Efficient file read and cache update logic.
+- **Advanced Template Engine**: Write templates in PHP-style syntax (`<?= $var ?>`, `<?php ... ?>`). Automatic conversion to Go’s `html/template` syntax. Supports variables, loops, conditionals, and custom operators. Template caching and reloading on file change.
+- **Request Parsing**: Automatic parsing of GET and POST parameters. Easy access to request data in controllers.
+- **Response Rendering**: Render templates with data from controllers. Render plain strings or error responses. Disable client-side caching for sensitive pages.
+- **SMTP/Email Support**: Built-in SMTP client for sending emails. Configurable SMTP server, port, user, and password.
+- **Logging**: Centralized logging for errors and server events.
+- **Console Commands**: Start, stop, restart, and exit server from the console. Help command for available options.
+- **Utilities**: Cookie management helpers. File utilities for reading and caching. Type definitions for routes, sessions, and templates.
+- **Extensible & Secure**: Easily add new controllers, routes, and templates. Secure session IDs, cache control, and best practices. Template and static file caching, mutex-protected maps, and efficient request handling.
 
 ---
 

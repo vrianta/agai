@@ -12,8 +12,7 @@ import (
 // Constructor for Router
 func New(_routes Type) *Struct {
 	return &Struct{
-		sessions: make(map[string]*Session.Struct), // Use a regular map for sessions
-		routes:   _routes,
+		routes: _routes,
 	}
 }
 
@@ -36,13 +35,9 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 			return
 		}
-		router.sessionMutex.Lock()
-		router.sessions[*sessionID] = sess
-		router.sessionMutex.Unlock()
+		Session.Set(sessionID, sess)
 	} else {
-		router.sessionMutex.RLock()
-		sess, ok = router.sessions[*sessionID]
-		router.sessionMutex.RUnlock()
+		sess, ok = Session.Get(sessionID)
 		if !ok {
 			// Session not found, create a new one
 			sess = Session.New(w, r)
@@ -51,9 +46,7 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 				return
 			}
-			router.sessionMutex.Lock()
-			router.sessions[*sessionID] = sess
-			router.sessionMutex.Unlock()
+			Session.Set(sessionID, sess)
 		}
 	}
 
@@ -111,16 +104,6 @@ func (s *Struct) StaticFileHandler(contentType string) http.HandlerFunc {
 		fileInfo.Store(_filePath, newRecord)
 		w.Write([]byte(_fileData))
 	}
-}
-
-// RemoveSession removes a session from the session manager.
-// It ensures the session is deleted after use.
-// Parameters:
-// - sessionID: The ID of the session to be removed.
-func (r *Struct) RemoveSession(sessionID string) {
-	r.sessionMutex.Lock()
-	defer r.sessionMutex.Unlock()
-	delete(r.sessions, sessionID)
 }
 
 // Get Function to return all the Routes

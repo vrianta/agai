@@ -8,6 +8,7 @@ import (
 	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/RenderEngine"
 	"github.com/vrianta/Server/Router"
+	"github.com/vrianta/Server/Session"
 )
 
 /*
@@ -34,6 +35,9 @@ func (s *_Struct) Start() {
 	s.setup_css_folder()
 	s.setup_js_folder()
 	s.setup_views() // Register all the views with the RenderEngine
+
+	// Starting Session Handler to Manage Session Expiry
+	go Session.StartSessionHandler()
 
 	// setting up the Custom Routing Handler for the syste
 	http.HandleFunc("/", s.Router.Handler)

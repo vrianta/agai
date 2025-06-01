@@ -95,6 +95,89 @@ func GetSessionID(r *http.Request) *string {
 	return nil
 }
 
+// Function to Remove Session using Session ID in
+// the request, if it exists
+func RemoveSession(sessionID *string) {
+	if sessionID == nil {
+		return
+	}
+
+	// Lock the mutex for writing
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	// Delete the session from the map
+	delete(all, (*sessionID))
+}
+
+// Function to Get Session using Session ID in
+// the request, if it exists
+func Get(sessionID *string) (*Struct, bool) {
+	if sessionID == nil {
+		return nil, false
+	}
+
+	// Lock the mutex for reading
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	// Retrieve the session from the map
+	session, exists := all[(*sessionID)]
+	if !exists {
+		return nil, false // Session not found
+	}
+
+	return session, true
+}
+
+// Function to Set the Session using Session ID in
+// the request, if it exists
+func Set(sessionID *string, session *Struct) {
+	if sessionID == nil || session == nil {
+		return
+	}
+
+	// Lock the mutex for reading
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	// Store the session in the map
+	all[(*sessionID)] = session
+}
+
+// Function to keep checking the session expiry to remve them.
+// How the function will work is it will loop through all the current sessions and check when the expiry is time.Time
+// Later it find the session which is expired and the one which has the least time to expire.
+// It will Expire the expired session and the go on sleep until the least time to expire is reached.
+// then it will again go on loop to to repeast the process.
+func StartSessionHandler() {
+	for {
+		if all == nil {
+			time.Sleep(30 * time.Minute) // Sleep for a minute if no sessions are found
+			continue
+		}
+		mutex.Lock()
+		var minExpiry *Struct
+		for _, sess := range all {
+			if sess.Expiry.Before(minExpiry.Expiry) || minExpiry == nil {
+				minExpiry = sess
+			}
+		}
+		mutex.Unlock()
+
+		if minExpiry != nil && minExpiry.Expiry.Before(time.Now()) {
+			RemoveSession(&minExpiry.ID)
+			Log.WriteLog("Session expired: " + minExpiry.ID)
+		}
+
+		if minExpiry != nil {
+			time.Sleep(time.Until(minExpiry.Expiry))
+		} else {
+			time.Sleep(30 * time.Minute) // Sleep for a minute if no sessions are found
+		}
+	}
+}
+
 func (sh *Struct) Login(uid string) {
 	// WriteConsole("Attempting to Login")
 	sh.Store["uid"] = uid
@@ -133,7 +216,7 @@ func (s *Struct) IsLoggedIn() bool {
 func (s *Struct) StartSession() *string {
 
 	if sessionID := GetSessionID(s.R); sessionID != nil {
-		if *sessionID == "expire" {
+		if (*sessionID) == "expire" {
 			return s.CreateNewSession()
 		}
 		// If the session ID doesn't match the current handler's ID, create a new session
@@ -169,12 +252,14 @@ func (sh *Struct) CreateNewSession() *string {
 
 // Sets the session cookie in the client's browser
 func (sh *Struct) SetSessionCookie(sessionID *string) {
+	sh.Expiry = time.Now().Add(30 * time.Minute).UTC()
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,
 		HttpOnly: true,
-		Expires:  time.Now().Add(30 * time.Minute).UTC(),
+		Expires:  sh.Expiry,
 	}
+
 	Cookies.AddCookie(c, sh.W, sh.R)
 }
 

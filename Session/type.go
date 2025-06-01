@@ -2,6 +2,7 @@ package Session
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/vrianta/Server/RenderEngine"
 )
@@ -21,5 +22,7 @@ type (
 		Store SessionVars
 
 		RenderEngine RenderEngine.Struct
+
+		Expiry time.Time // Expiry time for the session
 	}
 )

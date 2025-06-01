@@ -10,11 +10,11 @@ import (
 )
 
 // Constructor for Router
-func New(_routes *Routes) *Struct {
+func New(_routes *Routes) error {
 
 	routes = *_routes
 
-	return &Struct{}
+	return nil
 }
 
 // Handler processes incoming HTTP requests and manages user sessions.

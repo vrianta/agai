@@ -160,7 +160,11 @@ func StartSessionHandler() {
 		mutex.Lock()
 		var minExpiry *Struct
 		for _, sess := range all {
-			if minExpiry == nil || sess.Expiry.Before(minExpiry.Expiry) {
+			if minExpiry == nil {
+				minExpiry = sess
+				continue
+			}
+			if sess.Expiry.Before(minExpiry.Expiry) {
 				minExpiry = sess
 			}
 		}

@@ -7,11 +7,9 @@ import (
 )
 
 type (
-	Type map[string]*Controller.Struct // Type for routes, mapping URL paths to Controller structs
+	Routes map[string]*Controller.Struct // Type for routes, mapping URL paths to Controller structs
 
-	Struct struct {
-		routes Type
-	}
+	Struct struct{}
 
 	FileInfo struct {
 		Uri          string    // path of the template file

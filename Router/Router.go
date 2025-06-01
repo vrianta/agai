@@ -10,10 +10,11 @@ import (
 )
 
 // Constructor for Router
-func New(_routes Type) *Struct {
-	return &Struct{
-		routes: _routes,
-	}
+func New(_routes *Routes) *Struct {
+
+	routes = *_routes
+
+	return &Struct{}
 }
 
 // Handler processes incoming HTTP requests and manages user sessions.
@@ -22,7 +23,7 @@ func New(_routes Type) *Struct {
 // Parameters:
 // - w: The HTTP response writer.
 // - r: The HTTP request.
-func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := Session.GetSessionID(r)
 	var sess *Session.Struct
 	var ok bool
@@ -30,28 +31,38 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 	if sessionID == nil {
 		// No session, create a new one
 		sess = Session.New(w, r)
-		sessionID = sess.StartSession()
-		if sessionID == nil {
+		sessionID, err := Utils.GenerateSessionID()
+		if err != nil {
+			Log.WriteLog("Error generating session ID: " + err.Error())
+			return
+		}
+
+		if sess.StartSession(&sessionID) == nil {
 			http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 			return
 		}
-		Session.Set(sessionID, sess)
+		Session.Store(&sessionID, sess)
 	} else {
 		sess, ok = Session.Get(sessionID)
 		if !ok {
 			// Session not found, create a new one
 			sess = Session.New(w, r)
-			sessionID = sess.StartSession()
-			if sessionID == nil {
+			sessionID, err := Utils.GenerateSessionID()
+			if err != nil {
+				Log.WriteLog("Error generating session ID: " + err.Error())
+				return
+			}
+
+			if sess.StartSession(&sessionID) == nil {
 				http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 				return
 			}
-			Session.Set(sessionID, sess)
+			Session.Store(&sessionID, sess)
 		}
 	}
 
 	// At this point, sess is valid
-	if _controller, found := router.routes[r.URL.Path]; found {
+	if _controller, found := routes[r.URL.Path]; found {
 		sess.UpdateSession(w, r)
 		sess.ParseRequest()
 		response := _controller.CallMethod(sess)
@@ -64,6 +75,8 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// A Function to Create and Return
+
 // StaticFileHandler serves static files with caching support.
 // It checks if the file exists in the cache and serves it directly if the cache is valid.
 // Otherwise, it reads the file from disk, caches it, and serves it.
@@ -71,7 +84,7 @@ func (router *Struct) Handler(w http.ResponseWriter, r *http.Request) {
 // - contentType: The MIME type of the file being served.
 // Returns:
 // - http.HandlerFunc: A handler function for serving static files.
-func (s *Struct) StaticFileHandler(contentType string) http.HandlerFunc {
+func StaticFileHandler(contentType string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_filePath := "." + r.URL.Path
 
@@ -107,6 +120,6 @@ func (s *Struct) StaticFileHandler(contentType string) http.HandlerFunc {
 }
 
 // Get Function to return all the Routes
-func (r *Struct) Get() *Type {
-	return &r.routes
+func Get() *Routes {
+	return &routes
 }

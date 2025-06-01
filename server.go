@@ -19,12 +19,10 @@ import (
  * route ->  routes configaration which tells the
  * _config -> send the config of the server can be send nill if default is fine for you
  */
-func New(routes Routes) *_Struct {
+func New() *_Struct {
 	Config.Init() // Load the Configurations
 
-	srvInstance = &_Struct{
-		Router: Router.New(Router.Type(routes)),
-	}
+	srvInstance = &_Struct{}
 	return srvInstance
 }
 
@@ -40,7 +38,7 @@ func (s *_Struct) Start() {
 	go Session.StartSessionHandler()
 
 	// setting up the Custom Routing Handler for the syste
-	http.HandleFunc("/", s.Router.Handler)
+	http.HandleFunc("/", Router.Handler)
 
 	// Define the server configuration
 	s.server = &http.Server{
@@ -63,19 +61,19 @@ func (s *_Struct) setup_static_folders() {
 // Generating Creating Routes for the Css Folders
 func (s *_Struct) setup_css_folder() {
 	for _, folder := range Config.CssFolders {
-		http.HandleFunc("/"+folder+"/", s.Router.StaticFileHandler("text/css; charset=utf-8"))
+		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("text/css; charset=utf-8"))
 	}
 }
 
 func (s *_Struct) setup_js_folder() {
 	for _, folder := range Config.JsFolders {
-		http.HandleFunc("/"+folder+"/", s.Router.StaticFileHandler("application/javascript; charset=utf-8"))
+		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("application/javascript; charset=utf-8"))
 	}
 }
 
 // function to go through all the routes and register their Views and create templates
 func (s *_Struct) setup_views() {
-	routes := s.Router.Get()
+	routes := Router.Get()
 	for _, route := range *routes {
 		if route.View != "" {
 			if err := RenderEngine.RegisterTemplate(route.View); err != nil {

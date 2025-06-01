@@ -1,10 +1,10 @@
 package Session
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Cookies"
 	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/RenderEngine"
@@ -132,17 +132,18 @@ func Get(sessionID *string) (*Struct, bool) {
 
 // Function to Set the Session using Session ID in
 // the request, if it exists
-func Set(sessionID *string, session *Struct) {
+func Store(sessionID *string, session *Struct) {
 	if sessionID == nil || session == nil {
 		return
 	}
-
-	// Lock the mutex for reading
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	// Store the session in the map
-	all[(*sessionID)] = session
+	mutex.Lock()
+	all[*sessionID] = session
+	mutex.Unlock()
+	// Wake up the session handler if needed
+	select {
+	case sessionWakeupChan <- struct{}{}:
+	default:
+	}
 }
 
 // Function to keep checking the session expiry to remve them.
@@ -160,11 +161,7 @@ func StartSessionHandler() {
 		mutex.Lock()
 		var minExpiry *Struct
 		for _, sess := range all {
-			if minExpiry == nil {
-				minExpiry = sess
-				continue
-			}
-			if sess.Expiry.Before(minExpiry.Expiry) {
+			if minExpiry == nil || sess.Expiry.Before(minExpiry.Expiry) {
 				minExpiry = sess
 			}
 		}
@@ -173,12 +170,24 @@ func StartSessionHandler() {
 		if minExpiry != nil && minExpiry.Expiry.Before(time.Now()) {
 			RemoveSession(&minExpiry.ID)
 			Log.WriteLog("Session expired: " + minExpiry.ID)
+			continue // Immediately check for next expiry
 		}
 
+		var sleepDuration time.Duration
 		if minExpiry != nil {
-			time.Sleep(time.Until(minExpiry.Expiry))
+			sleepDuration = time.Until(minExpiry.Expiry)
+			if sleepDuration < 0 {
+				sleepDuration = 0
+			}
 		} else {
-			time.Sleep(30 * time.Minute)
+			sleepDuration = 30 * time.Minute
+		}
+
+		select {
+		case <-time.After(sleepDuration):
+			// Timer expired, loop to clean up
+		case <-sessionWakeupChan:
+			// New session or expiry update, re-evaluate minExpiry
 		}
 	}
 }
@@ -217,21 +226,16 @@ func (s *Struct) IsLoggedIn() bool {
 
 }
 
-// StartSession attempts to retrieve or create a new session
-func (s *Struct) StartSession() *string {
+// StartSession attempts to retrieve or create a new session and returnt he created session ID
+func (s *Struct) StartSession(sessionID *string) *string {
 
-	if sessionID := GetSessionID(s.R); sessionID != nil {
-		if (*sessionID) == "expire" {
-			return s.CreateNewSession()
-		}
+	if sessionID := GetSessionID(s.R); sessionID != nil && (*sessionID) != s.ID {
 		// If the session ID doesn't match the current handler's ID, create a new session
-		if (*sessionID) != s.ID {
-			s.EndSession()
-		}
+		defer RemoveSession(sessionID) // Remove the old session
 	}
 
 	// If no valid session ID is found, create a new session
-	return s.CreateNewSession()
+	return s.CreateNewSession(sessionID)
 }
 
 func (sh *Struct) UpdateSession(_w http.ResponseWriter, _r *http.Request) {
@@ -242,17 +246,20 @@ func (sh *Struct) UpdateSession(_w http.ResponseWriter, _r *http.Request) {
 }
 
 // Creates a new session and sets cookies
-func (sh *Struct) CreateNewSession() *string {
+func (sh *Struct) CreateNewSession(sessionID *string) *string {
 	// Generate a session ID
-	sessionID, err := Utils.GenerateSessionID()
-	if err != nil {
+	if sessionID == nil {
 		return nil
 	}
 
-	sh.ID = sessionID
-	sh.SetSessionCookie(&sessionID)
-
-	return &sessionID
+	sh.ID = *sessionID
+	sh.SetSessionCookie(sessionID)
+	// Wake up the session handler if needed
+	select {
+	case sessionWakeupChan <- struct{}{}:
+	default:
+	}
+	return sessionID
 }
 
 // Sets the session cookie in the client's browser
@@ -261,18 +268,20 @@ func (sh *Struct) SetSessionCookie(sessionID *string) {
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,
-		HttpOnly: true,
+		HttpOnly: Config.Http,
 		Expires:  sh.Expiry,
 	}
 
 	Cookies.AddCookie(c, sh.W, sh.R)
 }
 
-func (s *Struct) EndSession() {
-	Cookies.RemoveCookie("sessionid", s.W, s.R)
-	// defer RemoveSession(s.ID)
-	s = New(s.W, s.R)
-}
+// Not Used or Sure Function
+// func (s *Struct) EndSession() {
+// 	Cookies.RemoveCookie("sessionid", s.W, s.R)
+// 	s.Expiry = time.Time{} // Reset expiry time
+
+// 	defer RemoveSession(&s.ID) // Remove session from the map
+// }
 
 func (sh *Struct) ParseRequest() {
 	// Initialize queryParams once for later use
@@ -296,7 +305,7 @@ func (sh *Struct) ParseRequest() {
 			// Handle form data (application/x-www-form-urlencoded)
 			err := sh.R.ParseForm()
 			if err != nil {
-				http.Error(sh.W, fmt.Sprintf("Error parsing form data | Error - %s", err.Error()), http.StatusBadRequest)
+				Log.WriteLogf("Error parsing form data | Error - %s", err.Error())
 				return
 			}
 
@@ -304,7 +313,7 @@ func (sh *Struct) ParseRequest() {
 			// Handle multipart form data (file upload)
 			// Note: This case is handled separately below
 			if err := sh.R.ParseMultipartForm(10 << 20); err != nil { // 10 MB
-				http.Error(sh.W, fmt.Sprintf("Error parsing multipart form data | Error - %s", err.Error()), http.StatusBadRequest)
+				Log.WriteLogf("Error parsing multipart form data | Error - %s", err.Error())
 				return
 			}
 
@@ -348,6 +357,23 @@ func (sh *Struct) ProcessPostParams(key string, values []string) {
 		}
 	} else {
 		sh.POST[key] = values[0] // Store single value as a string
+	}
+}
+
+// a function to return *Struct{
+// w http.ResponseWriter
+// r *http.Request
+// } of the seession
+func (s *Struct) GetRw() *struct {
+	w http.ResponseWriter
+	r *http.Request
+} {
+	return &struct {
+		w http.ResponseWriter
+		r *http.Request
+	}{
+		w: s.W,
+		r: s.R,
 	}
 }
 

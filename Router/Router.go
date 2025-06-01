@@ -10,7 +10,7 @@ import (
 )
 
 // Constructor for Router
-func New(_routes *Routes) error {
+func InitRoutes(_routes *Routes) error {
 
 	routes = *_routes
 

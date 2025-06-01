@@ -186,27 +186,50 @@ func (s *Struct) EndSession() {
 
 func (sh *Struct) ParseRequest() {
 	// Initialize queryParams once for later use
-	queryParams := sh.R.URL.Query()
+	// queryParams := sh.R.URL.Query()
 
 	sh.POST = make(PostParams)
 	sh.GET = make(GetParams)
 
-	// Check if the request method is POST
-	if sh.R.Method == http.MethodPost {
-		// Parse multipart form data with a 10 MB limit for file uploads
-		err := sh.R.ParseMultipartForm(10 << 20) // 10 MB
-		if err != nil {
-			http.Error(sh.W, "Error parsing multipart form data", http.StatusBadRequest)
+	if sh.IsPostMethod() {
+		contentType := sh.R.Header.Get("Content-Type")
+		switch contentType {
+		case "application/json":
+			// Handle JSON data
+			// if err := Utils.ParseJSONBody(sh.R, &sh.POST); err != nil {
+			// 	http.Error(sh.W, fmt.Sprintf("Error parsing JSON body | Error - %s", err.Error()), http.StatusBadRequest)
+			// 	return
+			// }
+			break
+
+		case "application/x-www-form-urlencoded":
+			// Handle form data (application/x-www-form-urlencoded)
+			err := sh.R.ParseForm()
+			if err != nil {
+				http.Error(sh.W, fmt.Sprintf("Error parsing form data | Error - %s", err.Error()), http.StatusBadRequest)
+				return
+			}
+
+		case "multipart/form-data":
+			// Handle multipart form data (file upload)
+			// Note: This case is handled separately below
+			if err := sh.R.ParseMultipartForm(10 << 20); err != nil { // 10 MB
+				http.Error(sh.W, fmt.Sprintf("Error parsing multipart form data | Error - %s", err.Error()), http.StatusBadRequest)
+				return
+			}
+
+		default:
+			break
 		}
-		// Handle POST form data
-		fmt.Println(sh.R.PostForm)
+
+		// Log handling of query parameters for non-POST methods
 		for key, values := range sh.R.PostForm {
 			sh.ProcessPostParams(key, values)
 		}
 	}
 
 	// Log handling of query parameters for non-POST methods
-	for key, values := range queryParams {
+	for key, values := range sh.R.URL.Query() {
 		sh.ProcessQueryParams(key, values)
 	}
 }

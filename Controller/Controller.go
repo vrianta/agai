@@ -60,3 +60,8 @@ func (c *Struct) Validate() {
 		panic(fmt.Errorf("view is not defined for the controller %T", c))
 	}
 }
+
+// Function to return the Session because do not want to expose the session varaible directly
+func (c *Struct) GetSession() *Session.Struct {
+	return c.Session
+}

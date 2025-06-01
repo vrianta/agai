@@ -19,7 +19,6 @@ func New(_Uri string, session *Session.Struct) *response {
 // Redirects to the URI user provided
 func (r *response) Redirect() {
 	http.Redirect(r.session.W, r.session.R, r.uri, int(Response.Codes.TemporaryRedirect)) // if golang developpers worked so hard to create this why should I do it again :P
-	// http.RedirectHandler()
 }
 
 func (r *response) WithCode(_code Response.Code) {

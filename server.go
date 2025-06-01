@@ -43,7 +43,7 @@ func (s *_Struct) Start() {
 		Addr: Config.Host + ":" + Config.Port, // Host and port
 	}
 
-	Log.WriteLogf("Server Starting at : http://%s:%s", Config.Host, Config.Port)
+	Log.WriteLogf("Server Starting at : http://%s:%s\n", Config.Host, Config.Port)
 
 	s.server.ListenAndServe()
 }

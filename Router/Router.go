@@ -1,9 +1,12 @@
 package Router
 
 import (
+	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/vrianta/Server/Controller"
 	"github.com/vrianta/Server/Log"
 	Session "github.com/vrianta/Server/Session"
 	"github.com/vrianta/Server/Utils"
@@ -24,9 +27,18 @@ func InitRoutes(_routes *Routes) error {
 // - w: The HTTP response writer.
 // - r: The HTTP request.
 func Handler(w http.ResponseWriter, r *http.Request) {
+	start := time.Now() // Start time measurement
 	sessionID := Session.GetSessionID(r)
 	var sess *Session.Struct
 	var ok bool
+
+	var tempController *Controller.Struct
+	if _controller, found := routes[r.URL.Path]; found {
+		tempController = _controller.Copy()
+	} else {
+		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
+		return
+	}
 
 	if sessionID == nil {
 		// No session, create a new one
@@ -61,18 +73,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// At this point, sess is valid
-	if _controller, found := routes[r.URL.Path]; found {
-		sess.UpdateSession(w, r)
-		sess.ParseRequest()
-		response := _controller.CallMethod(sess)
-		if err := sess.RenderEngine.RenderTemplate(_controller.View, response); err != nil {
-			Log.WriteLog("Error rendering template: " + err.Error())
-			panic(err)
-		}
-	} else {
-		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
+	sess.UpdateSession(w, r)
+	sess.ParseRequest()
+	response := tempController.CallMethod(sess)
+	if err := tempController.Execute(response); err != nil {
+		Log.WriteLog("Error rendering template: " + err.Error())
+		panic(err)
 	}
+
+	duration := time.Since(start)
+	log.Printf("Handler took %s to complete\n", duration)
 }
 
 // A Function to Create and Return
@@ -122,4 +132,18 @@ func StaticFileHandler(contentType string) http.HandlerFunc {
 // Get Function to return all the Routes
 func Get() *Routes {
 	return &routes
+}
+
+// return a list of all the views from the controllers
+// loop throgh all the controllers and make a array of strings
+func GetViews() []string {
+	routerSize := len(routes)
+	if routerSize < 1 {
+		return nil
+	}
+	response := make([]string, routerSize)
+	for _, controller := range routes {
+		response = append(response, controller.View)
+	}
+	return response
 }

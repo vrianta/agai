@@ -2,7 +2,9 @@ package Controller
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Session"
 	"github.com/vrianta/Server/Template"
 )
@@ -64,4 +66,59 @@ func (c *Struct) Validate() {
 // Function to return the Session because do not want to expose the session varaible directly
 func (c *Struct) GetSession() *Session.Struct {
 	return c.Session
+}
+
+// Function which will check the View and it's extension and determine the type of view and accordingly will call the
+// appropiate render function
+func (c *Struct) RenderView(view string, data *Template.Response) error {
+	if view == "" {
+		return nil // No view to render
+	}
+
+	// get the extension of the view
+	extension := strings.Split(view, ".")
+
+	switch extension {
+	// case "html", "htm", "gohtml":
+	}
+
+	// if err := c.Session.RenderEngine.RenderTemplate(view, data); err != nil {
+	// 	return fmt.Errorf("error rendering view %s: %w", view, err)
+	// }
+	return nil
+}
+
+func (c *Struct) RegisterTemplate() error {
+	if _template, err := Template.New(c.View); err != nil {
+		return err
+	} else {
+		c.template = _template
+		return nil
+	}
+}
+
+func (c *Struct) Execute(__response *Template.Response) error {
+	if Config.Build {
+		return c.template.Execute(c.Session.W, __response)
+	}
+
+	return c.template.Update()
+
+}
+
+// a Copy Function to create a new controller Instance by copying the data
+func (c *Struct) Copy() *Struct {
+	return &Struct{
+		View:     c.View,
+		template: c.template,
+		GET:      c.GET,
+		POST:     c.POST,
+		DELETE:   c.DELETE,
+		PATCH:    c.PATCH,
+		PUT:      c.PUT,
+		HEAD:     c.HEAD,
+		OPTIONS:  c.OPTIONS,
+
+		Session: c.Session,
+	}
 }

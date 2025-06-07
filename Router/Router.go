@@ -57,14 +57,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		sess, ok = Session.Get(sessionID)
 		if !ok {
-			// Session not found, create a new one
-			sess = Session.New(w, r)
 			sessionID, err := Utils.GenerateSessionID()
 			if err != nil {
 				Log.WriteLog("Error generating session ID: " + err.Error())
 				return
 			}
-
+			sess = Session.New(w, r)
 			if sess.StartSession(&sessionID) == nil {
 				http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 				return
@@ -73,7 +71,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sess.UpdateSession(w, r)
+	sess.Update(w, r)
 	sess.ParseRequest()
 	response := tempController.CallMethod(sess)
 	if err := tempController.Execute(response); err != nil {

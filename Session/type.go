@@ -26,4 +26,9 @@ type (
 		Expiry   time.Time // Expiry time for the session
 		LastUsed time.Time // Last access time for LRU
 	}
+
+	lruUpdate struct {
+		SessionID string
+		Op        string // "move" or "insert"
+	}
 )

@@ -12,9 +12,7 @@ var (
 	mutex             = sync.RWMutex{}
 	sessionWakeupChan = make(chan struct{}, 1)
 	lruUpdateChan     = make(chan lruUpdate, 1000) // Buffered channel for LRU ops
-)
 
-type lruUpdate struct {
-	SessionID string
-	Op        string // "move" or "insert"
-}
+	updateMutex = sync.Mutex{}
+	cleanMutex  = sync.Mutex{}
+)

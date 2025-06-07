@@ -72,12 +72,12 @@ import (
  */
 
 func New(w http.ResponseWriter, r *http.Request) *Struct {
-	// fmt.Println("Creating New Session")
 	return &Struct{
-		W:    w,
-		R:    r,
-		POST: make(PostParams),
-		GET:  make(GetParams),
+		W:      w,
+		R:      r,
+		POST:   make(PostParams, 20),
+		GET:    make(GetParams, 20),
+		Expiry: time.Now().Add(time.Second * 30),
 		Store: SessionVars{
 			"uid":        "Guest",
 			"isLoggedIn": false,
@@ -273,22 +273,36 @@ func (s *Struct) IsLoggedIn() bool {
 // StartSession attempts to retrieve or create a new session and returnt he created session ID
 func (s *Struct) StartSession(sessionID *string) *string {
 
-	if sessionID := GetSessionID(s.R); sessionID != nil && (*sessionID) != s.ID {
-		// If the session ID doesn't match the current handler's ID, create a new session
-		defer RemoveSession(sessionID) // Remove the old session
-	}
+	// if sessionID := GetSessionID(s.R); sessionID != nil && (*sessionID) != s.ID {
+	// 	// If the session ID doesn't match the current handler's ID, create a new session
+	// 	defer RemoveSession(sessionID) // Remove the old session
+	// }
 
 	// If no valid session ID is found, create a new session
 	return s.CreateNewSession(sessionID)
 }
 
-func (sh *Struct) UpdateSession(_w http.ResponseWriter, _r *http.Request) {
+func (sh *Struct) Update(_w http.ResponseWriter, _r *http.Request) {
+	updateMutex.Lock()
+	defer updateMutex.Unlock()
+
 	sh.W = _w
 	sh.R = _r
 
 	sh.LastUsed = time.Now()
 
 	sh.RenderEngine.W = _w
+}
+
+// function to clear value of POST and GET from the Session
+// Make sure what ever in the store will stay for as long as the server is not stopped
+// or you remove the data intentionally
+func (sh *Struct) Clean() {
+	cleanMutex.Lock()
+	defer cleanMutex.Unlock()
+
+	sh.POST = make(PostParams, 20)
+	sh.GET = make(GetParams, 20)
 }
 
 // Creates a new session and sets cookies
@@ -310,7 +324,9 @@ func (sh *Struct) CreateNewSession(sessionID *string) *string {
 
 // Sets the session cookie in the client's browser
 func (sh *Struct) SetSessionCookie(sessionID *string) {
-	sh.Expiry = time.Now().Add(30 * time.Minute).UTC()
+	now := time.Now()
+	sh.Expiry = now.Add(30 * time.Minute).UTC()
+	sh.LastUsed = now
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,

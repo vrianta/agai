@@ -1,10 +1,7 @@
 package Session
 
 import (
-	"net/http"
 	"time"
-
-	"github.com/vrianta/Server/RenderEngine"
 )
 
 type (
@@ -14,14 +11,12 @@ type (
 
 	Struct struct {
 		ID string
-		W  http.ResponseWriter
-		R  *http.Request
 
 		POST  PostParams
 		GET   GetParams
 		Store SessionVars
 
-		RenderEngine RenderEngine.Struct
+		isLoggedIn bool
 
 		Expiry   time.Time // Expiry time for the session
 		LastUsed time.Time // Last access time for LRU

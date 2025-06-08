@@ -1,6 +1,8 @@
 package Controller
 
 import (
+	"net/http"
+
 	"github.com/vrianta/Server/Session"
 	"github.com/vrianta/Server/Template"
 )
@@ -23,6 +25,12 @@ type (
 		HEAD    _Func
 		OPTIONS _Func
 
-		Session *Session.Struct // Session object to handle user session
+		session *Session.Struct // Session object to handle user session
+
+		// privte objects
+		w http.ResponseWriter
+		r *http.Request
+
+		userInputs map[string]interface{}
 	}
 )

@@ -40,21 +40,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if sessionID == nil {
-		// No session, create a new one
-		sess = Session.New(w, r)
-		sessionID, err := Utils.GenerateSessionID()
-		if err != nil {
-			Log.WriteLog("Error generating session ID: " + err.Error())
-			return
-		}
-
-		if sess.StartSession(&sessionID) == nil {
-			http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
-			return
-		}
-		Session.Store(&sessionID, sess)
-	} else {
+	if sessionID != nil {
 		sess, ok = Session.Get(sessionID)
 		if !ok {
 			sessionID, err := Utils.GenerateSessionID()
@@ -62,17 +48,20 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 				Log.WriteLog("Error generating session ID: " + err.Error())
 				return
 			}
-			sess = Session.New(w, r)
-			if sess.StartSession(&sessionID) == nil {
+			sess = Session.New()
+			if sess.StartSession(&sessionID, w, r) == nil {
 				http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 				return
 			}
 			Session.Store(&sessionID, sess)
+		} else {
+			sess.Clean()
 		}
 	}
 
-	sess.Update(w, r)
-	sess.ParseRequest()
+	tempController.InitWR(w, r)
+	tempController.InitSession(sess)
+	// tempController.ParseRequest()
 	response := tempController.CallMethod(sess)
 	if err := tempController.Execute(response); err != nil {
 		Log.WriteLog("Error rendering template: " + err.Error())

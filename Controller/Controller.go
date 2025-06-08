@@ -2,6 +2,7 @@ package Controller
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/vrianta/Server/Config"
@@ -21,7 +22,10 @@ This file will store the local method for Controller which will be by default an
  */
 func (c *Struct) CallMethod(session *Session.Struct) *Template.Response {
 	c.assignSession(session) // Assign the session to the controller
-	switch session.R.Method {
+	if session != nil {
+		session.Update(c.w, c.r)
+	}
+	switch c.r.Method {
 	case "GET":
 		return c.isMethodNull(c.GET)
 	case "POST":
@@ -54,7 +58,7 @@ func (c *Struct) isMethodNull(method _Func) *Template.Response {
 
 // Function to Assign the Session in the Controller
 func (c *Struct) assignSession(session *Session.Struct) {
-	c.Session = session
+	c.session = session
 }
 
 func (c *Struct) Validate() {
@@ -65,7 +69,7 @@ func (c *Struct) Validate() {
 
 // Function to return the Session because do not want to expose the session varaible directly
 func (c *Struct) GetSession() *Session.Struct {
-	return c.Session
+	return c.session
 }
 
 // Function which will check the View and it's extension and determine the type of view and accordingly will call the
@@ -99,7 +103,7 @@ func (c *Struct) RegisterTemplate() error {
 
 func (c *Struct) Execute(__response *Template.Response) error {
 	if Config.Build {
-		return c.template.Execute(c.Session.W, __response)
+		return c.template.Execute(c.w, __response)
 	}
 
 	return c.template.Update()
@@ -119,6 +123,23 @@ func (c *Struct) Copy() *Struct {
 		HEAD:     c.HEAD,
 		OPTIONS:  c.OPTIONS,
 
-		Session: c.Session,
+		session: c.session,
+
+		// userInputs: make(map[string]interface{}, 20),
 	}
+}
+
+/*
+ * To Initialise the controller with the writer and reader objects
+ */
+func (c *Struct) InitWR(w http.ResponseWriter, r *http.Request) {
+	c.w = w
+	c.r = r
+}
+
+/*
+ * To Initialise the controller with the Session
+ */
+func (c *Struct) InitSession(__s *Session.Struct) {
+	c.session = __s
 }

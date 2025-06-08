@@ -7,8 +7,6 @@ import (
 	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Cookies"
 	"github.com/vrianta/Server/Log"
-	"github.com/vrianta/Server/RenderEngine"
-	"github.com/vrianta/Server/Utils"
 )
 
 /*
@@ -71,19 +69,16 @@ import (
 * Date: [Current Date]
  */
 
-func New(w http.ResponseWriter, r *http.Request) *Struct {
+func New() *Struct {
 	return &Struct{
-		W:      w,
-		R:      r,
-		POST:   make(PostParams, 20),
-		GET:    make(GetParams, 20),
-		Expiry: time.Now().Add(time.Second * 30),
+		POST:       make(PostParams, 20),
+		GET:        make(GetParams, 20),
+		isLoggedIn: false,
+		Expiry:     time.Now().Add(time.Second * 30),
 		Store: SessionVars{
 			"uid":        "Guest",
 			"isLoggedIn": false,
 		},
-
-		RenderEngine: RenderEngine.New(w),
 	}
 }
 
@@ -236,23 +231,9 @@ func StartLRUHandler() {
 	}
 }
 
-func (sh *Struct) Login(uid string) {
-	// WriteConsole("Attempting to Login")
-	sh.Store["uid"] = uid
-	sh.Store["isLoggedIn"] = true
-	// If no valid session ID is found, create a new session
-	sh.SetSessionCookie(&sh.ID)
-}
-
-func (s *Struct) Logout() {
-	s.Store["uid"] = ""
-	s.Store["isLoggedIn"] = false
-
-	Log.WriteLog("Loggingout")
-	s.W.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-	s.W.Header().Set("Pragma", "no-cache")
-	s.W.Header().Set("Expires", "0")
-
+func (sh *Struct) Login(w http.ResponseWriter, r *http.Request) {
+	sh.isLoggedIn = true
+	sh.SetSessionCookie(&sh.ID, w, r)
 }
 
 /*
@@ -260,18 +241,11 @@ func (s *Struct) Logout() {
  * @return false -> if the user is not logged in
  */
 func (s *Struct) IsLoggedIn() bool {
-	if _is_loggedin, present := s.Store["isLoggedIn"]; !present {
-		return false
-	} else {
-		// WriteLog("sending is loggedinclear")
-		// WriteLog(_is_loggedin.(bool))
-		return _is_loggedin.(bool)
-	}
-
+	return s.isLoggedIn
 }
 
 // StartSession attempts to retrieve or create a new session and returnt he created session ID
-func (s *Struct) StartSession(sessionID *string) *string {
+func (s *Struct) StartSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
 
 	// if sessionID := GetSessionID(s.R); sessionID != nil && (*sessionID) != s.ID {
 	// 	// If the session ID doesn't match the current handler's ID, create a new session
@@ -279,19 +253,14 @@ func (s *Struct) StartSession(sessionID *string) *string {
 	// }
 
 	// If no valid session ID is found, create a new session
-	return s.CreateNewSession(sessionID)
+	return s.CreateNewSession(sessionID, w, r)
 }
 
 func (sh *Struct) Update(_w http.ResponseWriter, _r *http.Request) {
 	updateMutex.Lock()
 	defer updateMutex.Unlock()
 
-	sh.W = _w
-	sh.R = _r
-
 	sh.LastUsed = time.Now()
-
-	sh.RenderEngine.W = _w
 }
 
 // function to clear value of POST and GET from the Session
@@ -306,14 +275,14 @@ func (sh *Struct) Clean() {
 }
 
 // Creates a new session and sets cookies
-func (sh *Struct) CreateNewSession(sessionID *string) *string {
+func (sh *Struct) CreateNewSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
 	// Generate a session ID
 	if sessionID == nil {
 		return nil
 	}
 
 	sh.ID = *sessionID
-	sh.SetSessionCookie(sessionID)
+	sh.SetSessionCookie(sessionID, w, r)
 	// Wake up the session handler if needed
 	select {
 	case sessionWakeupChan <- struct{}{}:
@@ -323,7 +292,7 @@ func (sh *Struct) CreateNewSession(sessionID *string) *string {
 }
 
 // Sets the session cookie in the client's browser
-func (sh *Struct) SetSessionCookie(sessionID *string) {
+func (sh *Struct) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	sh.Expiry = now.Add(30 * time.Minute).UTC()
 	sh.LastUsed = now
@@ -334,120 +303,7 @@ func (sh *Struct) SetSessionCookie(sessionID *string) {
 		Expires:  sh.Expiry,
 	}
 
-	Cookies.AddCookie(c, sh.W, sh.R)
-}
-
-func (sh *Struct) ParseRequest() {
-
-	sh.POST = make(PostParams)
-	sh.GET = make(GetParams)
-
-	if sh.IsPostMethod() {
-		contentType := sh.R.Header.Get("Content-Type")
-		switch contentType {
-		case "application/json":
-			// Handle JSON data
-			// if err := Utils.ParseJSONBody(sh.R, &sh.POST); err != nil {
-			// 	http.Error(sh.W, fmt.Sprintf("Error parsing JSON body | Error - %s", err.Error()), http.StatusBadRequest)
-			// 	return
-			// }
-			break
-
-		case "application/x-www-form-urlencoded":
-			// Handle form data (application/x-www-form-urlencoded)
-			err := sh.R.ParseForm()
-			if err != nil {
-				Log.WriteLogf("Error parsing form data | Error - %s", err.Error())
-				return
-			}
-
-		case "multipart/form-data":
-			// Handle multipart form data (file upload)
-			// Note: This case is handled separately below
-			if err := sh.R.ParseMultipartForm(10 << 20); err != nil { // 10 MB
-				Log.WriteLogf("Error parsing multipart form data | Error - %s", err.Error())
-				return
-			}
-
-		default:
-			break
-		}
-
-		// Log handling of query parameters for non-POST methods
-		for key, values := range sh.R.PostForm {
-			sh.ProcessPostParams(key, values)
-		}
-	}
-
-	// Log handling of query parameters for non-POST methods
-	for key, values := range sh.R.URL.Query() {
-		sh.ProcessQueryParams(key, values)
-	}
-}
-
-// handleQueryParams processes parameters found in the URL query
-func (sh *Struct) ProcessQueryParams(key string, values []string) {
-	var err error
-	// Check for multiple values
-
-	if len(values) > 1 {
-		if sh.GET[key], err = Utils.JsonToString(values); err != nil {
-			http.Error(sh.W, "Failed to convert data to JSON", http.StatusMethodNotAllowed)
-
-		}
-	} else {
-		sh.GET[key] = values[0] // Store single value as a string
-	}
-}
-
-// handlePostParams processes parameters found in the POST data
-func (sh *Struct) ProcessPostParams(key string, values []string) {
-	var err error
-	if len(values) > 1 {
-		if sh.POST[key], err = Utils.JsonToString(values); err != nil {
-			http.Error(sh.W, "Failed to convert data to JSON", http.StatusMethodNotAllowed)
-		}
-	} else {
-		sh.POST[key] = values[0] // Store single value as a string
-	}
-}
-
-// a function to return *Struct{
-// w http.ResponseWriter
-// r *http.Request
-// } of the seession
-func (s *Struct) GetRw() *struct {
-	w http.ResponseWriter
-	r *http.Request
-} {
-	return &struct {
-		w http.ResponseWriter
-		r *http.Request
-	}{
-		w: s.W,
-		r: s.R,
-	}
-}
-
-/*
- * Return True if the connection established is a post connection
- */
-func (ss *Struct) IsPostMethod() bool {
-	return ss.R.Method == http.MethodPost
-}
-
-/*
- * Return True if the connection established is a Get connection
- */
-func (ss *Struct) IsGetMethod() bool {
-	return ss.R.Method == http.MethodGet
-}
-
-/*
- * Return True if the connection established is a DELET connection
- */
-func (ss *Struct) IsDeleteMethod() bool {
-	return ss.R.Method == http.MethodDelete
+	Cookies.AddCookie(c, w, r)
 }
 
 /*

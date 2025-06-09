@@ -148,8 +148,8 @@ Session data and helpers are accessed via the `self.Session` variable inside you
 
 - Access POST/GET data:
   ```go
-  uid := self.Session.POST["uid"]
-  token := self.Session.GET["token"]
+  uid := self.GetInput("uid")
+  token := self.GetInput("token")
   ```
 - Store/retrieve session variables:
   ```go
@@ -158,9 +158,9 @@ Session data and helpers are accessed via the `self.Session` variable inside you
   ```
 - Login/logout:
   ```go
-  self.Session.Login("user123")
-  self.Session.Logout("/login")
-  if self.Session.IsLoggedIn() { /* ... */ }
+  self.Login()
+  self.Logout()
+  if self.IsLoggedIn() { /* ... */ }
   ```
 
 ---

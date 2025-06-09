@@ -74,7 +74,7 @@ func (s *_Struct) setup_js_folder() {
 // function to go through all the routes and register their Views and create templates
 func (s *_Struct) setup_views() {
 
-	routes := Router.Get()
+	routes := Router.GetRoutes()
 	for _, controller := range *routes {
 		if controller.View != "" {
 			if err := controller.RegisterTemplate(); err != nil {

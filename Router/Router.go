@@ -12,13 +12,50 @@ import (
 	"github.com/vrianta/Server/Utils"
 )
 
-// Constructor for Router
-func InitRoutes(_routes *Routes) error {
+/*
+ * Create a New Router Object with Default route group example / is the default route for this or /api or /v1 etc
+ */
+func New(route string) *Struct {
+	return &Struct{
+		defaultRoute: route,
+	}
+}
 
-	routes = *_routes
-
+/*
+ * initialise Requests and Register the paths
+ * Syntax - Router.New("").RegisterRoutes(
+ *	NewRoute(path, controllerOnject),
+ *  NewRoute(path, controllerOnject),
+ * )
+ * Example - Router.New("").RegisterRoutes(
+ *	NewRoute("/home", homeObj),
+ *  NewRoute("/list", listObj),
+ * )
+ */
+func (_r *Struct) RegisterRoutes(_routes ...route) error {
+	for _, rt := range _routes {
+		routeTable[_r.defaultRoute+rt.path] = &rt.controllerObject
+	}
 	return nil
 }
+
+/*
+ * Create Route Object
+ */
+func Route(path string, obj Controller.Struct) route {
+	return route{
+		path:             path,
+		controllerObject: obj,
+	}
+}
+
+// // Constructor for Router
+// func InitRoutes(_routes *routes) error {
+
+// 	routeTable = *_routes
+
+// 	return nil
+// }
 
 // Handler processes incoming HTTP requests and manages user sessions.
 // It checks if the user has an existing session and handles session creation or validation.
@@ -33,7 +70,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	var ok bool
 
 	var tempController *Controller.Struct
-	if _controller, found := routes[r.URL.Path]; found {
+	if _controller, found := routeTable[r.URL.Path]; found {
 		tempController = _controller.Copy()
 	} else {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
@@ -49,7 +86,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			sess = Session.New()
-			if sess.StartSession(&sessionID, w, r) == nil {
+			if create_session_error := sess.StartSession(&sessionID, w, r); create_session_error == nil {
 				http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 				return
 			}
@@ -86,8 +123,8 @@ func StaticFileHandler(contentType string) http.HandlerFunc {
 		_filePath := "." + r.URL.Path
 
 		// Attempt to load from cache
-		val, _ := fileInfo.Load(_filePath)
-		cached, ok := val.(FileInfo)
+		val, _ := fileCache.Load(_filePath)
+		cached, ok := val.(FileCacheEntry)
 
 		info, err := os.Stat(_filePath)
 		if err != nil {
@@ -106,30 +143,30 @@ func StaticFileHandler(contentType string) http.HandlerFunc {
 
 		// Read file from disk and cache it
 		_fileData := Utils.ReadFromFile(_filePath)
-		newRecord := FileInfo{
+		newRecord := FileCacheEntry{
 			Uri:          _filePath,
 			LastModified: info.ModTime(),
 			Data:         _fileData,
 		}
-		fileInfo.Store(_filePath, newRecord)
+		fileCache.Store(_filePath, newRecord)
 		w.Write([]byte(_fileData))
 	}
 }
 
 // Get Function to return all the Routes
-func Get() *Routes {
-	return &routes
+func GetRoutes() *routes {
+	return &routeTable
 }
 
 // return a list of all the views from the controllers
 // loop throgh all the controllers and make a array of strings
-func GetViews() []string {
-	routerSize := len(routes)
+func ListViews() []string {
+	routerSize := len(routeTable)
 	if routerSize < 1 {
 		return nil
 	}
-	response := make([]string, routerSize)
-	for _, controller := range routes {
+	response := make([]string, 0, routerSize)
+	for _, controller := range routeTable {
 		response = append(response, controller.View)
 	}
 	return response

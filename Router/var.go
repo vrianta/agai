@@ -3,6 +3,6 @@ package Router
 import "sync"
 
 var (
-	fileInfo sync.Map // map[string]FileInfo
-	routes   Routes   // map[string]*Controller.Struct
+	fileCache  sync.Map           // map[string]FileInfo
+	routeTable = make(routes, 50) // map[string]*Controller.Struct
 )

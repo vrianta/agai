@@ -10,13 +10,14 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 3. [Project Structure](#project-structure)
 4. [Configuration (`Config.json`)](#configuration-configjson)
 5. [Server Creation & Routing](#server-creation--routing)
-6. [Session Management](#session-management)
-7. [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
-8. [SMTP/Email Support](#smtpemail-support)
-9. [Console Commands](#console-commands)
-10. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
-11. [API Reference](#api-reference)
-12. [License](#license)
+6. [Creating Controllers and Views](#creating-controllers-and-views)
+7. [Session Management](#session-management)
+8. [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
+9. [SMTP/Email Support](#smtpemail-support)
+10. [Console Commands](#console-commands)
+11. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
+12. [API Reference](#api-reference)
+13. [License](#license)
 
 ---
 
@@ -139,6 +140,133 @@ var Home = Controller.Struct{
 - The `GET`, `POST`, and `DELETE` fields are function handlers for each HTTP method.
 - The `GET` handler returns a `*Template.Response` (a map of data for the template).
 - You can import and use components or data as needed.
+
+---
+
+## Creating Controllers and Views
+
+This section explains how to create controllers and views, including available public variables and methods.
+
+### What is a Controller?
+A **Controller** is a Go struct that handles HTTP requests for a specific route. It defines handler functions for HTTP methods (GET, POST, etc.), manages session data, and renders views (templates).
+
+### Controller Structure
+A controller is defined as a variable of type `Controller.Struct`. The main public fields and methods are:
+
+#### Public Fields
+- **View**: The name of the view (template) directory for this controller. Example: `"home"` (looks for templates in `Views/home/`).
+- **GET, POST, DELETE, PATCH, PUT, HEAD, OPTIONS**: Handler functions for each HTTP method. Each receives the controller as `self` and returns a `Template.Response` (a map of data for the template).
+
+#### Public Methods
+- `InitWR(w http.ResponseWriter, r *http.Request)`
+- `InitSession(session *Session.Struct)`
+- `RunRequest(session *Session.Struct)`
+- `RegisterTemplate() error`
+- `ExecuteTemplate(template *Template.Struct, response *Template.Response) error`
+- `GetInput(key string) interface{}`
+- `GetInputs() *map[string]interface{}`
+- `StoreData(key string, value any)`
+- `GetStoredData(key string) any`
+- `Redirect(uri string)`
+- `WithCode(uri string, code Response.Code)`
+- `IsLoggedIn() bool`
+- `Login() bool`
+- `Logout()`
+
+### Example: Creating a Controller
+```go
+package Home
+
+import (
+    "github.com/vrianta/Server/Controller"
+    "github.com/vrianta/Server/Template"
+)
+
+var Home = Controller.Struct{
+    View: "home",
+    GET: func(self *Controller.Struct) *Template.Response {
+        return &Template.Response{
+            "Title": "Welcome Home",
+            "User":  self.GetStoredData("uid"),
+        }
+    },
+    POST: func(self *Controller.Struct) *Template.Response {
+        username := self.GetInput("username")
+        self.StoreData("uid", username)
+        return &Template.Response{
+            "Message": "Logged in as " + username.(string),
+        }
+    },
+}
+```
+
+### Accessing Request Data
+- `GetInput(key string)`: Returns a value from GET or POST parameters.
+- `GetInputs()`: Returns all request parameters as a map.
+
+### Session Management
+- `StoreData(key, value)`: Store data in the session (e.g., user ID).
+- `GetStoredData(key)`: Retrieve data from the session.
+- `Login()`, `Logout()`, `IsLoggedIn()`: Manage authentication state.
+
+### Redirects
+- `Redirect(uri string)`: Redirects to another page.
+- `WithCode(uri, code)`: Redirects with a custom HTTP status code.
+
+### Creating Views
+#### View Directory Structure
+Each controller should have a corresponding directory under the `Views/` folder, named after the controller's `View` field.
+
+**Example:** If `View: "home"`, templates should be in `Views/home/`.
+
+#### Supported Template Files
+- `default.html`, `default.php`, or `index.html`/`index.php`: Default template for the controller.
+- `get.html`, `post.html`, etc.: Templates for specific HTTP methods.
+
+#### Template Syntax
+- PHP-style syntax is supported:
+  - `<?= $var ?>` → `{{ .var }}`
+  - `<?php if ($user): ?> ... <?php endif; ?>`
+  - Loops: `<?php foreach ($items as $item): ?> ... <?php endforeach; ?>`
+
+---
+
+## Views Folder Structure
+
+The `Views` folder contains all your HTML/PHP templates. Proper organization is important for the framework to locate and render the correct templates for each controller and HTTP method.
+
+### Location
+- The `Views` folder should be in your project root (or as configured in `Config.json` with the `Views_folder` key).
+
+### Organization
+- Each controller should have its own subfolder inside `Views`, named after the controller's `View` field (without file extension).
+- For example, if your controller has `View: "home"`, create a folder `Views/home/`.
+
+### Template Files
+- Place your template files inside the corresponding controller subfolder.
+- You can use the following naming conventions:
+  - `default.html` or `default.php`: The default template for the controller (used if no method-specific template is found).
+  - `index.html` or `index.php`: Also treated as the default template.
+  - `get.html`, `post.html`, `delete.html`, etc.: Templates for specific HTTP methods (GET, POST, DELETE, etc.).
+
+### Example Structure
+```
+Views/
+├── home/
+│   ├── default.php
+│   ├── get.php
+│   └── post.php
+├── user/
+│   ├── default.html
+│   └── get.html
+└── shared/
+    └── header.php
+```
+- In this example, the `Home` controller with `View: "home"` will use templates from `Views/home/`.
+- The framework will automatically select the correct template based on the HTTP method and file availability.
+
+### Including Shared Templates
+- You can create a `shared/` folder for partials like headers, footers, etc., and include them in your main templates using Go template syntax.
 
 ---
 
@@ -286,3 +414,52 @@ For more details, see the source files in each package (Controller, Session, Ren
 
 ## License
 See [LICENSE](LICENSE) for GPLv3 license details.
+
+---
+
+## Frequently Asked Questions (FAQ)
+
+**Q: How should I name and organize my controller's View field and view folder?**
+- The `View` field in your controller should match the subfolder name in the `Views` directory (case-sensitive). For example, `View: "home"` expects templates in `Views/home/`.
+- Do not include a file extension in the `View` field; it should be just the folder name.
+
+**Q: How does template resolution work?**
+- For each HTTP method (GET, POST, etc.), the framework looks for a file named `get.html`, `post.html`, etc., in the controller's view folder.
+- If no method-specific template is found, it falls back to `default.html`, `default.php`, `index.html`, or `index.php`.
+- If none of these exist, the server will panic with an error indicating a missing default view.
+
+**Q: Can I use multiple views per controller?**
+- Each controller is associated with a single view folder. If you need multiple views, create multiple controllers or use conditional logic in your handler to select data/templates.
+
+**Q: Are templates hot-reloaded in development?**
+- In development mode (`Build: false` in `Config.json`), templates are reloaded on each request. In build/production mode, templates are cached for performance.
+
+**Q: How do I include shared templates (partials)?**
+- Place shared templates (e.g., header, footer) in a `Views/shared/` folder.
+- Use Go template syntax to include them: `{{ template "shared/header.html" . }}`
+
+**Q: What happens if a template file is missing or there is a rendering error?**
+- If the default view is missing, the server will panic and log an error. Rendering errors will also panic and log details. Always check your logs for troubleshooting.
+
+**Q: Can I pass complex data (arrays, maps, structs) to templates?**
+- Yes, you can pass any Go data structure in the `Template.Response` map. Use dot notation in templates to access nested fields.
+
+**Q: How is session data secured?**
+- Sessions use secure, random IDs stored in HTTP-only cookies. For best security, run your server over HTTPS and set the `Secure` flag in your cookie configuration.
+- There is no built-in CSRF protection; you should implement CSRF tokens in your forms if needed.
+
+**Q: Can I serve static files from subfolders?**
+- Yes, you can organize static files in subfolders within your static directories. There are no restrictions on file types or folder depth.
+
+**Q: Is there middleware support?**
+- The framework does not have a formal middleware system, but you can add logic in your controller handlers or wrap the main handler in `server.go` for global middleware.
+
+**Q: How do I deploy to production?**
+- Set `Build: true` in `Config.json` for template caching and performance.
+- Use a reverse proxy (like Nginx) for HTTPS and static file serving if needed.
+- Monitor logs and handle panics gracefully in production.
+
+**Q: How can I extend the framework?**
+- You can add new packages, extend controllers, or modify the template engine. For advanced features (like WebSockets), integrate with Go's standard libraries and register your handlers in `server.go`.
+
+---

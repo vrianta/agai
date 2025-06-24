@@ -3,7 +3,6 @@ package Router
 import (
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/vrianta/Server/Controller"
 	"github.com/vrianta/Server/Log"
@@ -63,7 +62,7 @@ func Route(path string, obj Controller.Struct) route {
 // - w: The HTTP response writer.
 // - r: The HTTP request.
 func Handler(w http.ResponseWriter, r *http.Request) {
-	start := time.Now() // Start time measurement
+	// start := time.Now() // Start time measurement
 	sessionID := Session.GetSessionID(r)
 	var sess *Session.Struct
 	var ok bool

@@ -1,16 +1,29 @@
 package Controller
 
 import (
+	"net/http"
+
 	"github.com/vrianta/Server/Session"
 	"github.com/vrianta/Server/Template"
 )
 
 // Routes is a map of HTTP methods to their respective controllers
 type (
-	_Func func(self *Struct) *Template.Response // Map of HTTP methods to their respective handler functions
+	_Func      func(self *Struct) *Template.Response // Map of HTTP methods to their respective handler functions
+	_Templates struct {
+		View    *Template.Struct // default template store
+		Get     *Template.Struct // Template for GET requests
+		POST    *Template.Struct // Template for POST requests
+		DELETE  *Template.Struct // Template for DELETE requests
+		PATCH   *Template.Struct // Template for PATCH requests
+		PUT     *Template.Struct // Template for PUT requests
+		HEAD    *Template.Struct // Template for HEAD requests
+		OPTIONS *Template.Struct // Template for OPTIONS requests
+	}
 
 	Struct struct {
-		View string // name of the View have to mention it at the begining
+		View      string     // name of the View have to mention it at the begining
+		templates _Templates // storing pointer to a Template Struct store execute struct
 		// HTTP methods with their respective handlers
 		// Each method returns a view string and TemplateData
 		// string is the template name to render and TemplateData is the data to pass to the template
@@ -22,6 +35,12 @@ type (
 		HEAD    _Func
 		OPTIONS _Func
 
-		Session *Session.Struct // Session object to handle user session
+		session *Session.Struct // Session object to handle user session
+
+		// privte objects
+		w http.ResponseWriter
+		r *http.Request
+
+		userInputs map[string]interface{}
 	}
 )

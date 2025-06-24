@@ -6,7 +6,6 @@ import (
 
 	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Log"
-	"github.com/vrianta/Server/RenderEngine"
 	"github.com/vrianta/Server/Router"
 	"github.com/vrianta/Server/Session"
 )
@@ -74,14 +73,15 @@ func (s *_Struct) setup_js_folder() {
 
 // function to go through all the routes and register their Views and create templates
 func (s *_Struct) setup_views() {
-	routes := Router.Get()
-	for _, route := range *routes {
-		if route.View != "" {
-			if err := RenderEngine.RegisterTemplate(route.View); err != nil {
-				Log.WriteLogf("Error registering template %s: %v", route.View, err)
+
+	routes := Router.GetRoutes()
+	for _, controller := range *routes {
+		if controller.View != "" {
+			if err := controller.RegisterTemplate(); err != nil {
+				Log.WriteLogf("Error registering template %s: %v", controller.View, err)
 				os.Exit(1)
 			} else {
-				Log.WriteLogf("Template registered: %s\n", route.View)
+				Log.WriteLogf("Template registered: %s\n", controller.View)
 			} // Register the template with the RenderEngine
 		}
 	}

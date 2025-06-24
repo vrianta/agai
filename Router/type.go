@@ -7,9 +7,17 @@ import (
 )
 
 type (
-	Routes map[string]*Controller.Struct // Type for routes, mapping URL paths to Controller structs
+	route struct {
+		path             string
+		controllerObject Controller.Struct
+	}
+	routes map[string]*Controller.Struct // Type for routes, mapping URL paths to Controller structs
 
-	FileInfo struct {
+	Struct struct {
+		defaultRoute string
+	}
+
+	FileCacheEntry struct {
 		Uri          string    // path of the template file
 		LastModified time.Time // date when the file last modified
 		Data         string    // template data of the file before modified

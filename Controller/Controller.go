@@ -1,3 +1,39 @@
+/*
+Package Controller
+
+This package defines the core Controller struct and methods for the Go Server Framework.
+Controllers are responsible for handling HTTP requests, managing session state, and rendering views.
+
+Key Concepts:
+-------------
+- Each Controller is a struct that maps HTTP methods (GET, POST, etc.) to handler functions.
+- The Controller manages its own session, request, and response writer.
+- Views are loaded from the configured Views folder, and templates are registered per HTTP method.
+- Templates support PHP-like syntax and are rendered using the custom Template engine.
+- Session data is accessed via the controller's session field (see Session package).
+- The Controller provides helper methods for:
+    - Validating configuration (Validate)
+    - Registering and executing templates (RegisterTemplate, ExecuteTemplate)
+    - Initializing request/response/session objects (InitWR, InitSession)
+    - Running the correct handler for an HTTP request (RunRequest)
+    - Copying controller instances (Copy)
+    - Accessing the session safely (GetSession)
+
+Usage:
+------
+- Define a controller struct embedding Controller.Struct.
+- Set the View field and handler functions for each HTTP method.
+- Register the controller in your router.
+- Use the provided methods to manage templates and session state.
+
+See Also:
+---------
+- Session package: for session management and data storage.
+- Template package: for template parsing and rendering.
+- Config package: for server and view configuration.
+
+*/
+
 package Controller
 
 import (
@@ -14,19 +50,20 @@ import (
 )
 
 /*
-This file will store the local method for Controller which will be by default and Entirely local
+This file contains local methods for the Controller struct, providing default and internal logic.
 */
 
 /*
- * Controller Function Call
- * This function will be responsible for handling the Method calling of te Controller
- * Example: if the Method is GET then it will call Get Method if The Method is POST then it will call Post Method
- * This will be used in the routingHandler to call the correct method of the controller
- */
+RunRequest dispatches the HTTP request to the appropriate handler method (GET, POST, etc.)
+and renders the corresponding template. It also assigns and updates the session for the request.
+
+Parameters:
+- session: pointer to the current Session.Struct for the request.
+*/
 func (c *Struct) RunRequest(session *Session.Struct) {
 	c.assignSession(session) // Assign the session to the controller
 	if session != nil {
-		session.Update(c.w, c.r)
+		session.Update(c.w, c.r) // Update session with current writer and request
 	}
 	switch c.r.Method {
 	case "GET":
@@ -51,81 +88,107 @@ func (c *Struct) RunRequest(session *Session.Struct) {
 		reponse := c.isMethodNull(c.OPTIONS)
 		c.ExecuteTemplate(c.templates.OPTIONS, reponse)
 	default:
-		// fmt.write(c.w, "Method Not Allowed")
+		// Method not allowed; optionally handle here
 	}
 }
 
 /*
- * This Methid is to check if the Method passing is Defined or not if nill will return Error else print the value
- */
+isMethodNull checks if the provided handler function is nil.
+If not nil, it calls the handler and returns its response.
+If nil, returns a default error response.
+
+Parameters:
+- method: the handler function for the HTTP method.
+
+Returns:
+- *Template.Response: the response to render.
+*/
 func (c *Struct) isMethodNull(method _Func) *Template.Response {
 	if method != nil {
 		return method(c)
 	}
-
 	return &Template.Response{"error": "Current Method is not allowed"}
 }
 
-// Function to Assign the Session in the Controller
+/*
+assignSession assigns the given session to the controller instance.
+
+Parameters:
+- session: pointer to Session.Struct to assign.
+*/
 func (c *Struct) assignSession(session *Session.Struct) {
 	c.session = session
 }
 
+/*
+Validate checks if the controller's View field is set.
+Panics if the View is not defined, ensuring every controller has an associated view.
+*/
 func (c *Struct) Validate() {
 	if c.View == "" {
 		panic(fmt.Errorf("view is not defined for the controller %T", c))
 	}
 }
 
-// Function to return the Session because do not want to expose the session varaible directly
+/*
+GetSession safely returns the controller's session pointer.
+Use this instead of accessing the session field directly.
+*/
 func (c *Struct) GetSession() *Session.Struct {
 	return c.session
 }
 
-// Function which will check the View and it's extension and determine the type of view and accordingly will call the
-// appropiate render function
+/*
+RenderView determines the type of view based on its extension and calls the appropriate render function.
+Currently a stub; extend this to support multiple template engines if needed.
+
+Parameters:
+- view: the view file name.
+- data: pointer to Template.Response containing data for the template.
+
+Returns:
+- error: if rendering fails.
+*/
 func (c *Struct) RenderView(view string, data *Template.Response) error {
 	if view == "" {
 		return nil // No view to render
 	}
-
-	// get the extension of the view
 	extension := strings.Split(view, ".")
-
+	// Extend this switch to support more view types if needed
 	switch extension {
 	// case "html", "htm", "gohtml":
 	}
-
+	// Example for future use:
 	// if err := c.Session.RenderEngine.RenderTemplate(view, data); err != nil {
 	// 	return fmt.Errorf("error rendering view %s: %w", view, err)
 	// }
 	return nil
 }
 
+/*
+RegisterTemplate scans the controller's view directory and registers templates for each HTTP method.
+It expects files named default.html/php/gohtml, get.html/php, post.html/php, etc.
+Panics if no default view is found.
+
+Returns:
+- error: if reading the directory or registering a template fails.
+*/
 func (c *Struct) RegisterTemplate() error {
-
-	// Get all the Files in the View Folder with certain Name suffix
-	// Views should be inside a folder named as the view name and the views names with be with certain specific name types
-	// example for default use default.html or default.php // same file with two extensions are not allowed
-	// for Get Method use get.html or get.php
-
-	view_path := "./" + Config.ViewFolder + "/" + c.View // view path of the view package of the controller
+	view_path := "./" + Config.ViewFolder + "/" + c.View // Path to the controller's view folder
 	files, err := os.ReadDir(view_path)
 	if err != nil {
 		err := fmt.Errorf("error reading directory: %s", err.Error())
 		panic(err)
 	}
 
-	var gotDefaultView = false // to check if we got the default view or not
+	var gotDefaultView = false // Track if a default view is found
 	for _, entry := range files {
 		if !entry.IsDir() {
 			full_file_name := entry.Name()
-			var file_type = strings.TrimPrefix(filepath.Ext(full_file_name), ".") // type of the file
-			file_name := full_file_name[:len(full_file_name)-len(file_type)-1]
+			var file_type = strings.TrimPrefix(filepath.Ext(full_file_name), ".") // File extension/type
+			file_name := full_file_name[:len(full_file_name)-len(file_type)-1]    // Name without extension
 
-			// Template is our Custom Template Package this is not the go one
-			// Get name without extension
-			// fmt.Println("File Name:", file_name, "File Type:", file_type)
+			// Register the template using the custom Template package
 			if _template, err := Template.New(view_path, full_file_name, file_type); err != nil {
 				return err
 			} else {
@@ -148,7 +211,7 @@ func (c *Struct) RegisterTemplate() error {
 				case "options":
 					c.templates.OPTIONS = _template
 				default:
-
+					// Ignore unknown files
 				}
 			}
 		}
@@ -159,12 +222,26 @@ func (c *Struct) RegisterTemplate() error {
 		panic(err)
 	}
 	return nil
-
 }
 
+/*
+ExecuteTemplate renders the given template with the provided response data.
+If not in build mode, updates the template before rendering.
+Logs and panics on rendering errors.
+
+Parameters:
+- __template: pointer to the Template.Struct to render.
+- __response: pointer to Template.Response containing data for the template.
+
+Returns:
+- error: if updating the template fails (in dev mode).
+*/
 func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
 	if !Config.Build {
 		return __template.Update()
+	}
+	if c.View == "" {
+		return nil // No view to render, return nil
 	}
 
 	if __template == nil {
@@ -183,7 +260,13 @@ func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Templa
 	return nil
 }
 
-// a Copy Function to create a new controller Instance by copying the data
+/*
+Copy creates a new instance of the controller with the same configuration and handlers.
+Useful for creating per-request controller instances.
+
+Returns:
+- *Struct: pointer to the copied controller struct.
+*/
 func (c *Struct) Copy() *Struct {
 	return &Struct{
 		View:      c.View,
@@ -195,24 +278,31 @@ func (c *Struct) Copy() *Struct {
 		PUT:       c.PUT,
 		HEAD:      c.HEAD,
 		OPTIONS:   c.OPTIONS,
-
-		session: c.session,
-
+		session:   c.session,
 		// userInputs: make(map[string]interface{}, 20),
 	}
 }
 
 /*
- * To Initialise the controller with the writer and reader objects
- */
+InitWR initializes the controller with the HTTP response writer and request.
+Call this before handling a request.
+
+Parameters:
+- w: http.ResponseWriter for the response.
+- r: *http.Request for the incoming request.
+*/
 func (c *Struct) InitWR(w http.ResponseWriter, r *http.Request) {
 	c.w = w
 	c.r = r
 }
 
 /*
- * To Initialise the controller with the Session
- */
+InitSession assigns the given session to the controller.
+Call this to set up session state for the request.
+
+Parameters:
+- __s: pointer to Session.Struct to assign.
+*/
 func (c *Struct) InitSession(__s *Session.Struct) {
 	c.session = __s
 }

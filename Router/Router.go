@@ -1,7 +1,6 @@
 package Router
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -100,8 +99,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	tempController.InitSession(sess)
 	tempController.RunRequest(sess)
 
-	duration := time.Since(start)
-	log.Printf("Handler took %s to complete\n", duration)
+	// duration := time.Since(start)
+	// log.Printf("Handler took %s to complete\n", duration)
 }
 
 // A Function to Create and Return

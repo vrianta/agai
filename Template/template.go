@@ -4,12 +4,9 @@ import (
 	"bytes"
 	htmltemplate "html/template"
 	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/Utils"
 )
 
@@ -49,26 +46,20 @@ var (
 
 // Create Template Object stores it in the memory
 // name - name of the template
-func New(file_name string) (*Struct, error) {
+func New(file_path, file_name, file_type string) (*Struct, error) {
 
-	if file_name == "" {
+	if file_path == "" {
 		return nil, nil
 	}
 
-	var _template_type = strings.TrimPrefix(filepath.Ext(file_name), ".") // type of the file
-	var full_path = Config.ViewFolder + "/" + file_name
+	var full_path = file_path + "/" + file_name
 
 	info, err := os.Stat(full_path)
 	if err != nil {
 		return nil, err
 	}
 
-	// splited_path := strings.Split(".", file_name)
-	// splitten_path_len := len(splited_path)
-
-	// fmt.Println("full path is :", full_path)
-
-	switch _template_type {
+	switch file_type {
 	case "php", "gophp":
 		if _html_template, err := htmltemplate.New(file_name).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_path))); err == nil {
 			return &Struct{

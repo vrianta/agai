@@ -98,12 +98,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	tempController.InitWR(w, r)
 	tempController.InitSession(sess)
-	// tempController.ParseRequest()
-	response := tempController.CallMethod(sess)
-	if err := tempController.Execute(response); err != nil {
-		Log.WriteLog("Error rendering template: " + err.Error())
-		panic(err)
-	}
+	tempController.RunRequest(sess)
 
 	duration := time.Since(start)
 	log.Printf("Handler took %s to complete\n", duration)

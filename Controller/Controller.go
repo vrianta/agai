@@ -3,9 +3,12 @@ package Controller
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/vrianta/Server/Config"
+	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/Session"
 	"github.com/vrianta/Server/Template"
 )
@@ -20,28 +23,35 @@ This file will store the local method for Controller which will be by default an
  * Example: if the Method is GET then it will call Get Method if The Method is POST then it will call Post Method
  * This will be used in the routingHandler to call the correct method of the controller
  */
-func (c *Struct) CallMethod(session *Session.Struct) *Template.Response {
+func (c *Struct) RunRequest(session *Session.Struct) {
 	c.assignSession(session) // Assign the session to the controller
 	if session != nil {
 		session.Update(c.w, c.r)
 	}
 	switch c.r.Method {
 	case "GET":
-		return c.isMethodNull(c.GET)
+		reponse := c.isMethodNull(c.GET)
+		c.ExecuteTemplate(c.templates.Get, reponse)
 	case "POST":
-		return c.isMethodNull(c.POST)
+		reponse := c.isMethodNull(c.POST)
+		c.ExecuteTemplate(c.templates.POST, reponse)
 	case "DELETE":
-		return c.isMethodNull(c.DELETE)
+		reponse := c.isMethodNull(c.DELETE)
+		c.ExecuteTemplate(c.templates.DELETE, reponse)
 	case "PATCH":
-		return c.isMethodNull(c.PATCH)
+		reponse := c.isMethodNull(c.PATCH)
+		c.ExecuteTemplate(c.templates.PATCH, reponse)
 	case "PUT":
-		return c.isMethodNull(c.PUT)
+		reponse := c.isMethodNull(c.PUT)
+		c.ExecuteTemplate(c.templates.PUT, reponse)
 	case "HEAD":
-		return c.isMethodNull(c.HEAD)
+		reponse := c.isMethodNull(c.HEAD)
+		c.ExecuteTemplate(c.templates.HEAD, reponse)
 	case "OPTIONS":
-		return c.isMethodNull(c.OPTIONS)
+		reponse := c.isMethodNull(c.OPTIONS)
+		c.ExecuteTemplate(c.templates.OPTIONS, reponse)
 	default:
-		return &Template.Response{"error": "Method not allowed"}
+		// fmt.write(c.w, "Method Not Allowed")
 	}
 }
 
@@ -93,35 +103,98 @@ func (c *Struct) RenderView(view string, data *Template.Response) error {
 }
 
 func (c *Struct) RegisterTemplate() error {
-	if _template, err := Template.New(c.View); err != nil {
-		return err
-	} else {
-		c.template = _template
-		return nil
+
+	// Get all the Files in the View Folder with certain Name suffix
+	// Views should be inside a folder named as the view name and the views names with be with certain specific name types
+	// example for default use default.html or default.php // same file with two extensions are not allowed
+	// for Get Method use get.html or get.php
+
+	view_path := "./" + Config.ViewFolder + "/" + c.View // view path of the view package of the controller
+	files, err := os.ReadDir(view_path)
+	if err != nil {
+		err := fmt.Errorf("error reading directory: %s", err.Error())
+		panic(err)
 	}
+
+	var gotDefaultView = false // to check if we got the default view or not
+	for _, entry := range files {
+		if !entry.IsDir() {
+			full_file_name := entry.Name()
+			var file_type = strings.TrimPrefix(filepath.Ext(full_file_name), ".") // type of the file
+			file_name := full_file_name[:len(full_file_name)-len(file_type)-1]
+
+			// Template is our Custom Template Package this is not the go one
+			// Get name without extension
+			// fmt.Println("File Name:", file_name, "File Type:", file_type)
+			if _template, err := Template.New(view_path, full_file_name, file_type); err != nil {
+				return err
+			} else {
+				switch file_name {
+				case "default", "index":
+					c.templates.View = _template
+					gotDefaultView = true
+				case "get":
+					c.templates.Get = _template
+				case "post":
+					c.templates.POST = _template
+				case "delete":
+					c.templates.DELETE = _template
+				case "patch":
+					c.templates.PATCH = _template
+				case "put":
+					c.templates.PUT = _template
+				case "head":
+					c.templates.HEAD = _template
+				case "options":
+					c.templates.OPTIONS = _template
+				default:
+
+				}
+			}
+		}
+	}
+
+	if !gotDefaultView {
+		err := fmt.Errorf("default view not found for controller %s in path %s | to fix this create a view with name default.html/php/gohtml or index.php/html/gohtml in the directory %s", c.View, view_path, view_path)
+		panic(err)
+	}
+	return nil
+
 }
 
-func (c *Struct) Execute(__response *Template.Response) error {
-	if Config.Build {
-		return c.template.Execute(c.w, __response)
+func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
+	if !Config.Build {
+		return __template.Update()
 	}
 
-	return c.template.Update()
+	if __template == nil {
+		if err := c.templates.View.Execute(c.w, __response); err != nil {
+			Log.WriteLog("Error rendering template: " + err.Error())
+			panic(err)
+		}
+	} else {
+		if err := __template.Execute(c.w, __response); err != nil {
+			Log.WriteLog("Error rendering template: " + err.Error())
+			panic(err)
+		}
+	}
 
+	// return __template.Execute(c.w, __response)
+	return nil
 }
 
 // a Copy Function to create a new controller Instance by copying the data
 func (c *Struct) Copy() *Struct {
 	return &Struct{
-		View:     c.View,
-		template: c.template,
-		GET:      c.GET,
-		POST:     c.POST,
-		DELETE:   c.DELETE,
-		PATCH:    c.PATCH,
-		PUT:      c.PUT,
-		HEAD:     c.HEAD,
-		OPTIONS:  c.OPTIONS,
+		View:      c.View,
+		templates: c.templates,
+		GET:       c.GET,
+		POST:      c.POST,
+		DELETE:    c.DELETE,
+		PATCH:     c.PATCH,
+		PUT:       c.PUT,
+		HEAD:      c.HEAD,
+		OPTIONS:   c.OPTIONS,
 
 		session: c.session,
 

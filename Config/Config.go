@@ -2,11 +2,6 @@ package Config
 
 import "fmt"
 
-func Init() {
-	webInit()
-	databaseInit()
-}
-
 func GetPort() string {
 	return webConfig.Port
 }

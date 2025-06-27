@@ -7,7 +7,7 @@ import (
 	"github.com/vrianta/Server/Utils"
 )
 
-func databaseInit() {
+func init() {
 	__config := databaseConfigStruct{}
 	if err := json.Unmarshal([]byte(Utils.ReadFromFile(dBConfigFile)), &__config); err != nil {
 		Log.WriteLogf("Warning: Failed to Load Database Config File: %s", err.Error())

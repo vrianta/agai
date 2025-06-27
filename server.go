@@ -20,8 +20,6 @@ import (
  * _config -> send the config of the server can be send nill if default is fine for you
  */
 func New() *_Struct {
-	Config.Init() // Load the Configurations
-
 	srvInstance = &_Struct{}
 	return srvInstance
 }

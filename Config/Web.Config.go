@@ -9,7 +9,7 @@ import (
 	"github.com/vrianta/Server/Utils"
 )
 
-func webInit() {
+func init() {
 	__config := webConfigStruct{}
 	if err := json.Unmarshal([]byte(Utils.ReadFromFile(webConfigFile)), &__config); err != nil {
 		Log.WriteLogf("Warning:  Failed to Load Config File: %s", err.Error())

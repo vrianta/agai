@@ -9,7 +9,7 @@ type (
 	// Flaggs for Server Config where it will care of the config of the server
 	// http ->  is to tell server if it need to load https or http server for example http enabled mean it will load http server else by default it will be https
 	// By Default the Static Files will be in /Static and can be accessed in html by Static/files_path
-	class struct {
+	webConfigStruct struct {
 		Port          string   `json:"Port"`
 		Host          string   `json:"Host"`
 		Https         bool     `json:"Https"`

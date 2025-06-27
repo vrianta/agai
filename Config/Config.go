@@ -58,6 +58,6 @@ func SetViewFolder(folder string) {
 func SetMaxSessionCount(count int) {
 	webConfig.MaxSessionCount = count
 }
-func GetWebConfig() *class {
+func GetWebConfig() *webConfigStruct {
 	return &webConfig
 }

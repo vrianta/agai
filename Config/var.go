@@ -4,7 +4,7 @@ package Config
 
 var (
 	WebConfigFile = "Web.Config.json"
-	webConfig     = class{
+	webConfig     = webConfigStruct{
 		Port: "1080", // Default port for the server
 		Host: "",     // Default host for the server
 

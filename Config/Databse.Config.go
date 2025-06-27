@@ -3,16 +3,12 @@ package Config
 import (
 	"encoding/json"
 
-	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/Utils"
 )
 
 func init() {
 	__config := databaseConfigStruct{}
-	if err := json.Unmarshal([]byte(Utils.ReadFromFile(dBConfigFile)), &__config); err != nil {
-		Log.WriteLogf("Warning: Failed to Load Database Config File: %s", err.Error())
-		return
-	}
+	json.Unmarshal([]byte(Utils.ReadFromFile(dBConfigFile)), &__config)
 
 	if envHost := Utils.GetEnvString("DB_HOST"); envHost != nil && *envHost != "" {
 		databaseConfig.Host = *envHost

@@ -3,14 +3,22 @@ package Log
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/vrianta/Server/Config"
 )
 
 func WriteLog(massages ...any) {
+	if Config.GetBuild() {
+		return
+	}
 	fmt.Println(massages...)
 
 }
 
 func WriteLogf(massage string, args ...any) {
+	if Config.GetBuild() {
+		return
+	}
 	fmt.Printf(massage, args...)
 }
 

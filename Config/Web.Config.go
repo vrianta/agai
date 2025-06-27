@@ -5,16 +5,12 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/Utils"
 )
 
 func init() {
 	__config := webConfigStruct{}
-	if err := json.Unmarshal([]byte(Utils.ReadFromFile(webConfigFile)), &__config); err != nil {
-		Log.WriteLogf("Warning:  Failed to Load Config File: %s", err.Error())
-		return
-	}
+	json.Unmarshal([]byte(Utils.ReadFromFile(webConfigFile)), &__config)
 
 	// Use environment variables if present, else fallback to config.json values
 	if envPort := Utils.GetEnvString("SERVER_PORT"); envPort != nil && *envPort != "" {

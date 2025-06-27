@@ -42,17 +42,17 @@ func (s *_Struct) Start() {
 
 	// Define the server configuration
 	s.server = &http.Server{
-		Addr: Config.Host + ":" + Config.Port, // Host and port
+		Addr: Config.GetWebConfig().Host + ":" + Config.GetWebConfig().Port, // Host and port
 	}
 
-	Log.WriteLogf("Server Starting at : http://%s:%s\n", Config.Host, Config.Port)
+	Log.WriteLogf("Server Starting at : http://%s:%s\n", Config.GetWebConfig().Host, Config.GetWebConfig().Port)
 
 	s.server.ListenAndServe()
 }
 
 func (s *_Struct) setup_static_folders() {
 	// Create a file server handler
-	for _, folder := range Config.StaticFolders {
+	for _, folder := range Config.GetWebConfig().StaticFolders {
 		fs := http.FileServer(http.Dir(folder))
 		http.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", fs))
 	}
@@ -60,13 +60,13 @@ func (s *_Struct) setup_static_folders() {
 
 // Generating Creating Routes for the Css Folders
 func (s *_Struct) setup_css_folder() {
-	for _, folder := range Config.CssFolders {
+	for _, folder := range Config.GetWebConfig().CssFolders {
 		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("text/css; charset=utf-8"))
 	}
 }
 
 func (s *_Struct) setup_js_folder() {
-	for _, folder := range Config.JsFolders {
+	for _, folder := range Config.GetWebConfig().JsFolders {
 		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("application/javascript; charset=utf-8"))
 	}
 }

@@ -63,10 +63,10 @@ func (s *_Struct) startServer() {
 	}
 	// Define the server configuration
 	s.server = &http.Server{
-		Addr: Config.Host + ":" + Config.Port, // Host and port
+		Addr: Config.GetWebConfig().Host + ":" + Config.GetWebConfig().Port, // Host and port
 	}
 
-	Log.WriteLogf("%s", "Server Starting at "+Config.Host+":"+Config.Port)
+	Log.WriteLogf("%s", "Server Starting at "+Config.GetWebConfig().Host+":"+Config.GetWebConfig().Port)
 
 	s.server.ListenAndServe()
 	s.state = true

@@ -1,63 +1,63 @@
 package Config
 
-import (
-	_ "embed"
-	"encoding/json"
-	"strconv"
-
-	"github.com/vrianta/Server/Log"
-	"github.com/vrianta/Server/Utils"
-)
-
 func Init() {
-	__config := class{}
-	if err := json.Unmarshal([]byte(Utils.ReadFromFile("Config.json")), &__config); err != nil {
-		Log.WriteLogf("Warning:  Failed to Load Config File: %s", err.Error())
-		return
-	}
+	webInit()
+}
 
-	// Use environment variables if present, else fallback to config.json values
-	if envPort := Utils.GetEnvString("SERVER_PORT"); envPort != nil && *envPort != "" {
-		Port = *envPort
-	} else if __config.Port != "" {
-		Port = __config.Port
-	}
-	if envHost := Utils.GetEnvString("SERVER_HOST"); envHost != nil && *envHost != "" {
-		Host = *envHost
-	} else if __config.Host != "" {
-		Host = __config.Host
-	}
-	if envHttp := Utils.GetEnvString("SERVER_HTTPS"); envHttp != nil && *envHttp != "" {
-		Https = *envHttp == "true"
-	} else {
-		Https = __config.Https
-	}
-
-	if envBuild := Utils.GetEnvString("BUILD"); envBuild != nil && *envBuild != "" {
-		Build = *envBuild == "true"
-	} else {
-		Build = __config.Build
-	}
-
-	// MaxSessionCount: environment variable takes precedence
-	if envMax := Utils.GetEnvString("MAX_SESSION_COUNT"); envMax != nil && *envMax != "" {
-		if v, err := strconv.Atoi(*envMax); err == nil {
-			MaxSessionCount = v
-		}
-	} else if __config.MaxSessionCount > 0 {
-		MaxSessionCount = __config.MaxSessionCount
-	}
-
-	if __config.StaticFolders != nil {
-		StaticFolders = __config.StaticFolders
-	}
-	if __config.CssFolders != nil {
-		CssFolders = __config.CssFolders
-	}
-	if __config.JsFolders != nil {
-		JsFolders = __config.JsFolders
-	}
-	if __config.ViewFolder != "" {
-		ViewFolder = __config.ViewFolder
-	}
+func GetPort() string {
+	return webConfig.Port
+}
+func GetHost() string {
+	return webConfig.Host
+}
+func GetHttps() bool {
+	return webConfig.Https
+}
+func GetBuild() bool {
+	return webConfig.Build
+}
+func GetStaticFolders() []string {
+	return webConfig.StaticFolders
+}
+func GetCssFolders() []string {
+	return webConfig.CssFolders
+}
+func GetJsFolders() []string {
+	return webConfig.JsFolders
+}
+func GetViewFolder() string {
+	return webConfig.ViewFolder
+}
+func GetMaxSessionCount() int {
+	return webConfig.MaxSessionCount
+}
+func SetPort(p string) {
+	webConfig.Port = p
+}
+func SetHost(h string) {
+	webConfig.Host = h
+}
+func SetHttps(h bool) {
+	webConfig.Https = h
+}
+func SetBuild(b bool) {
+	webConfig.Build = b
+}
+func SetStaticFolders(folders []string) {
+	webConfig.StaticFolders = folders
+}
+func SetCssFolders(folders []string) {
+	webConfig.CssFolders = folders
+}
+func SetJsFolders(folders []string) {
+	webConfig.JsFolders = folders
+}
+func SetViewFolder(folder string) {
+	webConfig.ViewFolder = folder
+}
+func SetMaxSessionCount(count int) {
+	webConfig.MaxSessionCount = count
+}
+func GetWebConfig() *class {
+	return &webConfig
 }

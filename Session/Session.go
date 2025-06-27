@@ -130,7 +130,7 @@ func Store(sessionID *string, session *Struct) {
 		return
 	}
 	mutex.Lock()
-	if len(all) >= Config.MaxSessionCount {
+	if len(all) >= Config.GetWebConfig().MaxSessionCount {
 		evictLRUSession()
 	}
 	session.LastUsed = time.Now()
@@ -299,7 +299,7 @@ func (sh *Struct) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,
-		HttpOnly: Config.Https,
+		HttpOnly: Config.GetWebConfig().Https,
 		Expires:  sh.Expiry,
 	}
 

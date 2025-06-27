@@ -174,7 +174,7 @@ Returns:
 - error: if reading the directory or registering a template fails.
 */
 func (c *Struct) RegisterTemplate() error {
-	view_path := "./" + Config.ViewFolder + "/" + c.View // Path to the controller's view folder
+	view_path := "./" + Config.GetWebConfig().ViewFolder + "/" + c.View // Path to the controller's view folder
 	files, err := os.ReadDir(view_path)
 	if err != nil {
 		err := fmt.Errorf("error reading directory: %s", err.Error())
@@ -237,7 +237,7 @@ Returns:
 - error: if updating the template fails (in dev mode).
 */
 func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
-	if !Config.Build {
+	if !Config.GetWebConfig().Build {
 		return __template.Update()
 	}
 	if c.View == "" {

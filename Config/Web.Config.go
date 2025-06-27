@@ -1,0 +1,63 @@
+package Config
+
+import (
+	_ "embed"
+	"encoding/json"
+	"strconv"
+
+	"github.com/vrianta/Server/Log"
+	"github.com/vrianta/Server/Utils"
+)
+
+func webInit() {
+	__config := class{}
+	if err := json.Unmarshal([]byte(Utils.ReadFromFile("Web.Config.json")), &__config); err != nil {
+		Log.WriteLogf("Warning:  Failed to Load Config File: %s", err.Error())
+		return
+	}
+
+	// Use environment variables if present, else fallback to config.json values
+	if envPort := Utils.GetEnvString("SERVER_PORT"); envPort != nil && *envPort != "" {
+		webConfig.Port = *envPort
+	} else if __config.Port != "" {
+		webConfig.Port = __config.Port
+	}
+	if envHost := Utils.GetEnvString("SERVER_HOST"); envHost != nil && *envHost != "" {
+		webConfig.Host = *envHost
+	} else if __config.Host != "" {
+		webConfig.Host = __config.Host
+	}
+	if envHttp := Utils.GetEnvString("SERVER_HTTPS"); envHttp != nil && *envHttp != "" {
+		webConfig.Https = *envHttp == "true"
+	} else {
+		webConfig.Https = __config.Https
+	}
+
+	if envBuild := Utils.GetEnvString("BUILD"); envBuild != nil && *envBuild != "" {
+		webConfig.Build = *envBuild == "true"
+	} else {
+		webConfig.Build = __config.Build
+	}
+
+	// MaxSessionCount: environment variable takes precedence
+	if envMax := Utils.GetEnvString("MAX_SESSION_COUNT"); envMax != nil && *envMax != "" {
+		if v, err := strconv.Atoi(*envMax); err == nil {
+			webConfig.MaxSessionCount = v
+		}
+	} else if __config.MaxSessionCount > 0 {
+		webConfig.MaxSessionCount = __config.MaxSessionCount
+	}
+
+	if __config.StaticFolders != nil {
+		webConfig.StaticFolders = __config.StaticFolders
+	}
+	if __config.CssFolders != nil {
+		webConfig.CssFolders = __config.CssFolders
+	}
+	if __config.JsFolders != nil {
+		webConfig.JsFolders = __config.JsFolders
+	}
+	if __config.ViewFolder != "" {
+		webConfig.ViewFolder = __config.ViewFolder
+	}
+}

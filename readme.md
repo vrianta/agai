@@ -339,9 +339,9 @@ When the server is running, use these commands in the console:
   - You can also use `$obj->prop`, `$arr['key']`, `$arr[0]` for object and array access.
 - **If/Else:**
   ```php
-  <?php if ($user): ?>
-    Hello, <?= $user ?>
-  <?php elseif ($guest): ?>
+  <?php if ($$user): ?>
+    Hello, <?= $$user ?>
+  <?php elseif ($$guest): ?>
     Welcome, Guest!
   <?php else: ?>
     Please log in.
@@ -349,7 +349,7 @@ When the server is running, use these commands in the console:
   ```
 - **Loops:**
   ```php
-  <?php foreach ($items as $item): ?>
+  <?php foreach ($$items as $item): ?>
     <?= $item ?>
   <?php endforeach; ?>
   ```

@@ -9,8 +9,6 @@ import (
 	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/Router"
 	"github.com/vrianta/Server/Session"
-
-	"database/sql"
 )
 
 /*
@@ -60,9 +58,9 @@ func (s *_Struct) Start() *_Struct {
 }
 
 // Initialise Database Handler
-func (s *_Struct) RegisterDatabase(sql *sql.DB) *_Struct {
+func (s *_Struct) InitDatabase() *_Struct {
 
-	if err := DatabaseHandler.Init(sql); err != nil {
+	if err := DatabaseHandler.Init(); err != nil {
 		panic("Database Initialisation failed: " + err.Error())
 	} else {
 		Log.WriteLog("Database Initialised Successfully")

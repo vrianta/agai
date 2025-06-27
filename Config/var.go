@@ -21,8 +21,9 @@ var (
 		JsFolders: []string{
 			"Js",
 		},
-		ViewFolder:      "Views",
-		MaxSessionCount: 50000, // Default value
+		ViewFolder:       "Views",
+		MaxSessionCount:  50000,    // Default value.
+		SessionStoreType: "memory", // Default session store type
 	}
 
 	databaseConfig = databaseConfigStruct{
@@ -31,5 +32,6 @@ var (
 		User:     "root",
 		Password: "",
 		Database: "mydatabase",
+		Protocol: "tcp", // Default protocol for MySQL
 	}
 )

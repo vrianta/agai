@@ -1,5 +1,7 @@
 package Config
 
+import "fmt"
+
 func Init() {
 	webInit()
 	databaseInit()
@@ -61,4 +63,26 @@ func SetMaxSessionCount(count int) {
 }
 func GetWebConfig() *webConfigStruct {
 	return &webConfig
+}
+
+// function to get dsn of the database
+func GetDSN() string {
+	if databaseConfig.Driver == "mysql" {
+		return fmt.Sprintf("%s:%s@%s(%s:%s)/%s",
+			databaseConfig.User,
+			databaseConfig.Password,
+			databaseConfig.Protocol,
+			databaseConfig.Host,
+			databaseConfig.Port,
+			databaseConfig.Database,
+		)
+	}
+	return ""
+}
+func GetDatabaseDriver() string {
+	return databaseConfig.Driver
+}
+
+func GetDatabaseConfig() *databaseConfigStruct {
+	return &databaseConfig
 }

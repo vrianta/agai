@@ -44,6 +44,12 @@ func databaseInit() {
 		databaseConfig.Database = __config.Database
 	}
 
+	if envProtocol := Utils.GetEnvString("DB_PROTOCOL"); envProtocol != nil && *envProtocol != "" {
+		databaseConfig.Protocol = *envProtocol
+	} else if __config.Protocol != "" {
+		databaseConfig.Protocol = __config.Protocol
+	}
+
 	if envDriver := Utils.GetEnvString("DB_DRIVER"); envDriver != nil && *envDriver != "" {
 		databaseConfig.Driver = *envDriver
 	} else if __config.Driver != "" {

@@ -19,10 +19,11 @@ type (
 		// the Css files but image sure keep Css file only in CSS folders is good idea because it make this system faster no randome file checks needed
 		// Remember this CSS file will be auto loaded and will be updated once you update them in the local better for development and build system
 		// when we will introduce build systems
-		CssFolders      []string `json:"CssFolders"`      // css folders list which comes with a list of scrigs for all the css folder which needs to be in file server
-		JsFolders       []string `json:"JsFolders"`       // js folders list which comes with a list of scrigs for all the js folder which needs to be in file server
-		ViewFolder      string   `json:"ViewFolder"`      // view folder is the folder where all the views will be kept and it will be used to render the views
-		MaxSessionCount int      `json:"MaxSessionCount"` // <-- Add this line
+		CssFolders       []string `json:"CssFolders"`       // css folders list which comes with a list of scrigs for all the css folder which needs to be in file server
+		JsFolders        []string `json:"JsFolders"`        // js folders list which comes with a list of scrigs for all the js folder which needs to be in file server
+		ViewFolder       string   `json:"ViewFolder"`       // view folder is the folder where all the views will be kept and it will be used to render the views
+		MaxSessionCount  int      `json:"MaxSessionCount"`  // <-- Add this line
+		SessionStoreType string   `json:"SessionStoreType"` // Type of session store, e.g., "memory", "redis", "database".
 	}
 
 	databaseConfigStruct struct {
@@ -31,7 +32,8 @@ type (
 		User     string `json:"User"`
 		Password string `json:"Password"`
 		Database string `json:"Database"`
-		Driver   string `json:"Driver"`  // e.g., "mysql", "postgres", etc.
-		SSLMode  string `json:"SSLMode"` // e.g., "disable", "require", etc.
+		Protocol string `json:"Protocol"` // e.g., "tcp", "unix", etc.
+		Driver   string `json:"Driver"`   // e.g., "mysql", "postgres", etc.
+		SSLMode  string `json:"SSLMode"`  // e.g., "disable", "require", etc.
 	}
 )

@@ -9,15 +9,17 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 2. [Installation](#installation)
 3. [Project Structure](#project-structure)
 4. [Configuration (`Config.json`)](#configuration-configjson)
-5. [Server Creation & Routing](#server-creation--routing)
-6. [Creating Controllers and Views](#creating-controllers-and-views)
-7. [Session Management](#session-management)
-8. [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
-9. [SMTP/Email Support](#smtpemail-support)
-10. [Console Commands](#console-commands)
-11. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
-12. [API Reference](#api-reference)
-13. [License](#license)
+5. [Database Initialization](#database-initialization)
+6. [Server Creation & Routing](#server-creation--routing)
+7. [Creating Controllers and Views](#creating-controllers-and-views)
+8. [Session Management](#session-management)
+9. [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
+10. [SMTP/Email Support](#smtpemail-support)
+11. [Console Commands](#console-commands)
+12. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
+13. [API Reference](#api-reference)
+14. [License](#license)
+15. [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
 
 ---
 
@@ -81,21 +83,102 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 Create a `Config.json` file in your project root. Example:
 ```json
 {
-  "Http": true,
-  "Static_folders": ["Static"],
-  "CSS_Folders": ["Css"],
-  "JS_Folders": ["Js"],
-  "Views_folder": "Views",
-  "Build": false
+  "Port": "8080",
+  "Host": "localhost",
+  "Https": false,
+  "Build": false,
+  "StaticFolders": ["Static"],
+  "CssFolders": ["Css"],
+  "JsFolders": ["Js"],
+  "ViewFolder": "Views",
+  "MaxSessionCount": 1000,
+  "SessionStoreType": "memory"
 }
 ```
-- **Http**: Enable HTTP server
-- **Build**: Ensure if it is a Build Version or not
-- **Static_folders**: List of folders for static files
-- **CSS_Folders**: List of folders for CSS
-- **JS_Folders**: List of folders for JS
-- **Views_folder**: Folder for HTML/PHP templates
-- **Build**: Enable/disable template caching
+- **Port**: The port number the server will listen on (e.g., "8080").
+- **Host**: The hostname or IP address to bind the server to (e.g., "localhost").
+- **Https**: Enable HTTPS server (true/false).
+- **Build**: Enable/disable template caching and build mode (true/false).
+- **StaticFolders**: List of folders for static files (e.g., ["Static"]).
+
+- **CssFolders**: List of folders for CSS files (e.g., ["Css"]).
+
+- **JsFolders**: List of folders for JS files (e.g., ["Js"]).
+
+- **ViewFolder**: Folder for HTML/PHP templates (e.g., "Views").
+
+- **MaxSessionCount**: Maximum number of concurrent sessions allowed (integer).
+
+- **SessionStoreType**: Type of session store to use (e.g., "memory", "redis", "database").
+
+You can also override these values using environment variables:
+- `SERVER_PORT`
+- `SERVER_HOST`
+- `SERVER_HTTPS`
+- `BUILD`
+- `MAX_SESSION_COUNT`
+- `SESSION_STORE_TYPE`
+
+Environment variables take precedence over values in `Config.json`.
+
+### Database Configuration (`Database.Config.json`)
+
+To enable database support, create a `Database.Config.json` file with your database settings, or set the appropriate environment variables.
+
+Example:
+```json
+{
+  "Host": "localhost",
+  "Port": "3306",
+  "User": "root",
+  "Password": "",
+  "Database": "mydatabase",
+  "Protocol": "tcp",
+  "Driver": "mysql",
+  "SSLMode": "disable"
+}
+```
+
+#### Supported Environment Variables
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_DATABASE`
+- `DB_PROTOCOL`
+- `DB_DRIVER`
+- `DB_SSLMODE`
+
+Environment variables take precedence over values in `Database.Config.json`.
+
+---
+
+## Database Initialization
+
+To enable database support in your project, you need to initialize the database connection before starting the server. This is done by calling the `InitDatabase` method on your server instance.
+
+### How to Initialize the Database
+
+1. **Create a `Database.Config.json` file** in your project root with your database settings, or set the appropriate environment variables (see above for details).
+2. **Call `InitDatabase()` before starting the server:**
+
+   ```go
+   package main
+
+   import (
+       "github.com/vrianta/Server"
+   )
+
+   func main() {
+       srv := Server.New()
+       srv.InitDatabase() // Initialize the database connection
+       srv.Start()        // Start the server
+   }
+   ```
+
+3. **If you do not want to use a database**, simply do not call `InitDatabase()`. The server will run without attempting to connect to any database.
+
+> **Note:** If `InitDatabase()` is not called, the database will not be initialized. This allows you to run the server without any database connection if desired.
 
 ---
 

@@ -48,6 +48,13 @@ func webInit() {
 		webConfig.MaxSessionCount = __config.MaxSessionCount
 	}
 
+	// SessionStoreType: environment variable takes precedence
+	if envStoreType := Utils.GetEnvString("SESSION_STORE_TYPE"); envStoreType != nil && *envStoreType != "" {
+		webConfig.SessionStoreType = *envStoreType
+	} else if __config.SessionStoreType != "" {
+		webConfig.SessionStoreType = __config.SessionStoreType
+	}
+
 	if __config.StaticFolders != nil {
 		webConfig.StaticFolders = __config.StaticFolders
 	}

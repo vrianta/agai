@@ -3,16 +3,22 @@ package DatabaseHandler
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/vrianta/Server/Config"
 )
 
 // Function to init the Database with the Database/sql object and store it in the program
-func Init(_sql *sql.DB) error {
-	if _sql == nil {
-		return fmt.Errorf("Database Initialisation failed: provided Database Object is nil")
+func Init() error {
+
+	if Config.GetDatabaseConfig().Host == "" {
+
+		return nil
 	}
-	// Store the database object in a global variable or a struct
-	// This is just an example, you can modify it as per your program structure
-	database = _sql
+	var err error
+	if database, err = sql.Open(Config.GetDatabaseDriver(), Config.GetDSN()); err != nil {
+		return err
+	}
+
 	return nil
 }
 

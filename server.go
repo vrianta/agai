@@ -5,9 +5,12 @@ import (
 	"os"
 
 	"github.com/vrianta/Server/Config"
+	"github.com/vrianta/Server/DatabaseHandler"
 	"github.com/vrianta/Server/Log"
 	"github.com/vrianta/Server/Router"
 	"github.com/vrianta/Server/Session"
+
+	"database/sql"
 )
 
 /*
@@ -26,12 +29,14 @@ func New() *_Struct {
 }
 
 // Start runs the HTTP server
-func (s *_Struct) Start() {
+func (s *_Struct) Start() *_Struct {
 
 	s.setup_static_folders()
 	s.setup_css_folder()
 	s.setup_js_folder()
 	s.setup_views() // Register all the views with the RenderEngine
+
+	// Initialize Models Handler
 
 	// Starting Session Handler to Manage Session Expiry
 	go Session.StartSessionHandler()
@@ -45,9 +50,25 @@ func (s *_Struct) Start() {
 		Addr: Config.GetWebConfig().Host + ":" + Config.GetWebConfig().Port, // Host and port
 	}
 
-	Log.WriteLogf("Server Starting at : http://%s:%s\n", Config.GetWebConfig().Host, Config.GetWebConfig().Port)
+	Log.WriteLogf("Server Starting at : http://localhost:%s\n", Config.GetWebConfig().Port)
 
-	s.server.ListenAndServe()
+	if err := s.server.ListenAndServe(); err != nil {
+		panic("Server failed to start: " + err.Error())
+	}
+
+	return s
+}
+
+// Initialise Database Handler
+func (s *_Struct) RegisterDatabase(sql *sql.DB) *_Struct {
+
+	if err := DatabaseHandler.Init(sql); err != nil {
+		panic("Database Initialisation failed: " + err.Error())
+	} else {
+		Log.WriteLog("Database Initialised Successfully")
+	}
+
+	return s
 }
 
 func (s *_Struct) setup_static_folders() {

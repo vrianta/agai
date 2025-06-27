@@ -1,0 +1,58 @@
+package Config
+
+import (
+	"encoding/json"
+
+	"github.com/vrianta/Server/Log"
+	"github.com/vrianta/Server/Utils"
+)
+
+func databaseInit() {
+	__config := databaseConfigStruct{}
+	if err := json.Unmarshal([]byte(Utils.ReadFromFile(dBConfigFile)), &__config); err != nil {
+		Log.WriteLogf("Warning: Failed to Load Database Config File: %s", err.Error())
+		return
+	}
+
+	if envHost := Utils.GetEnvString("DB_HOST"); envHost != nil && *envHost != "" {
+		databaseConfig.Host = *envHost
+	} else if __config.Host != "" {
+		databaseConfig.Host = __config.Host
+	}
+
+	if envPort := Utils.GetEnvString("DB_PORT"); envPort != nil && *envPort != "" {
+		databaseConfig.Port = *envPort
+	} else if __config.Port != "" {
+		databaseConfig.Port = __config.Port
+	}
+
+	if envUser := Utils.GetEnvString("DB_USER"); envUser != nil && *envUser != "" {
+		databaseConfig.User = *envUser
+	} else if __config.User != "" {
+		databaseConfig.User = __config.User
+	}
+
+	if envPassword := Utils.GetEnvString("DB_PASSWORD"); envPassword != nil && *envPassword != "" {
+		databaseConfig.Password = *envPassword
+	} else if __config.Password != "" {
+		databaseConfig.Password = __config.Password
+	}
+
+	if envDatabase := Utils.GetEnvString("DB_DATABASE"); envDatabase != nil && *envDatabase != "" {
+		databaseConfig.Database = *envDatabase
+	} else if __config.Database != "" {
+		databaseConfig.Database = __config.Database
+	}
+
+	if envDriver := Utils.GetEnvString("DB_DRIVER"); envDriver != nil && *envDriver != "" {
+		databaseConfig.Driver = *envDriver
+	} else if __config.Driver != "" {
+		databaseConfig.Driver = __config.Driver
+	}
+
+	if envSSLMode := Utils.GetEnvString("DB_SSLMODE"); envSSLMode != nil && *envSSLMode != "" {
+		databaseConfig.SSLMode = *envSSLMode
+	} else if __config.SSLMode != "" {
+		databaseConfig.SSLMode = __config.SSLMode
+	}
+}

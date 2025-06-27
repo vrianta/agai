@@ -2,6 +2,7 @@ package Config
 
 func Init() {
 	webInit()
+	databaseInit()
 }
 
 func GetPort() string {

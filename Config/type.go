@@ -24,4 +24,14 @@ type (
 		ViewFolder      string   `json:"ViewFolder"`      // view folder is the folder where all the views will be kept and it will be used to render the views
 		MaxSessionCount int      `json:"MaxSessionCount"` // <-- Add this line
 	}
+
+	databaseConfigStruct struct {
+		Host     string `json:"Host"`
+		Port     string `json:"Port"`
+		User     string `json:"User"`
+		Password string `json:"Password"`
+		Database string `json:"Database"`
+		Driver   string `json:"Driver"`  // e.g., "mysql", "postgres", etc.
+		SSLMode  string `json:"SSLMode"` // e.g., "disable", "require", etc.
+	}
 )

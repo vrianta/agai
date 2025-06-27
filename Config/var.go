@@ -3,7 +3,8 @@ package Config
 // Config package provides configuration settings for the server
 
 var (
-	WebConfigFile = "Web.Config.json"
+	webConfigFile = "Web.Config.json"
+	dBConfigFile  = "Database.Config.json"
 	webConfig     = webConfigStruct{
 		Port: "1080", // Default port for the server
 		Host: "",     // Default host for the server
@@ -22,5 +23,13 @@ var (
 		},
 		ViewFolder:      "Views",
 		MaxSessionCount: 50000, // Default value
+	}
+
+	databaseConfig = databaseConfigStruct{
+		Host:     "localhost",
+		Port:     "3306", // Default MySQL port
+		User:     "root",
+		Password: "",
+		Database: "mydatabase",
 	}
 )

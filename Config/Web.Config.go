@@ -11,7 +11,7 @@ import (
 
 func webInit() {
 	__config := webConfigStruct{}
-	if err := json.Unmarshal([]byte(Utils.ReadFromFile("Web.Config.json")), &__config); err != nil {
+	if err := json.Unmarshal([]byte(Utils.ReadFromFile(webConfigFile)), &__config); err != nil {
 		Log.WriteLogf("Warning:  Failed to Load Config File: %s", err.Error())
 		return
 	}

@@ -3,8 +3,8 @@ package Config
 // Config package provides configuration settings for the server
 
 var (
-	webConfigFile = "Web.Config.json"
-	dBConfigFile  = "Database.Config.json"
+	webConfigFile = "config.web.json"
+	dBConfigFile  = "config.database.json"
 	webConfig     = webConfigStruct{
 		Port: "1080", // Default port for the server
 		Host: "",     // Default host for the server

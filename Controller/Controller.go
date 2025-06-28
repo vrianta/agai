@@ -238,7 +238,12 @@ Returns:
 */
 func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
 	if !Config.GetWebConfig().Build {
-		return __template.Update()
+		__template.Update()
+		if err := __template.Execute(c.w, __response); err != nil {
+			Log.WriteLog("Error rendering template: " + err.Error())
+			panic(err)
+		} // Update the template before rendering
+		return nil
 	}
 	if c.View == "" {
 		return nil // No view to render, return nil
@@ -252,11 +257,8 @@ func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Templa
 	} else {
 		if err := __template.Execute(c.w, __response); err != nil {
 			Log.WriteLog("Error rendering template: " + err.Error())
-			panic(err)
 		}
 	}
-
-	// return __template.Execute(c.w, __response)
 	return nil
 }
 

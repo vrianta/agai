@@ -444,3 +444,12 @@ func (q *Query) buildLimit() string {
 	}
 	return ""
 }
+
+func (q *Query) Clone() *Query {
+	copy := *q
+	copy.whereClauses = append([]string{}, q.whereClauses...)
+	copy.whereArgs = append([]any{}, q.whereArgs...)
+	copy.setClauses = append([]string{}, q.setClauses...)
+	copy.setArgs = append([]any{}, q.setArgs...)
+	return &copy
+}

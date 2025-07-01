@@ -18,8 +18,9 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 11. [Console Commands](#console-commands)
 12. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
 13. [API Reference](#api-reference)
-14. [License](#license)
-15. [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
+14. [ModelsHandler (ORM-like Query Builder)](#modelshandler-orm-like-query-builder)
+15. [License](#license)
+16. [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
 
 ---
 
@@ -27,7 +28,7 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 - **Custom HTTP Server**: Easily start and stop the server with interactive console commands. Configurable via `Config.json` (HTTP/HTTPS, static/view folders, build mode).
 - **Routing System**: Map URL paths to controller structs. Supports GET, POST, DELETE HTTP methods. Dynamic handler invocation based on request method.
 - **Controller Architecture**: Modular controller packages. Each controller defines its own view and HTTP method handlers. Handlers return data for templates or perform logic.
-- **Session Management**: Secure, cookie-based session tracking. Session creation, retrieval, update, and destruction. Session variables (`Store` map) for user data. Login/logout helpers and authentication checks. Session expiry and cleanup mechanism.
+- **Session Management**: Secure, cookie-based session tracking. Session creation, retrieval, update, and destruction. Session variables (`Store` map) for user data. Login/logout helpers and authentication checks.
 - **Static File Serving**: Serve static, CSS, and JS files from configurable folders. Static file caching with last-modified checks. Efficient file read and cache update logic.
 - **Advanced Template Engine**: Write templates in PHP-style syntax (`<?= $var ?>`, `<?php ... ?>`). Automatic conversion to Go’s `html/template` syntax. Supports variables, loops, conditionals, and custom operators. Template caching and reloading on file change.
 - **Request Parsing**: Automatic parsing of GET and POST parameters. Easy access to request data in controllers.
@@ -37,6 +38,51 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 - **Console Commands**: Start, stop, restart, and exit server from the console. Help command for available options.
 - **Utilities**: Cookie management helpers. File utilities for reading and caching. Type definitions for routes, sessions, and templates.
 - **Extensible & Secure**: Easily add new controllers, routes, and templates. Secure session IDs, cache control, and best practices. Template and static file caching, mutex-protected maps, and efficient request handling.
+
+---
+
+## ModelsHandler (ORM-like Query Builder)
+
+The framework includes a powerful, human-friendly query builder called **ModelsHandler** for working with your database using Go structs. ModelsHandler provides a chainable API for building and executing SQL queries (SELECT, UPDATE, DELETE) in a style similar to popular ORMs.
+
+- Define your models as Go structs and map them to database tables.
+- Build queries using a fluent, readable API (e.g., `Users.Get().Where("age").GreaterThan(18).OrderBy("name").Fetch()`).
+- Supports WHERE, AND, OR, IN, NOT IN, BETWEEN, LIKE, IS NULL, LIMIT, OFFSET, ORDER BY, GROUP BY, and more.
+- Makes database access easy to read, write, and maintain.
+- **Automatic Database Migration:** If the `Build` flag is set to `false` in your `web.config.json`, ModelsHandler will automatically migrate your database schema to match your model definitions. This means tables and columns are created or updated as needed, so you don't have to write migration scripts manually.
+
+> **Note:** Migration only happens if the `Build` flag is `false`. In production, set it to `true` to prevent accidental schema changes.
+
+### How to Create a Model (Quick Example)
+
+To define a model, use the `models_handler.New` function, specifying the table name and a map of fields:
+
+```go
+import models_handler "github.com/vrianta/Server/modelsHandler"
+
+var Users = models_handler.New(
+    "users", // Table name
+    map[string]models_handler.Field{
+        "userId": {
+            Name:     "userId",
+            Type:     models_handler.FieldsTypes.VarChar,
+            Length:   20,
+            Nullable: false,
+        },
+        "userName": {
+            Name:     "userName",
+            Type:     models_handler.FieldsTypes.VarChar,
+            Length:   30,
+            Nullable: false,
+        },
+    },
+)
+```
+- The first argument is the table name in your database.
+- The second argument is a map where each key is a column name and the value is a `Field` struct describing the column.
+- You can add more fields and options (like indexes, types, etc.) as needed.
+
+**For full documentation, advanced usage, and API reference, see [`modelsHandler/readme.md`](modelsHandler/readme.md).**
 
 ---
 
@@ -78,7 +124,9 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 
 ---
 
-## Configuration (`Config.json`)
+## Configuration (`web.config.json`)
+
+> **For complete configuration details, environment variable reference, and advanced usage, see [`Config/readme.md`](Config/readme.md). The summary below covers the basics; the linked documentation provides authoritative and up-to-date information.**
 
 Create a `Config.json` file in your project root. Example:
 ```json
@@ -149,7 +197,25 @@ Example:
 - `DB_DRIVER`
 - `DB_SSLMODE`
 
-Environment variables take precedence over values in `Database.Config.json`.
+Environment variables take precedence over values in `database.config.json`.
+
+---
+
+## Configuration and the Config Package
+
+All configuration for the server is managed by the **Config package**. This package loads settings from config files (such as `Config.json` and `Database.Config.json`) and supports overriding them with environment variables. The Config package ensures that your server is flexible and easy to configure for different environments (development, production, etc.).
+
+- **Config file names, supported environment variables, and override order are fully documented in [`Config/readme.md`](Config/readme.md).**
+- **Environment variables always take precedence over config file values.**
+- For best practices, advanced usage, and troubleshooting, see the [Config package documentation](Config/readme.md).
+
+**Quick Reference:**
+- Main server config: `Config.json` (see example above)
+- Database config: `Database.Config.json` (see example above)
+- Supported environment variables: see [`Config/readme.md`](Config/readme.md)
+- Override order: Environment variables > Config files > Defaults
+
+For a complete guide to all configuration options, environment variable names, and advanced usage, please refer to [`Config/readme.md`](Config/readme.md).
 
 ---
 
@@ -282,6 +348,8 @@ var Home = Controller.Struct{
     },
 }
 ```
+
+> **For full details, advanced usage, and API reference for controllers, see [`Controller/readme.md`](Controller/readme.md).**
 
 ### Accessing Request Data
 - `GetInput(key string)`: Returns a value from GET or POST parameters.
@@ -544,5 +612,9 @@ See [LICENSE](LICENSE) for GPLv3 license details.
 
 **Q: How can I extend the framework?**
 - You can add new packages, extend controllers, or modify the template engine. For advanced features (like WebSockets), integrate with Go's standard libraries and register your handlers in `server.go`.
+
+---
+
+For more details on configuration options, environment variables, and advanced usage, see [`Config/readme.md`](Config/readme.md).
 
 ---

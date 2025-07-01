@@ -72,7 +72,7 @@ func (m *Struct) GetTableScema() {
 
 // Function to get the table topology and compare with the latest fields and generate a new SQL query to alter the table
 // This function will be used to update the table structure if there are any changes in the fields
-func (m *Struct) SyncTableSchema() {
+func (m *Struct) syncTableSchema() {
 	// Use maps for faster lookups
 	schemaMap := make(map[string]schema, len(m.schemas))
 	for _, s := range m.schemas {
@@ -172,7 +172,7 @@ func (m *Struct) SyncTableSchema() {
 func (m *Struct) CreateTableIfNotExists() {
 	if len(m.schemas) > 0 { // if the lenth is more that 0 that means talbe is already created and no need to create it again instead we should focus on updating it
 		if !Config.GetBuild() { // table syncing will only work only if it is a build version
-			m.SyncTableSchema()
+			m.syncTableSchema()
 		}
 		return
 	}

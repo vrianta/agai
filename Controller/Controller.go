@@ -193,7 +193,7 @@ func (c *Struct) RegisterTemplate() error {
 			if _template, err := Template.New(view_path, full_file_name, file_type); err != nil {
 				return err
 			} else {
-				fmt.Printf("  Found template: %s (type: %s) for controller: %T and file_name:%s\n", full_file_name, file_type, c, file_name)
+				fmt.Printf("  Found template: %s (type: %s) for controller: %T and file_name:%s Path:%s\n", full_file_name, file_type, c, file_name, view_path)
 				switch file_name {
 				case "default", "index":
 					fmt.Printf("  Registering default view template for controller: %T\n", c)

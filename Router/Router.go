@@ -67,13 +67,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	var sess *Session.Struct
 	var ok bool
 
-	var tempController *Controller.Struct
-	if _controller, found := routeTable[r.URL.Path]; found {
-		tempController = _controller.Copy()
-	} else {
-		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
-		return
-	}
+	// var tempController *Controller.Struct
+	// if _controller, found := routeTable[r.URL.Path]; found {
+	// 	tempController = _controller.Copy()
+	// } else {
+	// 	http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
+	// 	return
+	// }
 
 	if sessionID != nil {
 		sess, ok = Session.Get(sessionID)
@@ -106,9 +106,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		go Session.Store(&sessionID, sess)
 	}
 
-	tempController.InitWR(w, r)
-	tempController.InitSession(sess)
-	tempController.RunRequest(sess)
+	if _controller, found := routeTable[r.URL.Path]; found {
+		_controller.InitWR(w, r)
+		_controller.InitSession(sess)
+		_controller.RunRequest(sess)
+	} else {
+		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
+		return
+	}
 
 	// duration := time.Since(start)
 	// log.Printf("Handler took %s to complete\n", duration)

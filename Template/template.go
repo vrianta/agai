@@ -69,6 +69,8 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 				php:          _html_template,
 				viewType:     viewTypes.phpTemplate,
 			}, nil
+		} else {
+			return nil, err
 		}
 	case "html", "gohtml":
 		if _html_template, err := htmltemplate.New(file_name).Parse(Utils.ReadFromFile(full_path)); err == nil {
@@ -79,6 +81,8 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 				html:         _html_template,
 				viewType:     viewTypes.htmlTemplate,
 			}, nil
+		} else {
+			return nil, err
 		}
 	default:
 		if _html_template, err := htmltemplate.New(file_name).Parse(Utils.ReadFromFile(full_path)); err == nil {
@@ -89,10 +93,10 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 				html:         _html_template,
 				viewType:     viewTypes.htmlTemplate,
 			}, nil
+		} else {
+			return nil, err
 		}
 	}
-
-	return nil, err
 }
 
 /*

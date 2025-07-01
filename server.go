@@ -50,6 +50,8 @@ func (s *_Struct) Start() *_Struct {
 	}
 
 	Log.WriteLogf("[Server] Started at : http://localhost:%s\n", Config.GetWebConfig().Port)
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("---------------------------------------------------------\n\n\n")
 
 	if err := s.server.ListenAndServe(); err != nil {
 		panic("[Server] Failed to start: " + err.Error())
@@ -98,13 +100,13 @@ func (s *_Struct) setup_views() {
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Print("[Views Setup] Registering templates for controllers:\n")
 	fmt.Print("---------------------------------------------------------\n")
-	for _, controller := range *routes {
+	for route, controller := range *routes {
 		if controller.View != "" {
 			if err := controller.RegisterTemplate(); err != nil {
 				fmt.Printf("[Error]   Template: %-20s | %v\n", controller.View, err)
 				os.Exit(1)
 			} else {
-				fmt.Printf("[Success] Template: %-20s | Registered\n", controller.View)
+				fmt.Printf("[Success] Template: %s and Route: %-20s | Registered\n", controller.View, route)
 			}
 		}
 	}

@@ -4,7 +4,7 @@ ModelsHandler is a human-friendly, chainable query builder for working with data
 
 ## Features
 - Chainable, fluent API for building queries
-- Supports SELECT, UPDATE, DELETE operations
+- Supports SELECT, CREATE, UPDATE, DELETE operations
 - WHERE, AND, OR, IN, NOT IN, BETWEEN, LIKE, IS NULL, etc.
 - LIMIT, OFFSET, ORDER BY, GROUP BY
 - Easy to extend and understand
@@ -65,6 +65,18 @@ var Users = models_handler.New(
 
 ## 2. Building and Executing Queries
 
+### Creating Records (INSERT)
+
+```go
+// Create a new user
+err := Users.Create().
+    Set("userId").To("u123").
+    Set("userName").To("alice").
+    Set("password").To("securepass").
+    Set("firstName").To("Alice").
+    Exec()
+```
+
 ### Fetching Data (SELECT)
 
 ```go
@@ -97,6 +109,7 @@ err := Users.Get().Where("firstName").Is("John").Delete()
 
 ## 3. Query Builder API Reference
 
+- `.Create()` — Start a new INSERT query
 - `.Get()` — Start a new query (default SELECT)
 - `.Where(column)` — Add a WHERE condition
 - `.Is(value)` — WHERE column = value
@@ -120,6 +133,14 @@ err := Users.Get().Where("firstName").Is("John").Delete()
 ## 4. Example: Full Query Chain
 
 ```go
+// Create a new user with multiple fields
+err := Users.Create().
+    Set("userId").To("u123").
+    Set("userName").To("bob").
+    Set("age").To(25).
+    Set("status").To("active").
+    Exec()
+
 // Update all users named 'Bob' to be age 30
 err := Users.Get().Set("age").To(30).Where("userName").Is("Bob").Exec()
 

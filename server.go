@@ -49,10 +49,10 @@ func (s *_Struct) Start() *_Struct {
 		Addr: Config.GetWebConfig().Host + ":" + Config.GetWebConfig().Port, // Host and port
 	}
 
-	Log.WriteLogf("Server Starting at : http://localhost:%s\n", Config.GetWebConfig().Port)
+	Log.WriteLogf("[Server] Started at : http://localhost:%s\n", Config.GetWebConfig().Port)
 
 	if err := s.server.ListenAndServe(); err != nil {
-		panic("Server failed to start: " + err.Error())
+		panic("[Server] Failed to start: " + err.Error())
 	}
 
 	return s
@@ -64,7 +64,7 @@ func (s *_Struct) InitDatabase() *_Struct {
 	if err := DatabaseHandler.Init(); err != nil {
 		panic("Database Initialisation failed: " + err.Error())
 	} else {
-		Log.WriteLog("Database Initialised Successfully")
+		Log.WriteLog("[Database] Initialised Successfully\n")
 	}
 
 	return s
@@ -95,32 +95,43 @@ func (s *_Struct) setup_js_folder() {
 func (s *_Struct) setup_views() {
 
 	routes := Router.GetRoutes()
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Views Setup] Registering templates for controllers:\n")
+	fmt.Print("---------------------------------------------------------\n")
 	for _, controller := range *routes {
 		if controller.View != "" {
 			if err := controller.RegisterTemplate(); err != nil {
-				Log.WriteLogf("Error registering template %s: %v", controller.View, err)
+				fmt.Printf("[Error]   Template: %-20s | %v\n", controller.View, err)
 				os.Exit(1)
 			} else {
-				Log.WriteLogf("Template registered: %s\n", controller.View)
-			} // Register the template with the RenderEngine
+				fmt.Printf("[Success] Template: %-20s | Registered\n", controller.View)
+			}
 		}
 	}
-	Log.WriteLog("Views setup completed")
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Views Setup] All views registered successfully.\n")
+	fmt.Print("---------------------------------------------------------\n\n")
 }
 
 func (s *_Struct) initialiseModels() {
 	if Config.GetBuild() {
+		fmt.Print("[Models] Build mode enabled, skipping model initialization.\n")
 		return
 	}
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Models] Initializing models and syncing database tables:\n")
+	fmt.Print("---------------------------------------------------------\n")
 	for _, model := range Models.ModelsRegistry {
 		if DatabaseHandler.Initialized {
-			fmt.Println("ModelsHandler", "Creating table for model: "+model.TableName)
+			fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)
 			model.GetTableScema()
 			model.CreateTableIfNotExists() // creating table if not existed
-			// fmt.Println("Creating the table with the query: ", create_sql_command)
 		} else {
-			fmt.Println("Database is not initialized, skipping table creation for model:", model.TableName)
+			fmt.Printf("[Warning] Database not initialized, skipping table creation for model: %-20s\n", model.TableName)
 		}
 	}
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Models] Model initialization complete.\n")
+	fmt.Print("---------------------------------------------------------\n\n")
 
 }

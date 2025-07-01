@@ -88,7 +88,7 @@ func (c *Struct) RunRequest(session *Session.Struct) {
 		reponse := c.isMethodNull(c.OPTIONS)
 		c.ExecuteTemplate(c.templates.OPTIONS, reponse)
 	default:
-		// Method not allowed; optionally handle here
+		c.ExecuteTemplate(c.templates.View, &Template.NoResponse)
 	}
 }
 
@@ -175,6 +175,7 @@ Returns:
 */
 func (c *Struct) RegisterTemplate() error {
 	view_path := "./" + Config.GetWebConfig().ViewFolder + "/" + c.View // Path to the controller's view folder
+	fmt.Printf("Registering templates for controller: %T, view path: %s\n", c, view_path)
 	files, err := os.ReadDir(view_path)
 	if err != nil {
 		err := fmt.Errorf("error reading directory: %s", err.Error())
@@ -192,8 +193,10 @@ func (c *Struct) RegisterTemplate() error {
 			if _template, err := Template.New(view_path, full_file_name, file_type); err != nil {
 				return err
 			} else {
+				fmt.Printf("  Found template: %s (type: %s) for controller: %T and file_name:%s\n", full_file_name, file_type, c, file_name)
 				switch file_name {
 				case "default", "index":
+					fmt.Printf("  Registering default view template for controller: %T\n", c)
 					c.templates.View = _template
 					gotDefaultView = true
 				case "get":

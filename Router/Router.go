@@ -88,10 +88,22 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 				return
 			}
-			Session.Store(&sessionID, sess)
+			go Session.Store(&sessionID, sess)
 		} else {
 			sess.Clean()
 		}
+	} else {
+		sessionID, err := Utils.GenerateSessionID()
+		if err != nil {
+			Log.WriteLog("Error generating session ID: " + err.Error())
+			return
+		}
+		sess = Session.New()
+		if create_session_error := sess.StartSession(&sessionID, w, r); create_session_error != nil {
+			http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
+			return
+		}
+		go Session.Store(&sessionID, sess)
 	}
 
 	tempController.InitWR(w, r)

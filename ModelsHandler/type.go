@@ -1,4 +1,4 @@
-package Models
+package models
 
 import "database/sql"
 
@@ -8,7 +8,7 @@ type (
 
 	Struct struct {
 		TableName string           // Name of the table in the database
-		Fields    map[string]Field // Map of field names to their types
+		fields    map[string]Field // Map of field names to their types
 		schemas   []schema
 	}
 
@@ -34,5 +34,14 @@ type (
 	schema struct { // Scema is to hold the table scema which is available in the database
 		field, fieldType, nullable, key, extra string
 		defaultVal                             sql.NullString
+	}
+
+	Query struct {
+		model      *Struct
+		conditions []string
+		args       []any
+		limit      int
+		offset     int
+		lastColumn string
 	}
 )

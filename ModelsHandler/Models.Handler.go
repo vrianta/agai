@@ -1,4 +1,4 @@
-package Models
+package models
 
 import (
 	"bufio"
@@ -21,7 +21,7 @@ import (
 func New(tableName string, fields map[string]Field) *Struct {
 	_model := Struct{
 		TableName: tableName,
-		Fields:    fields,
+		fields:    fields,
 	}
 
 	ModelsRegistry = append(ModelsRegistry, &_model)
@@ -79,13 +79,13 @@ func (m *Struct) syncTableSchema() {
 		schemaMap[s.field] = s
 	}
 
-	fieldMap := make(map[string]Field, len(m.Fields))
-	for _, f := range m.Fields {
+	fieldMap := make(map[string]Field, len(m.fields))
+	for _, f := range m.fields {
 		fieldMap[f.Name] = f
 	}
 
 	// Check for new or changed fields
-	for _, field := range m.Fields {
+	for _, field := range m.fields {
 		schema, exists := schemaMap[field.Name]
 		if !exists {
 			m.addField(&field)
@@ -179,7 +179,7 @@ func (m *Struct) CreateTableIfNotExists() {
 	sql := "CREATE TABLE IF NOT EXISTS " + m.TableName + " (\n"
 	fieldDefs := []string{}
 
-	for _, field := range m.Fields {
+	for _, field := range m.fields {
 		fieldDefs = append(fieldDefs, field.String())
 	}
 
@@ -260,4 +260,7 @@ func (m *Struct) GetTableName() string {
 	return m.TableName
 }
 
-// function to get the all details from the
+// function to get data of a field
+func (m *Struct) GetFieldValue(field_name string) any {
+	return m.fields[field_name].value
+}

@@ -7,8 +7,8 @@ type (
 	Fields    map[string]fieldType
 
 	Struct struct {
-		TableName string  // Name of the table in the database
-		Fields    []Field // Map of field names to their types
+		TableName string           // Name of the table in the database
+		Fields    map[string]Field // Map of field names to their types
 		schemas   []schema
 	}
 
@@ -28,6 +28,7 @@ type (
 		DefaultValue  string
 		AutoIncrement bool
 		Index         Index // Index type (e.g., "UNIQUE", "INDEX")
+		value         any   // a variable where the value of the field will be stored
 	}
 
 	schema struct { // Scema is to hold the table scema which is available in the database

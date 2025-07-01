@@ -18,7 +18,7 @@ import (
  * It will provide the default functions to handle the models like Create, Read, Update, Delete
  */
 
-func New(tableName string, fields []Field) *Struct {
+func New(tableName string, fields map[string]Field) *Struct {
 	_model := Struct{
 		TableName: tableName,
 		Fields:    fields,
@@ -259,3 +259,5 @@ func (m *Struct) dropField(fieldName string) {
 func (m *Struct) GetTableName() string {
 	return m.TableName
 }
+
+// function to get the all details from the

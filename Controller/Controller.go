@@ -240,37 +240,28 @@ Returns:
 - error: if updating the template fails (in dev mode).
 */
 func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
-	if __template == nil && c.templates.View != nil {
-		// If no specific template is provided, use the default view template
-		__template = c.templates.View
-	} else {
-		// no template to exeute, return nil
-		fmt.Printf("Template is nil for controller %s, no template to execute\n", c.View)
-		return nil
+	if __template == nil {
+		if c.templates.View != nil {
+			__template = c.templates.View
+		} else {
+			fmt.Printf("Template is nil for controller %s, no template to execute\n", c.View)
+			return nil
+		}
 	}
+
 	if !Config.GetWebConfig().Build {
 		__template.Update()
 		if err := __template.Execute(c.w, __response); err != nil {
 			Log.WriteLog("Error rendering template: " + err.Error())
 			panic(err)
-		} // Update the template before rendering
+		}
 		return nil
 	}
-	if c.View == "" {
-		return nil // No view to render, return nil
-	}
 
-	// if __template == nil {
-	// 	if err := c.templates.View.Execute(c.w, __response); err != nil {
-	// 		Log.WriteLog("Error rendering template: " + err.Error())
-	// 		panic(err)
-	// 	}
-	// } else {
 	if err := __template.Execute(c.w, __response); err != nil {
 		Log.WriteLog("Error rendering template: " + err.Error())
 		return err
 	}
-	// }
 	return nil
 }
 

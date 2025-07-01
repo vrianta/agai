@@ -1,4 +1,4 @@
-package models
+package models_handler
 
 /*
 CREATE TABLE IF NOT EXISTS employees (

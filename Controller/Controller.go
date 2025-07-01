@@ -237,6 +237,9 @@ Returns:
 - error: if updating the template fails (in dev mode).
 */
 func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
+	if __template == nil {
+		__template = c.templates.View
+	}
 	if !Config.GetWebConfig().Build {
 		__template.Update()
 		if err := __template.Execute(c.w, __response); err != nil {
@@ -249,16 +252,17 @@ func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Templa
 		return nil // No view to render, return nil
 	}
 
-	if __template == nil {
-		if err := c.templates.View.Execute(c.w, __response); err != nil {
-			Log.WriteLog("Error rendering template: " + err.Error())
-			panic(err)
-		}
-	} else {
-		if err := __template.Execute(c.w, __response); err != nil {
-			Log.WriteLog("Error rendering template: " + err.Error())
-		}
+	// if __template == nil {
+	// 	if err := c.templates.View.Execute(c.w, __response); err != nil {
+	// 		Log.WriteLog("Error rendering template: " + err.Error())
+	// 		panic(err)
+	// 	}
+	// } else {
+	if err := __template.Execute(c.w, __response); err != nil {
+		Log.WriteLog("Error rendering template: " + err.Error())
+		return err
 	}
+	// }
 	return nil
 }
 

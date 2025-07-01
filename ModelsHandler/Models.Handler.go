@@ -88,7 +88,7 @@ func (m *Struct) SyncTableSchema() {
 	for _, field := range m.Fields {
 		schema, exists := schemaMap[field.Name]
 		if !exists {
-			m.AddField(&field)
+			m.addField(&field)
 			continue
 		}
 
@@ -149,7 +149,7 @@ func (m *Struct) SyncTableSchema() {
 		}
 
 		if shouldChange {
-			m.UpdateField(&field)
+			m.updateField(&field)
 		}
 	}
 
@@ -159,7 +159,7 @@ func (m *Struct) SyncTableSchema() {
 			fmt.Printf("Do you want to delete %s (y/n): ", schema.field)
 			reader := bufio.NewReader(os.Stdin)
 			if input, err := reader.ReadString('\n'); err == nil && strings.TrimSpace(input) == "y" {
-				m.DropField(schema.field)
+				m.dropField(schema.field)
 			} else if err != nil {
 				fmt.Printf("Error Getting Input: %s", err.Error())
 			} else {
@@ -202,7 +202,7 @@ func (m *Struct) CreateTableIfNotExists() {
 }
 
 // function to add the new field in the table
-func (m *Struct) AddField(field *Field) {
+func (m *Struct) addField(field *Field) {
 	/*
 		ALTER TABLE `users`
 		ADD `newel` VARCHAR(20) NULL DEFAULT 'dwads' AFTER `userId`,
@@ -224,7 +224,7 @@ func (m *Struct) AddField(field *Field) {
 }
 
 // function to change the field details
-func (m *Struct) UpdateField(field *Field) {
+func (m *Struct) updateField(field *Field) {
 	// ALTER TABLE `users` CHANGE `userId` `userId` INT(30) NOT NULL AUTO_INCREMENT;
 	response := "ALTER TABLE `" + m.TableName + "` "
 	response += "CHANGE `" + field.Name + "` " + field.columnDefinition() + ";"
@@ -240,7 +240,8 @@ func (m *Struct) UpdateField(field *Field) {
 	}
 }
 
-func (m *Struct) DropField(fieldName string) {
+// Drop a field from the databasess
+func (m *Struct) dropField(fieldName string) {
 	//ALTER TABLE `users` DROP `userId`;
 	query := "ALTER TABLE `" + m.TableName + "` DROP `" + fieldName + "`;"
 	if databaseObj, err := DatabaseHandler.GetDatabase(); err != nil {
@@ -254,27 +255,7 @@ func (m *Struct) DropField(fieldName string) {
 	}
 }
 
-// here alter table will take the field attributes to alter the table details
-// it will only alter each attribuite at a time
-// Reserved for future: granular attribute-level alteration
-func (m *Struct) AlterTable() string { return "" }
-
+// get the table name
 func (m *Struct) GetTableName() string {
 	return m.TableName
 }
-
-// func NewField(name string, _type fieldType, lenth int, nullable bool, defaultValue string, index string) *Field {
-// 	_field := Field{
-// 		Name:         name,
-// 		Type:         _type,
-// 		Length:       lenth,
-// 		Nullable:     nullable,
-// 		DefaultValue: defaultValue,
-// 		Index:        index,
-// 	}
-
-// 	if ModelsRegistry == nil {
-// 		ModelsRegistry = make([]*Struct, 0)
-// 	}
-// 	return &_field
-// }

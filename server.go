@@ -1,12 +1,14 @@
 package Server
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/DatabaseHandler"
 	"github.com/vrianta/Server/Log"
+	Models "github.com/vrianta/Server/ModelsHandler"
 	"github.com/vrianta/Server/Router"
 	"github.com/vrianta/Server/Session"
 )
@@ -30,7 +32,8 @@ func (s *_Struct) Start() *_Struct {
 	s.setup_static_folders()
 	s.setup_css_folder()
 	s.setup_js_folder()
-	s.setup_views() // Register all the views with the RenderEngine
+	s.setup_views()      // Register all the views with the RenderEngine
+	s.initialiseModels() // intialsing models with creating tables and updating them
 
 	// Initialize Models Handler
 
@@ -103,4 +106,21 @@ func (s *_Struct) setup_views() {
 		}
 	}
 	Log.WriteLog("Views setup completed")
+}
+
+func (s *_Struct) initialiseModels() {
+	if Config.GetBuild() {
+		return
+	}
+	for _, model := range Models.ModelsRegistry {
+		if DatabaseHandler.Initialized {
+			fmt.Println("ModelsHandler", "Creating table for model: "+model.TableName)
+			model.GetTableScema()
+			model.CreateTableIfNotExists() // creating table if not existed
+			// fmt.Println("Creating the table with the query: ", create_sql_command)
+		} else {
+			fmt.Println("Database is not initialized, skipping table creation for model:", model.TableName)
+		}
+	}
+
 }

@@ -27,7 +27,7 @@ var (
 	}
 
 	databaseConfig = databaseConfigStruct{
-		Host:     "localhost",
+		Host:     "",
 		Port:     "3306", // Default MySQL port
 		User:     "root",
 		Password: "",

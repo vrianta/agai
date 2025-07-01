@@ -19,10 +19,14 @@ func Init() error {
 		return err
 	}
 
+	Initialized = true
 	return nil
 }
 
 func GetDatabase() (*sql.DB, error) {
+	if !Initialized {
+		return nil, fmt.Errorf("Database configuration is not set")
+	}
 	if database == nil {
 		return nil, fmt.Errorf("Database is not initialized")
 	}

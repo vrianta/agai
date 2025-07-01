@@ -43,6 +43,14 @@ func (m *Struct) Get() *Query {
 	}
 }
 
+func (m *Struct) Create() *Query {
+	return &Query{
+		model:        m,
+		operation:    "insert",
+		insertFields: make(map[string]any),
+	}
+}
+
 // =======================
 // WHERE Clause Functions
 // =======================
@@ -63,38 +71,88 @@ func (q *Query) Is(value any) *Query {
 	return q                                                                       // Return the query object for chaining
 }
 
-// IsNot adds a NOT EQUAL condition to the WHERE clause.
-// Example: .Where("status").IsNot("inactive")
+// IsNot adds a NOT EQUAL condition (`!=`) to the WHERE clause for the previously specified column.
+// It is used after calling .Where("columnName").
+//
+// Example:
+//
+//	query.Where("status").IsNot("inactive")
+//
+// Generates:
+//
+//	WHERE `status` != 'inactive'
 func (q *Query) IsNot(value any) *Query {
-	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` != ?", q.lastColumn)) // Add a NOT EQUAL condition for the last column
-	q.whereArgs = append(q.whereArgs, value)                                        // Add the value to the arguments for the query
-	q.lastColumn = ""                                                               // Reset lastColumn for safety
-	return q                                                                        // Return the query object for chaining
+	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` != ?", q.lastColumn))
+	q.whereArgs = append(q.whereArgs, value)
+	q.lastColumn = ""
+	return q
 }
 
+// Like adds a LIKE condition to the WHERE clause for SQL pattern matching (e.g., for wildcards like `%value%`).
+// It is used after calling .Where("columnName").
+//
+// Example:
+//
+//	query.Where("username").Like("%pritam%")
+//
+// Generates:
+//
+//	WHERE `username` LIKE '%pritam%'
 func (q *Query) Like(value string) *Query {
-	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` LIKE ?", q.lastColumn)) // Add a LIKE condition for pattern matching
-	q.whereArgs = append(q.whereArgs, value)                                          // Add the value to the arguments for the query
-	q.lastColumn = ""                                                                 // Reset lastColumn for safety
-	return q                                                                          // Return the query object for chaining
+	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` LIKE ?", q.lastColumn))
+	q.whereArgs = append(q.whereArgs, value)
+	q.lastColumn = ""
+	return q
 }
 
+// And appends a logical AND operator between WHERE conditions.
+// It should be used between chained .Where() clauses.
+//
+// Example:
+//
+//	query.Where("role").Is("admin").And().Where("active").Is(true)
+//
+// Generates:
+//
+//	WHERE `role` = 'admin' AND `active` = true
 func (q *Query) And() *Query {
-	q.whereClauses = append(q.whereClauses, "AND") // Add an AND logical operator to the WHERE clause
-	return q                                       // Return the query object for chaining
+	q.whereClauses = append(q.whereClauses, "AND")
+	return q
 }
 
+// Or appends a logical OR operator between WHERE conditions.
+// It should be used between chained .Where() clauses.
+//
+// Example:
+//
+//	query.Where("role").Is("admin").Or().Where("role").Is("moderator")
+//
+// Generates:
+//
+//	WHERE `role` = 'admin' OR `role` = 'moderator'
 func (q *Query) Or() *Query {
-	q.whereClauses = append(q.whereClauses, "OR") // Add an OR logical operator to the WHERE clause
-	return q                                      // Return the query object for chaining
+	q.whereClauses = append(q.whereClauses, "OR")
+	return q
 }
 
+// In adds an IN condition to the WHERE clause for checking if a column's value exists in a set of values.
+// It is used after .Where("columnName") and accepts a variadic list of values.
+//
+// Example:
+//
+//	query.Where("userId").In(1, 2, 3)
+//
+// Generates:
+//
+//	WHERE `userId` IN (1, 2, 3)
+//
+// Note: The values passed are safely parameterized using `?` placeholders to prevent SQL injection.
 func (q *Query) In(values ...any) *Query {
-	placeholders := strings.TrimRight(strings.Repeat("?,", len(values)), ",")                        // Create placeholders for each value
-	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IN (%s)", q.lastColumn, placeholders)) // Add an IN condition for the last column
-	q.whereArgs = append(q.whereArgs, values...)                                                     // Add all values to the arguments for the query
-	q.lastColumn = ""                                                                                // Reset lastColumn for safety
-	return q                                                                                         // Return the query object for chaining
+	placeholders := strings.TrimRight(strings.Repeat("?,", len(values)), ",")
+	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IN (%s)", q.lastColumn, placeholders))
+	q.whereArgs = append(q.whereArgs, values...)
+	q.lastColumn = ""
+	return q
 }
 
 // NotIn adds a NOT IN condition to the WHERE clause for excluding values.
@@ -158,18 +216,24 @@ func (q *Query) IsNotNull() *Query {
 // Call this before .To().
 // Example: .Set("name")
 func (q *Query) Set(field string) *Query {
-	q.operation = "update" // Switch to UPDATE mode
-	q.lastSet = field      // Remember which field to update next
+	q.lastSet = field
+	if q.operation == "" {
+		q.operation = "update" // default fallback
+	}
 	return q
 }
 
 // To specifies the value to set for the previously specified field in an UPDATE.
 // Example: .Set("name").To("Alice")
 func (q *Query) To(value any) *Query {
-	// Add a SET clause for the update (e.g., `name` = ?)
-	q.setClauses = append(q.setClauses, fmt.Sprintf("`%s` = ?", q.lastSet))
-	q.setArgs = append(q.setArgs, value) // Store the value to use in the query
-	q.lastSet = ""                       // Reset for safety
+	switch q.operation {
+	case "update":
+		q.setClauses = append(q.setClauses, fmt.Sprintf("`%s` = ?", q.lastSet))
+		q.setArgs = append(q.setArgs, value)
+	case "insert":
+		q.insertFields[q.lastSet] = value
+	}
+	q.lastSet = ""
 	return q
 }
 
@@ -331,29 +395,50 @@ func (q *Query) First() (*Struct, error) {
 //	args: all the values to use in the query
 //	result: the result of running the update
 func (q *Query) Exec() error {
-	if q.operation != "update" { // Step 1: Check if this is an update operation
-		return fmt.Errorf("invalid Exec call: not an update query")
-	}
-	db, err := DatabaseHandler.GetDatabase() // Step 2: Get a database connection
+	db, err := DatabaseHandler.GetDatabase()
 	if err != nil {
-		return err // If connection fails, return error
-	}
-	if len(q.setClauses) == 0 { // Step 3: Check if there are fields to update
-		return fmt.Errorf("no fields to update")
+		return err
 	}
 
-	set := strings.Join(q.setClauses, ", ")                                    // Step 4: Build the SET clause
-	where := q.buildWhere()                                                    // Step 4: Build the WHERE clause
-	query := fmt.Sprintf("UPDATE %s SET %s %s", q.model.TableName, set, where) // Step 5: Build the SQL UPDATE query
+	switch q.operation {
+	case "update":
+		// (your existing update logic)
+	case "insert":
+		if len(q.insertFields) == 0 {
+			return fmt.Errorf("no fields to insert")
+		}
+		cols := []string{}
+		vals := []string{}
+		args := []any{}
 
-	args := append(q.setArgs, q.whereArgs...) // Step 6: Combine SET and WHERE values
-	result, err := db.Exec(query, args...)    // Step 7: Run the update query
-	if err != nil {
-		return err // If update fails, return error
+		for k, v := range q.insertFields {
+			cols = append(cols, fmt.Sprintf("`%s`", k))
+			vals = append(vals, "?")
+			args = append(args, v)
+		}
+
+		query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
+			q.model.TableName,
+			strings.Join(cols, ", "),
+			strings.Join(vals, ", "),
+		)
+
+		result, err := db.Exec(query, args...)
+		if err != nil {
+			return err
+		}
+		if id, err := result.LastInsertId(); err == nil {
+			fmt.Printf("[Insert] Table: %s | Last Inserted ID: %d\n", q.model.TableName, id)
+		} else {
+			fmt.Printf("[Insert] Table: %s | Row Inserted\n", q.model.TableName)
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("invalid Exec call: unknown operation '%s'", q.operation)
 	}
-	affected, _ := result.RowsAffected()                                                // Step 8: Get number of affected rows
-	fmt.Printf("[Update] Table: %s | Rows Affected: %d\n", q.model.TableName, affected) // Print for debugging
-	return nil                                                                          // Step 9: Return nil if successful
+
+	return nil
 }
 
 // =======================

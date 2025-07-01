@@ -55,6 +55,7 @@ type (
 		offset  int
 		orderBy string
 
-		operation string // "select", "delete", "update"
+		operation    string // "select", "delete", "update"
+		insertFields map[string]any
 	}
 )

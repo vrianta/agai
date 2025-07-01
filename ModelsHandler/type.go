@@ -37,11 +37,24 @@ type (
 	}
 
 	Query struct {
-		model      *Struct
-		conditions []string
-		args       []any
-		limit      int
-		offset     int
-		lastColumn string
+		model *Struct
+
+		// WHERE clause
+		whereClauses []string
+		whereArgs    []any
+		lastColumn   string
+
+		// SET clause for update
+		setClauses []string
+		setArgs    []any
+		lastSet    string
+		groupBy    string
+
+		// Other options
+		limit   int
+		offset  int
+		orderBy string
+
+		operation string // "select", "delete", "update"
 	}
 )

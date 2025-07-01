@@ -237,8 +237,13 @@ Returns:
 - error: if updating the template fails (in dev mode).
 */
 func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
-	if __template == nil {
+	if __template == nil && c.templates.View != nil {
+		// If no specific template is provided, use the default view template
 		__template = c.templates.View
+	} else {
+		// no template to exeute, return nil
+		fmt.Printf("Template is nil for controller %s, no template to execute\n", c.View)
+		return nil
 	}
 	if !Config.GetWebConfig().Build {
 		__template.Update()

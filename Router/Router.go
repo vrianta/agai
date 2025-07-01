@@ -99,7 +99,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sess = Session.New()
-		if create_session_error := sess.StartSession(&sessionID, w, r); create_session_error != nil {
+		if create_session_error := sess.StartSession(&sessionID, w, r); create_session_error == nil {
 			http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
 			return
 		}

@@ -8,9 +8,9 @@ import (
 	"github.com/vrianta/Server/Config"
 	"github.com/vrianta/Server/DatabaseHandler"
 	"github.com/vrianta/Server/Log"
-	Models "github.com/vrianta/Server/ModelsHandler"
 	"github.com/vrianta/Server/Router"
 	"github.com/vrianta/Server/Session"
+	Models "github.com/vrianta/Server/modelsHandler"
 )
 
 /*

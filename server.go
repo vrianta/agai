@@ -116,21 +116,32 @@ func (s *_Struct) setup_views() {
 }
 
 func (s *_Struct) initialiseModels() {
-	if Config.GetBuild() {
-		fmt.Print("[Models] Build mode enabled, skipping model initialization.\n")
-		return
-	}
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Print("[Models] Initializing models and syncing database tables:\n")
 	fmt.Print("---------------------------------------------------------\n")
-	for _, model := range Models.ModelsRegistry {
-		if DatabaseHandler.Initialized {
-			fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)
-			model.GetTableScema()
-			model.CreateTableIfNotExists() // creating table if not existed
+
+	if !DatabaseHandler.Initialized {
+		if Config.GetDatabaseConfig().Host == "" {
+			fmt.Printf("[Warning] Database not initialized, skipping table creation/modification\n")
+			return
 		} else {
-			fmt.Printf("[Warning] Database not initialized, skipping table creation for model: %-20s\n", model.TableName)
+			panic("[Models] Error: Connecting the Database, please check the database configuration.\n")
 		}
+	}
+
+	if Config.GetBuild() {
+		fmt.Print("[Models] Build mode enabled, skipping model initialization.\n")
+		for _, model := range Models.ModelsRegistry {
+			model.Initialised = true
+		}
+		return
+	}
+
+	for _, model := range Models.ModelsRegistry {
+		fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)
+		model.GetTableScema()
+		model.CreateTableIfNotExists() // creating table if not existed
+		model.Initialised = true
 	}
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Print("[Models] Model initialization complete.\n")

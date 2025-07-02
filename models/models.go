@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	Config "github.com/vrianta/Server/config"
 	DatabaseHandler "github.com/vrianta/Server/database"
@@ -263,4 +264,30 @@ func (m *Struct) GetTableName() string {
 // function to get data of a field
 func (m *Struct) GetFieldValue(field_name string) any {
 	return m.fields[field_name].value
+}
+
+// Convert the Fetched Data to a of objects
+// This function will convert the Struct to a map[string]any for easy access and manipulation
+func (m *Struct) ToMap() map[string]any {
+	response := make(map[string]any, len(m.fields))
+	var wg sync.WaitGroup
+
+	for _, field := range m.fields {
+		wg.Add(1)
+
+		go func(f Field) {
+			defer wg.Done()
+
+			var value any
+			if f.value != nil {
+				value = f.value
+			} else {
+				value = nil
+			}
+			response[f.Name] = value
+		}(field)
+	}
+
+	wg.Wait()
+	return response
 }

@@ -7,9 +7,10 @@ type (
 	Fields    map[string]fieldType
 
 	Struct struct {
-		TableName string           // Name of the table in the database
-		fields    map[string]Field // Map of field names to their types
-		schemas   []schema
+		TableName   string           // Name of the table in the database
+		fields      map[string]Field // Map of field names to their types
+		schemas     []schema
+		Initialised bool // Flag to check if the model is initialised
 	}
 
 	Index struct {

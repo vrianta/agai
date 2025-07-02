@@ -2,6 +2,23 @@
 
 ModelsHandler is a human-friendly, chainable query builder for working with database tables using Go structs. It allows you to easily create models, build queries, and interact with your database in a readable, maintainable way—similar to popular Object-Relational Mappers (ORMs).
 
+# Table of Contents
+- [ModelsHandler: Go ORM-like Query Builder](#modelshandler-go-orm-like-query-builder)
+- [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [1. Defining a Model](#1-defining-a-model)
+  - [2. Building and Executing Queries](#2-building-and-executing-queries)
+    - [Creating Records (INSERT)](#creating-records-insert)
+    - [Fetching Data (SELECT)](#fetching-data-select)
+    - [Fetching a Single Row](#fetching-a-single-row)
+    - [Updating Data (UPDATE)](#updating-data-update)
+    - [Deleting Data (DELETE)](#deleting-data-delete)
+  - [3. Query Builder API Reference](#3-query-builder-api-reference)
+  - [4. Example: Full Query Chain](#4-example-full-query-chain)
+  - [5. Notes](#5-notes)
+  - [6. Contributing](#6-contributing)
+  - [7. License](#7-license)
+
 ## Features
 - Chainable, fluent API for building queries
 - Supports SELECT, CREATE, UPDATE, DELETE operations

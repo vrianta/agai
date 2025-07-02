@@ -1,3 +1,7 @@
-components are those static values(example Settings) which you need to be initialised at the begining of the program from the
+components are a static elements in the dataase 
+It can be used for specific use cases like Settings,
 
-this file will handle them
+this package is just like models but has specific data settings
+though we need models for the components to be created
+
+components are basically struct which will store the element of the database

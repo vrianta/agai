@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/vrianta/Server/Config"
+	Config "github.com/vrianta/Server/config"
 )
 
 func WriteLog(massages ...any) {

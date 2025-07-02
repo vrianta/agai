@@ -1,11 +1,11 @@
-package Controller
+package controller
 
 import (
 	"net/http"
 
-	"github.com/vrianta/Server/Log"
-	"github.com/vrianta/Server/Session"
-	"github.com/vrianta/Server/Utils"
+	Log "github.com/vrianta/Server/log"
+	Session "github.com/vrianta/Server/session"
+	Utils "github.com/vrianta/Server/utils"
 )
 
 /*

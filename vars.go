@@ -1,4 +1,4 @@
-package Server
+package server
 
 // Global instance of the server
 var (

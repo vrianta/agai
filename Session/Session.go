@@ -1,12 +1,12 @@
-package Session
+package session
 
 import (
 	"net/http"
 	"time"
 
-	"github.com/vrianta/Server/Config"
-	"github.com/vrianta/Server/Cookies"
-	"github.com/vrianta/Server/Log"
+	Config "github.com/vrianta/Server/config"
+	Cookies "github.com/vrianta/Server/cookies"
+	Log "github.com/vrianta/Server/log"
 )
 
 /*

@@ -1,9 +1,9 @@
-package Controller
+package controller
 
 import (
 	"net/http"
 
-	"github.com/vrianta/Server/Response"
+	Response "github.com/vrianta/Server/response"
 )
 
 // Redirects to the URI user provided

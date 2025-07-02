@@ -1,4 +1,4 @@
-package Config
+package config
 
 // Config package provides configuration settings for the server
 

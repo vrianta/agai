@@ -1,4 +1,4 @@
-package DatabaseHandler
+package database
 
 import "database/sql"
 

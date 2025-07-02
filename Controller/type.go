@@ -1,10 +1,10 @@
-package Controller
+package controller
 
 import (
 	"net/http"
 
-	"github.com/vrianta/Server/Session"
-	"github.com/vrianta/Server/Template"
+	Session "github.com/vrianta/Server/session"
+	Template "github.com/vrianta/Server/template"
 )
 
 // Routes is a map of HTTP methods to their respective controllers

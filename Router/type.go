@@ -1,9 +1,9 @@
-package Router
+package router
 
 import (
 	"time"
 
-	"github.com/vrianta/Server/Controller"
+	Controller "github.com/vrianta/Server/controller"
 )
 
 type (

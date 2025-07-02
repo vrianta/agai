@@ -123,7 +123,7 @@ Register your controllers with the router using the `Router.Route` and `Router.R
 
 ```go
 import (
-    "github.com/vrianta/Server/Router"
+    "github.com/vrianta/Server/router"
     "yourapp/Controller/Home"
 )
 

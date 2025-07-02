@@ -1,11 +1,11 @@
-package Config
+package config
 
 import (
 	_ "embed"
 	"encoding/json"
 	"strconv"
 
-	"github.com/vrianta/Server/Utils"
+	Utils "github.com/vrianta/Server/utils"
 )
 
 func init() {

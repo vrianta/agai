@@ -1,13 +1,13 @@
-package Router
+package router
 
 import (
 	"net/http"
 	"os"
 
-	"github.com/vrianta/Server/Controller"
-	"github.com/vrianta/Server/Log"
-	Session "github.com/vrianta/Server/Session"
-	"github.com/vrianta/Server/Utils"
+	Controller "github.com/vrianta/Server/controller"
+	Log "github.com/vrianta/Server/log"
+	Session "github.com/vrianta/Server/session"
+	Utils "github.com/vrianta/Server/utils"
 )
 
 /*

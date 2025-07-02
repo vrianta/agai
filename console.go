@@ -1,4 +1,4 @@
-package Server
+package server
 
 import (
 	"bufio"
@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/vrianta/Server/Config"
-	"github.com/vrianta/Server/Log"
+	Config "github.com/vrianta/Server/config"
+	Log "github.com/vrianta/Server/log"
 )
 
 func (s *_Struct) ServeConsole() {

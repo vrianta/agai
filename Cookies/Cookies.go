@@ -1,4 +1,4 @@
-package Cookies
+package cookies
 
 import (
 	"fmt"

@@ -1,9 +1,9 @@
-package Config
+package config
 
 import (
 	"encoding/json"
 
-	"github.com/vrianta/Server/Utils"
+	Utils "github.com/vrianta/Server/utils"
 )
 
 func init() {

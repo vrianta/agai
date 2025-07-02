@@ -1,10 +1,10 @@
-package models_handler
+package models
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/vrianta/Server/DatabaseHandler"
+	DatabaseHandler "github.com/vrianta/Server/database"
 )
 
 // ===============================

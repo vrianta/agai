@@ -1,4 +1,4 @@
-package models_handler
+package models
 
 import (
 	"bufio"
@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/vrianta/Server/Config"
-	"github.com/vrianta/Server/DatabaseHandler"
+	Config "github.com/vrianta/Server/config"
+	DatabaseHandler "github.com/vrianta/Server/database"
 )
 
 /*

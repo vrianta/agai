@@ -34,7 +34,7 @@ See Also:
 
 */
 
-package Controller
+package controller
 
 import (
 	"fmt"
@@ -43,10 +43,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vrianta/Server/Config"
-	"github.com/vrianta/Server/Log"
-	"github.com/vrianta/Server/Session"
-	"github.com/vrianta/Server/Template"
+	Config "github.com/vrianta/Server/config"
+	Log "github.com/vrianta/Server/log"
+	Session "github.com/vrianta/Server/session"
+	Template "github.com/vrianta/Server/template"
 )
 
 /*

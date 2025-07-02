@@ -1,4 +1,4 @@
-package Template
+package template
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vrianta/Server/Utils"
+	Utils "github.com/vrianta/Server/utils"
 )
 
 type (

@@ -1,16 +1,16 @@
-package Server
+package server
 
 import (
 	"fmt"
 	"net/http"
 	"os"
 
-	"github.com/vrianta/Server/Config"
-	"github.com/vrianta/Server/DatabaseHandler"
-	"github.com/vrianta/Server/Log"
-	"github.com/vrianta/Server/Router"
-	"github.com/vrianta/Server/Session"
-	Models "github.com/vrianta/Server/modelsHandler"
+	Config "github.com/vrianta/Server/config"
+	DatabaseHandler "github.com/vrianta/Server/database"
+	Log "github.com/vrianta/Server/log"
+	Models "github.com/vrianta/Server/models"
+	Router "github.com/vrianta/Server/router"
+	Session "github.com/vrianta/Server/session"
 )
 
 /*

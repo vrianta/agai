@@ -1,10 +1,10 @@
-package DatabaseHandler
+package database
 
 import (
 	"database/sql"
 	"fmt"
 
-	"github.com/vrianta/Server/Config"
+	Config "github.com/vrianta/Server/config"
 )
 
 // Function to init the Database with the Database/sql object and store it in the program

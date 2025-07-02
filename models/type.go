@@ -1,4 +1,4 @@
-package models_handler
+package models
 
 import "database/sql"
 

@@ -20,12 +20,13 @@ import (
  }
 }
 */
+type component map[string]any
 
 // map[string]map[string]any -> "[component_key/field_key value] => { "tableheading" : "value" } "
-type component map[string]map[string]any
+type components map[string]component
 
 // [table_name](all the components)
-type storage map[string]component
+type storage map[string]components
 
 var (
 	jsonStore        storage // store all the tables
@@ -69,7 +70,7 @@ func LoadAllComponentsFromJSON() {
 				fmt.Printf("[Component] Error reading %s: %v\n", file.Name(), err)
 				continue
 			}
-			var raw component
+			var raw components
 			if err := json.Unmarshal(data, &raw); err != nil {
 				if err.Error() == "json: cannot unmarshal array into Go value of type component.component" {
 					panic("Make sure you component structure is properly structured for reference \n {\n \"Value of the PrimaryKey\":{\n  elemet: \"data\"\n}\n \n}\n and make sure you also have to include the primary key in the json object")
@@ -108,7 +109,7 @@ func DumpComponentToJSON(tableName string, data any) error {
 }
 
 // GetComponentMap returns the unmarshaled JSON as a slice of map[string]any for a table name
-func GetComponentMap(tableName string) (component, bool) {
+func GetComponentMap(tableName string) (components, bool) {
 	jsonStoreMu.RLock()
 	defer jsonStoreMu.RUnlock()
 	obj, ok := jsonStore[tableName]
@@ -187,7 +188,7 @@ func initializeComponent() error {
 					}
 				}
 				// if it is build then we have to sync with the Database
-				updatedLocalList := make(component, len(localList))
+				updatedLocalList := make(components, len(localList))
 				for _, dbModel := range dbList {
 					dbMap := dbModel.ToMap()
 					updatedLocalList[fmt.Sprint(dbModel.GetPrimary().GetVal())] = dbMap
@@ -286,4 +287,12 @@ func getModelAndInserterByTableName(tableName string) *model.Struct {
 
 	fmt.Println(model.ModelsRegistry)
 	panic("[ERROR] No Model Found with the Table Name: " + tableName)
+}
+
+func Get(tablename string) components {
+	return jsonStore[tablename]
+}
+
+func (c *components) Where(id string) component {
+	return (*c)[id]
 }

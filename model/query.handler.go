@@ -63,6 +63,23 @@ func (m *Struct) Update(key string) *Query {
 }
 
 // =======================
+// DELETE Query Function
+// =======================
+
+// Delete executes a DELETE query using the built WHERE and LIMIT clauses.
+// It removes matching rows from the database table.
+// Prints the number of affected rows for debugging.
+// Delete deletes rows matching the query from the table.
+// Delete starts a DELETE query chain.
+// Usage: UserModel.Delete().Where("id").Is(5).Exec()
+func (m *Struct) Delete() *Query {
+	return &Query{
+		model:     m,
+		operation: "delete",
+	}
+}
+
+// =======================
 // WHERE Clause Functions
 // =======================
 
@@ -460,7 +477,27 @@ func (q *Query) Exec() error {
 			fmt.Printf("[Insert] Table: %s | Row Inserted\n", q.model.TableName)
 		}
 		return nil
+	case "delete":
+		where := q.buildWhere()
+		limit := q.buildLimit()
 
+		if where == "" {
+			return fmt.Errorf("unsafe delete: WHERE clause is required")
+		}
+
+		query := fmt.Sprintf("DELETE FROM `%s` %s %s", q.model.TableName, where, limit)
+		result, err := db.Exec(query, q.whereArgs...)
+		if err != nil {
+			fmt.Printf("[Delete] Errored Query: %s\n", query)
+			return err
+		}
+
+		if affected, err := result.RowsAffected(); err == nil {
+			fmt.Printf("[Delete] Table: %s | Rows Affected: %d\n", q.model.TableName, affected)
+		} else {
+			fmt.Printf("[Delete] Table: %s | Executed (affected rows unknown)\n", q.model.TableName)
+		}
+		return nil
 	default:
 		return fmt.Errorf("invalid Exec call: unknown operation '%s'", q.operation)
 	}
@@ -499,33 +536,6 @@ func (q *InsertQuery) Exec() error {
 	} else {
 		fmt.Printf("[Insert] Table: %s | Row Inserted\n", q.model.TableName)
 	}
-	return nil
-}
-
-// =======================
-// DELETE Query Function
-// =======================
-
-// Delete executes a DELETE query using the built WHERE and LIMIT clauses.
-// It removes matching rows from the database table.
-// Prints the number of affected rows for debugging.
-func (q *Query) Delete() error {
-	db, err := DatabaseHandler.GetDatabase()
-	if err != nil {
-		return err
-	}
-	q.operation = "delete"
-
-	where := q.buildWhere()
-	limit := q.buildLimit()
-
-	query := fmt.Sprintf("DELETE FROM %s %s %s", q.model.TableName, where, limit)
-	result, err := db.Exec(query, q.whereArgs...)
-	if err != nil {
-		return err
-	}
-	affected, _ := result.RowsAffected()
-	fmt.Printf("[Delete] Table: %s | Rows Affected: %d\n", q.model.TableName, affected)
 	return nil
 }
 

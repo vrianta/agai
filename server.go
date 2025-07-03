@@ -36,7 +36,6 @@ func (s *_Struct) Start() *_Struct {
 	s.setup_views()      // Register all the views with the RenderEngine
 	s.initialiseModels() // intialsing model with creating tables and updating them
 	component.LoadAllComponentsFromJSON()
-	component.InitializeComponent()
 
 	// Initialize Models Handler
 
@@ -132,13 +131,13 @@ func (s *_Struct) initialiseModels() {
 		}
 	}
 
-	if Config.GetBuild() {
-		fmt.Print("[Models] Build mode enabled, skipping model initialization.\n")
-		for _, model := range Models.ModelsRegistry {
-			model.Initialised = true
-		}
-		return
-	}
+	// if Config.GetBuild() {
+	// 	fmt.Print("[Models] Build mode enabled, skipping model initialization.\n")
+	// 	for _, model := range Models.ModelsRegistry {
+	// 		model.Initialised = true
+	// 	}
+	// 	return
+	// }
 
 	for _, model := range Models.ModelsRegistry {
 		fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)

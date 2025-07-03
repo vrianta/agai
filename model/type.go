@@ -6,19 +6,10 @@ type (
 	fieldType uint16
 	Fields    map[string]fieldType
 
-	Struct struct {
-		TableName   string           // Name of the table in the database
-		fields      map[string]Field // Map of field names to their types
-		schemas     []schema
-		Initialised bool // Flag to check if the model is initialised
-	}
-
-	Index struct {
-		PrimaryKey bool
-		Unique     bool
-		Index      bool
-		FullText   bool
-		Spatial    bool
+	indexInfo struct {
+		ColumnName string
+		IndexName  string
+		NonUnique  bool
 	}
 
 	Field struct {
@@ -32,9 +23,36 @@ type (
 		value         any   // a variable where the value of the field will be stored
 	}
 
-	schema struct { // Scema is to hold the table scema which is available in the database
-		field, fieldType, nullable, key, extra string
-		defaultVal                             sql.NullString
+	Struct struct {
+		TableName   string           // Name of the table in the database
+		fields      map[string]Field // Map of field names to their types
+		schemas     []schema
+		Initialised bool                 // Flag to check if the model is initialised
+		primary     *Field               // name of the primary elemet
+		indexes     map[string]indexInfo // columnName -> index info
+	}
+
+	Index struct {
+		PrimaryKey bool
+		Unique     bool
+		Index      bool
+		FullText   bool
+		Spatial    bool
+	}
+
+	schema struct {
+		field      string
+		fieldType  string
+		nullable   string
+		key        string
+		extra      string
+		defaultVal sql.NullString
+
+		// Add these for precise index detection (from `information_schema.statistics`)
+		indexName string
+		isunique  bool
+		isindex   bool
+		isprimary bool
 	}
 
 	Query struct {

@@ -11,20 +11,18 @@ import (
 )
 
 var (
-	jsonStore        = make(map[string]map[string]any) // map[table_name]jsonobj
+	jsonStore        = make(map[string][]any) // map[table_name]jsonobj
 	jsonStoreMu      sync.RWMutex
 	componentsDir    = "./components"
 	warnedMissingDir = false
 )
 
 func init() {
-	loadAllComponentsFromJSON()
+	LoadAllComponentsFromJSON()
 }
 
 // loadAllComponentsFromJSON loads all JSON files in ./components into jsonStore
-func loadAllComponentsFromJSON() {
-	jsonStoreMu.Lock()
-	defer jsonStoreMu.Unlock()
+func LoadAllComponentsFromJSON() {
 	if _, err := os.Stat(componentsDir); os.IsNotExist(err) {
 		if !warnedMissingDir {
 			fmt.Printf("[Component] Warning: components directory '%s' does not exist.\n", componentsDir)
@@ -45,7 +43,7 @@ func loadAllComponentsFromJSON() {
 				fmt.Printf("[Component] Error reading %s: %v\n", file.Name(), err)
 				continue
 			}
-			var raw map[string]any
+			var raw []any
 			if err := json.Unmarshal(data, &raw); err != nil {
 				fmt.Printf("[Component] Error unmarshaling %s: %v\n", file.Name(), err)
 				continue
@@ -78,7 +76,7 @@ func DumpComponentToJSON(tableName string, data any) error {
 
 // ReloadComponents reloads all JSON files from disk
 func ReloadComponents() {
-	loadAllComponentsFromJSON()
+	LoadAllComponentsFromJSON()
 }
 
 // GetComponentMap returns the unmarshaled JSON as a slice of map[string]any for a table name
@@ -107,6 +105,12 @@ func GetComponentMap(tableName string) ([]map[string]any, bool) {
 func InitializeComponent() error {
 	jsonStoreMu.Lock()
 	defer jsonStoreMu.Unlock()
+
+	if len(jsonStore) == 0 {
+		fmt.Println("[Component] No components found to initialize.")
+		return nil
+	}
+	fmt.Println("[Component] Initializing components...")
 	for tableName, raw := range jsonStore {
 		// Try to get the model by tableName (assumes a global registry or factory function)
 		_model := getModelAndInserterByTableName(tableName)
@@ -123,26 +127,11 @@ func InitializeComponent() error {
 		if len(rows) == 0 {
 			// Insert all JSON values into DB
 			for key, value := range raw {
+				fmt.Printf("[Component] Inserting into '%s': %s = %v\n", tableName, key, value)
+				// Use the model's Create method to insert the data
 				_model.Create().Set(key).To(value).Exec()
 			}
 		}
-		// 	} else {
-		// 		// Load from DB, update jsonStore, and write to JSON file
-		// 		var arr []map[string]any
-		// 		for _, row := range rows {
-		// 			if m, ok := row.(map[string]any); ok {
-		// 				arr = append(arr, m)
-		// 			} else {
-		// 				// fallback: marshal then unmarshal
-		// 				b, _ := json.Marshal(row)
-		// 				var m map[string]any
-		// 				_ = json.Unmarshal(b, &m)
-		// 				arr = append(arr, m)
-		// 			}
-		// 		}
-		// 		jsonStore[tableName] = arr
-		// 		_ = DumpComponentToJSON(tableName, arr)
-		// 	}
 	}
 	return nil
 }

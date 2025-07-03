@@ -35,6 +35,7 @@ func (s *_Struct) Start() *_Struct {
 	s.setup_js_folder()
 	s.setup_views()      // Register all the views with the RenderEngine
 	s.initialiseModels() // intialsing model with creating tables and updating them
+	component.LoadAllComponentsFromJSON()
 	component.InitializeComponent()
 
 	// Initialize Models Handler

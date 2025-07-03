@@ -1,116 +1,89 @@
 # Component Package Documentation
 
-The `component` package provides a generic, type-safe, and extensible way to manage application components that are backed by database model. It is designed for settings, configuration tables, or any static/dynamic data that should be loaded, initialized, and accessed efficiently in memory.
+The `component` package now supports a hybrid file+DB approach for managing application components. Component data is stored as JSON files in the `./components/` directory, and can also be synced with the database. This enables type-safe, ergonomic, and persistent management of static or dynamic configuration data.
 
 ## Features
-- Generic: Works with any struct type and primary key.
-- Type-safe: Access your data as `map[PrimaryKey]YourStruct`.
-- Automatic initialization: Loads from DB, inserts defaults if needed.
-- Thread-safe: Uses mutexes for concurrent access.
-- Centralized registration and initialization of all components.
+- **File-based storage:** Each component is stored as a JSON file (`table_name.components.json`) in `./components/`.
+- **Type-safe access:** Data is loaded into Go structs and accessible as `map[PrimaryKey]YourStruct`.
+- **Automatic initialization:** On startup, loads from JSON, inserts into DB if needed, or loads from DB and updates JSON.
+- **Thread-safe:** Uses mutexes for concurrent access.
+- **Centralized registration and initialization.**
+- **Hot reload:** Reload all components from disk at runtime.
+- **Optional write-back:** Dump in-memory data to JSON files.
 
 ## Usage
 
-### 1. Define Your Model and Struct
+### 1. Place JSON Files
+Create a `./components/` directory at the project root. For each component, add a file named `table_name.components.json`:
+
+```json
+[
+  { "Key": "site_name", "Value": "My Site" },
+  { "Key": "theme", "Value": "light" }
+]
+```
+
+### 2. Define Your Model and Struct
 ```go
 // Example struct for a settings table
- type Setting struct {
-     Key   string
-     Value string
- }
+type Setting struct {
+    Key   string
+    Value string
+}
 
-// Register your model (using your model package)
-var SettingsModel = model.New("settings", map[string]model.Field{
-    "Key":   {/* ... */},
-    "Value": {/* ... */},
+var SettingsModel = models.New("settings", map[string]models.Field{
+   "Key":   {/* ... */},
+   "Value": {/* ... */},
 })
 ```
 
-### 2. Register a Component
+### 3. Register a Component
 ```go
 import "github.com/vrianta/Server/component"
 
 var SettingsComponent = component.New[Setting, string](
-    SettingsModel, // your *model.Struct
+    SettingsModel, // your *models.Struct
     "Key",         // primary key field name
-    Setting{Key: "site_name", Value: "My Site"}, // default values (optional)
-    Setting{Key: "theme", Value: "light"},
 )
 ```
 
-### 3. Initialize All Components (at startup)
+### 4. Initialize All Components (at startup)
 ```go
 component.InitializeAll()
 ```
 
-### 4. Access Data
+### 5. Access Data
 ```go
 siteName := SettingsComponent.Val["site_name"].Value
 ```
 
-## How It Works
-- On initialization, each component checks if its table is empty. If so, it inserts the provided default values.
-- All rows are loaded from the DB and stored in a map, keyed by the primary key field you specify.
-- You can safely read from the `Val` map concurrently.
-
-## Advanced
-- You can register as many components as you want. All are initialized with `component.InitializeAll()`.
-- The system uses reflection to map DB rows to your struct and extract the primary key.
-- If you need to reload data, call `YourComponent.Initialize()` again.
-
-## Example: Settings Component
+### 6. Dump or Reload Data
 ```go
-// Define your struct and model
- type Setting struct {
-     Key   string
-     Value string
- }
-var SettingsModel = model.New("settings", map[string]model.Field{
-    "Key":   {/* ... */},
-    "Value": {/* ... */},
-})
+// Write in-memory data to JSON file
+component.DumpComponentToJSON("settings", SettingsComponent.Val)
 
-// Register the component
-var SettingsComponent = component.New[Setting, string](SettingsModel, "Key",
-    Setting{Key: "site_name", Value: "My Site"},
-    Setting{Key: "theme", Value: "light"},
-)
-
-// Initialize all components at startup
-tfunc main() {
-    component.InitializeAll()
-    // Now you can use SettingsComponent.Val["site_name"].Value
-}
+// Reload all components from disk
+component.ReloadComponents()
 ```
+
+## How It Works
+- On startup, the package loads all JSON files in `./components/`.
+- If the DB table is empty, it inserts the JSON values as defaults.
+- If the DB table has data, it loads from DB and updates the local JSON file.
+- All data is accessible as a map in Go, keyed by the primary key.
+- You can reload or dump data at any time.
 
 ## Best Practices
 - Always call `component.InitializeAll()` before accessing component data.
-- Use struct field names as the primary key (case-sensitive, must match your struct).
-- Use default values to ensure your tables are never empty.
-- For advanced use, you can extend the `Component` struct with custom methods or hooks.
+- Keep your JSON files in sync with your model structs.
+- Use the provided dump/reload functions for persistence and hot reloads.
+- If `./components/` is missing, a warning will be printed (but the app will continue).
+- Only present JSON files are loaded; missing/malformed files are skipped with a warning.
+
+## Migration Notes
+- The legacy DB-backed logic is still supported. If no JSON file is present, or if the DB has data, the system will fall back to DB logic.
+- For new components, simply add a JSON file and register the component as shown above.
 
 ---
 
-component.New[T any](m *model, default_values) component {
-    // create new controller
-    // default values are all the values for the component elements I am not sure which should be the best aproach to get the data because the model can have two or more fields
-    create the struct of component which will store the 
-    {
-        model,
-        val T
-        default_values
-    }
-
-    // store the components in a storage
-    return component
-}
-
-initialised() {
-    loop through all the components and check if the model is initialsed and then 
-
-    check if the table has no content then we should create elements with default value
-
-    else we should get the data and store it in val using reflect 
-}
-
-the T probably map[primarykey]struct{elements}
+For advanced usage, see the source code and inline documentation.

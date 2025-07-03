@@ -43,10 +43,60 @@ func (m *Struct) Get() *Query {
 	}
 }
 
-func (m *Struct) Create() *Query {
-	return &Query{
+// Set marks the start of an INSERT operation, specifying which field to insert.
+func (q *InsertQuery) Set(field string) *InsertQuery {
+	q.lastSet = field
+	return q
+}
+
+// To specifies the value to set for the previously specified field in an INSERT.
+// Example: .Set("name").To("Alice")
+func (q *InsertQuery) To(value any) *InsertQuery {
+	if q.lastSet != "" {
+		q.insertFields[q.lastSet] = value
+		q.lastSet = ""
+	}
+	return q
+}
+
+// Exec executes the insert operation.
+func (q *InsertQuery) Exec() error {
+	db, err := DatabaseHandler.GetDatabase()
+	if err != nil {
+		return err
+	}
+	if len(q.insertFields) == 0 {
+		return fmt.Errorf("no fields to insert")
+	}
+	cols := []string{}
+	vals := []string{}
+	args := []any{}
+	for k, v := range q.insertFields {
+		cols = append(cols, fmt.Sprintf("`%s`", k))
+		vals = append(vals, "?")
+		args = append(args, v)
+	}
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
+		q.model.TableName,
+		strings.Join(cols, ", "),
+		strings.Join(vals, ", "),
+	)
+	result, err := db.Exec(query, args...)
+	if err != nil {
+		return err
+	}
+	if id, err := result.LastInsertId(); err == nil {
+		fmt.Printf("[Insert] Table: %s | Last Inserted ID: %d\n", q.model.TableName, id)
+	} else {
+		fmt.Printf("[Insert] Table: %s | Row Inserted\n", q.model.TableName)
+	}
+	return nil
+}
+
+// Refactored: Struct.Create now returns an InsertQuery for insert operations.
+func (m *Struct) Create() *InsertQuery {
+	return &InsertQuery{
 		model:        m,
-		operation:    "insert",
 		insertFields: make(map[string]any),
 	}
 }

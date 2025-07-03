@@ -59,4 +59,11 @@ type (
 		operation    string // "select", "delete", "update"
 		insertFields map[string]any
 	}
+
+	// InsertQuery is a dedicated struct for insert operations (CREATE), separate from the general Query struct.
+	InsertQuery struct {
+		model        *Struct
+		insertFields map[string]any
+		lastSet      string
+	}
 )

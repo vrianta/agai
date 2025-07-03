@@ -39,5 +39,5 @@ var (
 	// 	Spatial:    "SPATIAL",  // Spatial index
 	// }
 
-	ModelsRegistry = []*Struct{}
+	ModelsRegistry = map[string]*Struct{}
 )

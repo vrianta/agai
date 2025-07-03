@@ -25,7 +25,7 @@ func New(tableName string, fields map[string]Field) *Struct {
 		fields:    fields,
 	}
 
-	ModelsRegistry = append(ModelsRegistry, &_model)
+	ModelsRegistry[tableName] = &_model
 	return &_model
 }
 
@@ -293,4 +293,14 @@ func (m *Struct) ToMap() map[string]any {
 
 	wg.Wait()
 	return response
+}
+
+// Insert inserts a new record into the table using the provided values map.
+// This is a dedicated Create/Insert function that does not overlap with table creation or schema management.
+func (m *Struct) Insert(values map[string]any) error {
+	q := m.Create()
+	for k, v := range values {
+		q.insertFields[k] = v
+	}
+	return q.Exec()
 }

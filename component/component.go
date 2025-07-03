@@ -1,102 +1,156 @@
 package component
 
 import (
-	"reflect"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/vrianta/Server/model"
 )
 
-type Component[T any, PK comparable] struct {
-	Model         *model.Struct
-	Val           map[PK]T
-	DefaultValues []T
-	primaryKey    string
-	mu            sync.RWMutex
-}
-
 var (
-	componentsMu sync.RWMutex
-	components   []any // store all components for initialization
+	jsonStore        = make(map[string]map[string]any) // map[table_name]jsonobj
+	jsonStoreMu      sync.RWMutex
+	componentsDir    = "./components"
+	warnedMissingDir = false
 )
 
-// New creates and registers a new component
-func New[T any, PK comparable](model *model.Struct, primaryKey string, defaultValues ...T) *Component[T, PK] {
-	c := &Component[T, PK]{
-		Model:         model,
-		Val:           make(map[PK]T),
-		DefaultValues: defaultValues,
-		primaryKey:    primaryKey,
-	}
-	componentsMu.Lock()
-	components = append(components, c)
-	componentsMu.Unlock()
-	return c
+func init() {
+	loadAllComponentsFromJSON()
 }
 
-// Initialize all registered components (should be called at startup)
-func InitializeAll() {
-	componentsMu.RLock()
-	defer componentsMu.RUnlock()
-	for _, comp := range components {
-		switch c := comp.(type) {
-		case interface{ Initialize() error }:
-			_ = c.Initialize()
+// loadAllComponentsFromJSON loads all JSON files in ./components into jsonStore
+func loadAllComponentsFromJSON() {
+	jsonStoreMu.Lock()
+	defer jsonStoreMu.Unlock()
+	if _, err := os.Stat(componentsDir); os.IsNotExist(err) {
+		if !warnedMissingDir {
+			fmt.Printf("[Component] Warning: components directory '%s' does not exist.\n", componentsDir)
+			warnedMissingDir = true
+		}
+		return
+	}
+	files, err := os.ReadDir(componentsDir)
+	if err != nil {
+		fmt.Printf("[Component] Error reading components directory: %v\n", err)
+		return
+	}
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".json" {
+			path := filepath.Join(componentsDir, file.Name())
+			data, err := os.ReadFile(path)
+			if err != nil {
+				fmt.Printf("[Component] Error reading %s: %v\n", file.Name(), err)
+				continue
+			}
+			var raw map[string]any
+			if err := json.Unmarshal(data, &raw); err != nil {
+				fmt.Printf("[Component] Error unmarshaling %s: %v\n", file.Name(), err)
+				continue
+			}
+			tableName := file.Name()[:len(file.Name())-len(".components.json")]
+			jsonStore[tableName] = raw
 		}
 	}
 }
 
-// Initialize checks DB, inserts defaults if needed, and loads data into Val
-func (c *Component[T, PK]) Initialize() error {
-	if c.Model == nil || !c.Model.Initialised {
-		return nil // or trigger model init if desired
-	}
-	// Check if table is empty
-	rows, err := c.Model.Get().Limit(1).Fetch()
+// GetComponentJSON returns the raw JSON object for a table name
+func GetComponentJSON(tableName string) (any, bool) {
+	jsonStoreMu.RLock()
+	defer jsonStoreMu.RUnlock()
+	obj, ok := jsonStore[tableName]
+	return obj, ok
+}
+
+// DumpComponentToJSON writes the in-memory component data to its JSON file
+func DumpComponentToJSON(tableName string, data any) error {
+	jsonStoreMu.Lock()
+	defer jsonStoreMu.Unlock()
+	bytes, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return err
 	}
-	if len(rows) == 0 && len(c.DefaultValues) > 0 {
-		// Insert default values
-		for _, def := range c.DefaultValues {
-			q := c.Model.Create()
-			v := reflect.ValueOf(def)
-			for i := 0; i < v.NumField(); i++ {
-				field := v.Type().Field(i)
-				q.Set(field.Name).To(v.Field(i).Interface())
-			}
-			_ = q.Exec()
-		}
+	path := filepath.Join(componentsDir, tableName+".components.json")
+	return os.WriteFile(path, bytes, 0644)
+}
+
+// ReloadComponents reloads all JSON files from disk
+func ReloadComponents() {
+	loadAllComponentsFromJSON()
+}
+
+// GetComponentMap returns the unmarshaled JSON as a slice of map[string]any for a table name
+func GetComponentMap(tableName string) ([]map[string]any, bool) {
+	jsonStoreMu.RLock()
+	defer jsonStoreMu.RUnlock()
+	obj, ok := jsonStore[tableName]
+	if !ok {
+		return nil, false
 	}
-	// Fetch all data and populate Val
-	legacyRows, err := c.Model.Get().Fetch()
+	bytes, err := json.Marshal(obj)
 	if err != nil {
-		return err
+		return nil, false
 	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.Val = make(map[PK]T, len(legacyRows))
-	for _, row := range legacyRows {
-		var item T
-		rowMap := row.ToMap()
-		v := reflect.ValueOf(&item).Elem()
-		for k, val := range rowMap {
-			f := v.FieldByName(k)
-			if f.IsValid() && f.CanSet() {
-				f.Set(reflect.ValueOf(val))
+	var arr []map[string]any
+	if err := json.Unmarshal(bytes, &arr); err != nil {
+		return nil, false
+	}
+	return arr, true
+}
+
+// InitializeComponent syncs all JSON components with their DB tables.
+// For each table in jsonStore:
+//   - If the DB table is empty, insert all JSON values into the DB.
+//   - If the DB table has data, load from DB, update jsonStore, and write to the JSON file.
+func InitializeComponent() error {
+	jsonStoreMu.Lock()
+	defer jsonStoreMu.Unlock()
+	for tableName, raw := range jsonStore {
+		// Try to get the model by tableName (assumes a global registry or factory function)
+		_model := getModelAndInserterByTableName(tableName)
+		if _model == nil {
+			panic("[ERROR] No Such Model Found for Table while creating the component: " + tableName)
+		}
+
+		// Check if DB is empty
+		rows, err := _model.Get().Fetch()
+		if err != nil {
+			fmt.Printf("[Component] Error fetching from DB for '%s': %v\n", tableName, err)
+			continue
+		}
+		if len(rows) == 0 {
+			// Insert all JSON values into DB
+			for key, value := range raw {
+				_model.Create().Set(key).To(value).Exec()
 			}
 		}
-		pk := getPrimaryKey[PK, T](item, c.primaryKey)
-		c.Val[pk] = item
+		// 	} else {
+		// 		// Load from DB, update jsonStore, and write to JSON file
+		// 		var arr []map[string]any
+		// 		for _, row := range rows {
+		// 			if m, ok := row.(map[string]any); ok {
+		// 				arr = append(arr, m)
+		// 			} else {
+		// 				// fallback: marshal then unmarshal
+		// 				b, _ := json.Marshal(row)
+		// 				var m map[string]any
+		// 				_ = json.Unmarshal(b, &m)
+		// 				arr = append(arr, m)
+		// 			}
+		// 		}
+		// 		jsonStore[tableName] = arr
+		// 		_ = DumpComponentToJSON(tableName, arr)
+		// 	}
 	}
 	return nil
 }
 
-// getPrimaryKey uses reflection to extract the primary key value from struct
-func getPrimaryKey[PK comparable, T any](obj T, field string) PK {
-	v := reflect.ValueOf(obj)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+// getModelAndInserterByTableName returns the model and an insert function for a given table name
+func getModelAndInserterByTableName(tableName string) *model.Struct {
+	if m, ok := model.ModelsRegistry[tableName]; ok {
+		return m
 	}
-	return v.FieldByName(field).Interface().(PK)
+	return nil
 }

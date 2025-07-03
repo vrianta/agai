@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/vrianta/Server/component"
 	Config "github.com/vrianta/Server/config"
 	DatabaseHandler "github.com/vrianta/Server/database"
 	Log "github.com/vrianta/Server/log"
@@ -34,6 +35,7 @@ func (s *_Struct) Start() *_Struct {
 	s.setup_js_folder()
 	s.setup_views()      // Register all the views with the RenderEngine
 	s.initialiseModels() // intialsing model with creating tables and updating them
+	component.InitializeComponent()
 
 	// Initialize Models Handler
 

@@ -8,7 +8,7 @@ import (
 	Config "github.com/vrianta/Server/config"
 	DatabaseHandler "github.com/vrianta/Server/database"
 	Log "github.com/vrianta/Server/log"
-	Models "github.com/vrianta/Server/models"
+	Models "github.com/vrianta/Server/model"
 	Router "github.com/vrianta/Server/router"
 	Session "github.com/vrianta/Server/session"
 )
@@ -33,7 +33,7 @@ func (s *_Struct) Start() *_Struct {
 	s.setup_css_folder()
 	s.setup_js_folder()
 	s.setup_views()      // Register all the views with the RenderEngine
-	s.initialiseModels() // intialsing models with creating tables and updating them
+	s.initialiseModels() // intialsing model with creating tables and updating them
 
 	// Initialize Models Handler
 
@@ -117,7 +117,7 @@ func (s *_Struct) setup_views() {
 
 func (s *_Struct) initialiseModels() {
 	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("[Models] Initializing models and syncing database tables:\n")
+	fmt.Print("[Models] Initializing model and syncing database tables:\n")
 	fmt.Print("---------------------------------------------------------\n")
 
 	if !DatabaseHandler.Initialized {

@@ -1,6 +1,6 @@
 # ModelsHandler: Go ORM-like Query Builder
 
-ModelsHandler is a human-friendly, chainable query builder for working with database tables using Go structs. It allows you to easily create models, build queries, and interact with your database in a readable, maintainable way—similar to popular Object-Relational Mappers (ORMs).
+ModelsHandler is a human-friendly, chainable query builder for working with database tables using Go structs. It allows you to easily create model, build queries, and interact with your database in a readable, maintainable way—similar to popular Object-Relational Mappers (ORMs).
 
 # Table of Contents
 - [ModelsHandler: Go ORM-like Query Builder](#modelshandler-go-orm-like-query-builder)
@@ -36,7 +36,7 @@ ModelsHandler is a human-friendly, chainable query builder for working with data
 To use ModelsHandler, define your model struct and register it. For example, to create a `User` model:
 
 ```go
-package models
+package model
 
 import models_handler "github.com/vrianta/Server/modelsHandler"
 

@@ -1,4 +1,4 @@
-package models
+package model
 
 /*
 CREATE TABLE IF NOT EXISTS employees (

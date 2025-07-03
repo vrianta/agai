@@ -1,4 +1,4 @@
-package models
+package model
 
 var (
 	FieldsTypes = struct {

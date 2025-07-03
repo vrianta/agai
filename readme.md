@@ -45,7 +45,7 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 
 The framework includes a powerful, human-friendly query builder called **ModelsHandler** for working with your database using Go structs. ModelsHandler provides a chainable API for building and executing SQL queries (SELECT, UPDATE, DELETE) in a style similar to popular ORMs.
 
-- Define your models as Go structs and map them to database tables.
+- Define your model as Go structs and map them to database tables.
 - Build queries using a fluent, readable API (e.g., `Users.Get().Where("age").GreaterThan(18).OrderBy("name").Fetch()`).
 - Supports WHERE, AND, OR, IN, NOT IN, BETWEEN, LIKE, IS NULL, LIMIT, OFFSET, ORDER BY, GROUP BY, and more.
 - Makes database access easy to read, write, and maintain.

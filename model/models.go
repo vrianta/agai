@@ -1,4 +1,4 @@
-package models
+package model
 
 import (
 	"bufio"
@@ -12,11 +12,11 @@ import (
 )
 
 /*
- * This Package is to handle models in the database checking and creating tables and providing default functions to handle them
+ * This Package is to handle model in the database checking and creating tables and providing default functions to handle them
  * It will create the table,
  * It will update the table accordingly during the initial program startup only if the build is not true
  * So Dynaimic Table Updation will be handled during development only
- * It will provide the default functions to handle the models like Create, Read, Update, Delete
+ * It will provide the default functions to handle the model like Create, Read, Update, Delete
  */
 
 func New(tableName string, fields map[string]Field) *Struct {

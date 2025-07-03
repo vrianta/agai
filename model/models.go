@@ -125,6 +125,9 @@ func (m *Struct) syncTableSchema() {
 			if !field.Index.PrimaryKey {
 				fmt.Printf("[Index]         Field: %-20s | DB: Primary Key    | Model: Primary Key Removed\n", field.Name)
 				shouldChange = true
+			} else if !field.Index.Index {
+				fmt.Printf("[Index]         Field: %-20s | DB: Indexed (MUL)  | Model: Index Removed\n", field.Name)
+				shouldChange = true
 			}
 		case "UNI":
 			if !field.Index.Unique {

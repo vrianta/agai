@@ -141,7 +141,7 @@ func initializeComponent() error {
 			// If the database is empty, add everything from the local list
 			for _, localItem := range localList {
 				addRow := tableModel.Create()
-				for key, value := range localItem {
+				for key, value := range *localItem {
 					fmt.Printf("[Component] Inserting into '%s': %s = %v\n", tableName, key, value)
 					addRow.Set(key).To(value)
 				}
@@ -158,7 +158,7 @@ func initializeComponent() error {
 						panic(err.Error())
 					} else if component == nil {
 						// need to create this component in the DB with default value
-						tableModel.Insert(localItem)
+						tableModel.Insert(*localItem)
 					} else {
 						// no need to do anything
 					}
@@ -175,7 +175,8 @@ func initializeComponent() error {
 				updatedLocalList := make(components, len(localList))
 				for _, dbModel := range dbList {
 					dbMap := dbModel.ToMap()
-					updatedLocalList[fmt.Sprint(dbModel.GetPrimaryKey().GetVal())] = dbMap
+					comp := component(dbMap)
+					updatedLocalList[fmt.Sprint(dbModel.GetPrimaryKey().GetVal())] = &comp
 				}
 				localList = updatedLocalList
 				// At the end, update the localList in local storage
@@ -194,7 +195,7 @@ func initializeComponent() error {
 					found := false
 					for _, localItem := range localList {
 						match := true
-						for key, value := range localItem {
+						for key, value := range *localItem {
 							if dbVal, ok := dbMap[key]; !ok || dbVal != value {
 								match = false
 								break
@@ -230,7 +231,7 @@ func initializeComponent() error {
 					for _, dbModel := range dbList {
 						dbMap := dbModel.ToMap()
 						match := true
-						for key, value := range localItem {
+						for key, value := range *localItem {
 							if dbVal, ok := dbMap[key]; !ok || dbVal != value {
 								match = false
 								break
@@ -244,7 +245,7 @@ func initializeComponent() error {
 					if !found {
 						// Not found in DB, so insert into DB
 						addRow := tableModel.Create()
-						for key, value := range localItem {
+						for key, value := range *localItem {
 							addRow.Set(key).To(value)
 						}
 						if err := addRow.Exec(); err != nil {
@@ -277,7 +278,7 @@ func Get(tablename string) components {
 	return jsonStore[tablename]
 }
 
-func (c *components) Where(id string) component {
+func (c *components) Where(id string) *component {
 	return (*c)[id]
 }
 

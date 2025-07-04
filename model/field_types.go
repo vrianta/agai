@@ -17,7 +17,7 @@ func (f fieldType) string() string {
 	case FieldsTypes.Float:
 		return "FLOAT"
 	case FieldsTypes.Bool:
-		return "BOOL"
+		return "TINYINT"
 	case FieldsTypes.Date:
 		return "DATE"
 	case FieldsTypes.Time:

@@ -20,15 +20,16 @@ import (
  * It will provide the default functions to handle the model like Create, Read, Update, Delete
  */
 
-func New(tableName string, fields map[string]Field) *Struct {
+func New(tableName string, fields FieldMap) *Struct {
 	_model := Struct{
 		TableName: tableName,
 		fields:    fields,
-		primary: func(fields map[string]Field) *Field {
-			for _, fields_val := range fields {
-				if fields_val.Index.PrimaryKey {
+		primary: func(fields FieldMap) *Field {
+			for key, _ := range fields {
+				field := fields[key]
+				if field.Index.PrimaryKey {
 					fmt.Println("Found Primary Key: ", tableName)
-					return &fields_val
+					return fields[key] // ✅ CORRECT — take pointer directly from the map
 				}
 			}
 			return nil
@@ -170,7 +171,7 @@ func (m *Struct) syncTableSchema() {
 		schemaMap[s.field] = s
 	}
 
-	fieldMap := make(map[string]Field, len(m.fields))
+	fieldMap := make(FieldMap, len(m.fields))
 	for _, f := range m.fields {
 		fieldMap[f.Name] = f
 	}
@@ -179,7 +180,7 @@ func (m *Struct) syncTableSchema() {
 	for _, field := range m.fields {
 		schema, exists := schemaMap[field.Name]
 		if !exists {
-			m.addField(&field)
+			m.addField(field)
 			continue
 		}
 
@@ -214,20 +215,20 @@ func (m *Struct) syncTableSchema() {
 		}
 
 		if shouldChange {
-			m.updateField(&field)
+			m.updateField(field)
 		}
 
 		// Check for index mismatches
 		if schema.isunique != field.Index.Unique {
 			// fmt.Println("unique are different")
-			m.updateUniqueIndex(&field, &schema)
+			m.updateUniqueIndex(field, &schema)
 		}
 		if schema.isprimary != field.Index.PrimaryKey {
 			fmt.Println("Primary Keys are different")
-			m.updatePrimaryKey(&field, &schema)
+			m.updatePrimaryKey(field, &schema)
 		}
 		if schema.isindex != field.Index.Index {
-			m.updateNormalIndex(&field, &schema)
+			m.updateNormalIndex(field, &schema)
 		}
 	}
 
@@ -472,7 +473,7 @@ func (m *Struct) ToMap() map[string]any {
 	for _, field := range m.fields {
 		wg.Add(1)
 
-		go func(f Field) {
+		go func(f *Field) {
 			defer wg.Done()
 
 			var value any

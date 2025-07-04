@@ -355,8 +355,8 @@ func (q *Query) Fetch() ([]*Struct, error) {
 		}
 
 		row := &Struct{ // Create a new Struct for this row
-			TableName: q.model.TableName,      // Set the table name
-			fields:    make(map[string]Field), // Prepare the fields map
+			TableName: q.model.TableName,       // Set the table name
+			fields:    make(map[string]*Field), // Prepare the fields map
 		}
 		for k, v := range q.model.fields { // Copy the model's field definitions
 			row.fields[k] = v

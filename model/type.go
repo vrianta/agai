@@ -5,6 +5,7 @@ import "database/sql"
 type (
 	fieldType uint16
 	Fields    map[string]fieldType
+	FieldMap  map[string]*Field
 
 	indexInfo struct {
 		ColumnName string
@@ -24,8 +25,8 @@ type (
 	}
 
 	Struct struct {
-		TableName   string           // Name of the table in the database
-		fields      map[string]Field // Map of field names to their types
+		TableName   string   // Name of the table in the database
+		fields      FieldMap // Map of field names to their types
 		schemas     []schema
 		Initialised bool                 // Flag to check if the model is initialised
 		primary     *Field               // name of the primary elemet
@@ -49,7 +50,7 @@ type (
 		defaultVal sql.NullString
 
 		// Add these for precise index detection (from `information_schema.statistics`)
-		indexName string
+		// indexName string
 		isunique  bool
 		isindex   bool
 		isprimary bool

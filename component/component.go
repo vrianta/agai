@@ -297,12 +297,12 @@ func (c *components) Where(id string) component {
 }
 
 // it will loop thorugh all the components to find the primary key column name
-func get_primary_key_column(key string, c component) string {
+// func get_primary_key_column(key string, c component) string {
 
-	for k, val := range c {
-		if val == key {
-			return k
-		}
-	}
-	return ""
-}
+// 	for k, val := range c {
+// 		if val == key {
+// 			return k
+// 		}
+// 	}
+// 	return ""
+// }

@@ -25,15 +25,23 @@ func New(tableName string, fields FieldMap) *Struct {
 		TableName: tableName,
 		fields:    fields,
 		primary: func(fields FieldMap) *Field {
-			for key, _ := range fields {
-				field := fields[key]
+			for _, field := range fields {
 				if field.Index.PrimaryKey {
 					fmt.Println("Found Primary Key: ", tableName)
-					return fields[key] // ✅ CORRECT — take pointer directly from the map
+					return field // Return the pointer directly from the map
 				}
 			}
 			return nil
 		}(fields),
+	}
+
+	for _, field := range _model.fields {
+		if field.Index.PrimaryKey {
+			fmt.Println("Found Primary Key: ", tableName) // create local copy
+			_model.primary = field                        // take address of copy
+			// _model.primary = &field
+			break
+		}
 	}
 
 	_model.validate()
@@ -517,5 +525,15 @@ true ->  if exists
 false -> if not exists
 */
 func (m *Struct) PrimaryKeyExists() bool {
-	return m.primary != nil
+	if m.primary != nil {
+		return true
+	}
+	for _, field := range m.fields {
+		if field.Index.PrimaryKey {
+			m.primary = field
+			return true // Return the pointer directly from the map
+		}
+	}
+
+	return false
 }

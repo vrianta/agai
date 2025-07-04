@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/vrianta/Server/component"
-	Config "github.com/vrianta/Server/config"
-	DatabaseHandler "github.com/vrianta/Server/database"
+	"github.com/vrianta/Server/config"
+	"github.com/vrianta/Server/database"
 	Log "github.com/vrianta/Server/log"
 	Models "github.com/vrianta/Server/model"
 	Router "github.com/vrianta/Server/router"
@@ -22,14 +22,23 @@ import (
  * route ->  routes configaration which tells the
  * _config -> send the config of the server can be send nill if default is fine for you
  */
-func New() *_Struct {
+
+// func init() {
+// 	srvInstance = &_Struct{}
+// 	srvInstance.start()
+// }
+
+func new() *_Struct {
 	srvInstance = &_Struct{}
 	return srvInstance
 }
 
 // Start runs the HTTP server
-func (s *_Struct) Start() *_Struct {
+func Start() *_Struct {
 
+	s := &_Struct{}
+
+	database.Init()
 	s.setup_static_folders()
 	s.setup_css_folder()
 	s.setup_js_folder()
@@ -48,10 +57,10 @@ func (s *_Struct) Start() *_Struct {
 
 	// Define the server configuration
 	s.server = &http.Server{
-		Addr: Config.GetWebConfig().Host + ":" + Config.GetWebConfig().Port, // Host and port
+		Addr: config.GetWebConfig().Host + ":" + config.GetWebConfig().Port, // Host and port
 	}
 
-	Log.WriteLogf("[Server] Started at : http://localhost:%s\n", Config.GetWebConfig().Port)
+	Log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Print("---------------------------------------------------------\n\n\n")
 
@@ -62,21 +71,9 @@ func (s *_Struct) Start() *_Struct {
 	return s
 }
 
-// Initialise Database Handler
-func (s *_Struct) InitDatabase() *_Struct {
-
-	if err := DatabaseHandler.Init(); err != nil {
-		panic("Database Initialisation failed: " + err.Error())
-	} else {
-		Log.WriteLog("[Database] Initialised Successfully\n")
-	}
-
-	return s
-}
-
 func (s *_Struct) setup_static_folders() {
 	// Create a file server handler
-	for _, folder := range Config.GetWebConfig().StaticFolders {
+	for _, folder := range config.GetWebConfig().StaticFolders {
 		fs := http.FileServer(http.Dir(folder))
 		http.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", fs))
 	}
@@ -84,13 +81,13 @@ func (s *_Struct) setup_static_folders() {
 
 // Generating Creating Routes for the Css Folders
 func (s *_Struct) setup_css_folder() {
-	for _, folder := range Config.GetWebConfig().CssFolders {
+	for _, folder := range config.GetWebConfig().CssFolders {
 		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("text/css; charset=utf-8"))
 	}
 }
 
 func (s *_Struct) setup_js_folder() {
-	for _, folder := range Config.GetWebConfig().JsFolders {
+	for _, folder := range config.GetWebConfig().JsFolders {
 		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("application/javascript; charset=utf-8"))
 	}
 }
@@ -118,12 +115,9 @@ func (s *_Struct) setup_views() {
 }
 
 func (s *_Struct) initialiseModels() {
-	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("[Models] Initializing model and syncing database tables:\n")
-	fmt.Print("---------------------------------------------------------\n")
 
-	if !DatabaseHandler.Initialized {
-		if Config.GetDatabaseConfig().Host == "" {
+	if !database.Initialized {
+		if config.GetDatabaseConfig().Host == "" {
 			fmt.Printf("[Warning] Database not initialized, skipping table creation/modification\n")
 			return
 		} else {
@@ -131,13 +125,18 @@ func (s *_Struct) initialiseModels() {
 		}
 	}
 
-	// if Config.GetBuild() {
-	// 	fmt.Print("[Models] Build mode enabled, skipping model initialization.\n")
-	// 	for _, model := range Models.ModelsRegistry {
-	// 		model.Initialised = true
-	// 	}
-	// 	return
-	// }
+	// fmt.Println("Build Mode: ", fmt.Sprint(config.GetBuild()), " Sync Flag: ", fmt.Sprint(config.SyncDatabase))
+	if config.GetBuild() && !config.SyncDatabase {
+		fmt.Print("[INFO] Build mode enabled, skipping model initialization.\n To do migration please use flag --migrate-model/-m \n")
+		for _, model := range Models.ModelsRegistry {
+			model.Initialised = true
+		}
+		return
+	}
+
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Models] Initializing model and syncing database tables:\n")
+	fmt.Print("---------------------------------------------------------\n")
 
 	for _, model := range Models.ModelsRegistry {
 		fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)

@@ -27,6 +27,7 @@ func New(tableName string, fields map[string]Field) *Struct {
 		primary: func(fields map[string]Field) *Field {
 			for _, fields_val := range fields {
 				if fields_val.Index.PrimaryKey {
+					fmt.Println("Found Primary Key: ", tableName)
 					return &fields_val
 				}
 			}
@@ -501,14 +502,11 @@ func (m *Struct) Insert(values map[string]any) error {
 	return q.Exec()
 }
 
-func (m *Struct) GetPrimary() *Field {
+func (m *Struct) GetPrimaryKey() *Field {
 	if !m.PrimaryKeyExists() {
-		panic("You asked for Primary Key but the Model do not have any PrimaryKey")
+		panic("Primary Key is Required for but the Model(" + m.TableName + ") ")
 	}
 	return m.primary
-}
-func (m *Struct) GetPrimaryKeyVal() string {
-	return m.primary.value.(string)
 }
 
 /*

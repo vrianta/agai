@@ -134,7 +134,6 @@ func GetComponentMap(tableName string) (components, bool) {
 //   - If the DB table is empty, insert all JSON values into the DB.
 //   - If the DB table has data, load from DB, update jsonStore, and write to the JSON file.
 func initializeComponent() error {
-
 	if len(jsonStore) == 0 {
 		fmt.Println("[Component] No components found to initialize.")
 		return nil
@@ -169,7 +168,7 @@ func initializeComponent() error {
 			if config.GetBuild() {
 				// localItem_key -> primary key value
 				for localItem_key, localItem := range localList {
-					if component, err := tableModel.Get().Where(dbList[0].GetPrimary().Name).Is(localItem_key).First(); err != nil {
+					if component, err := tableModel.Get().Where(dbList[0].GetPrimaryKey().Name).Is(localItem_key).First(); err != nil {
 						// means error on DB Connection or Failed to get the item
 						panic(err.Error())
 					} else if component == nil {
@@ -182,16 +181,16 @@ func initializeComponent() error {
 				// delete items from DB if it is present in the DB but not in local
 				for _, dbModel := range dbList {
 					// dbMap := dbModel.ToMap()
-					if _, ok := localList[dbModel.GetPrimary().GetVal()]; !ok {
+					if _, ok := localList[dbModel.GetPrimaryKey().GetVal()]; !ok {
 						// removed from the local file
-						dbModel.Delete().Where(dbModel.GetPrimary().Name).Is(dbModel.GetPrimary().GetVal())
+						dbModel.Delete().Where(dbModel.GetPrimaryKey().Name).Is(dbModel.GetPrimaryKey().GetVal())
 					}
 				}
 				// if it is build then we have to sync with the Database
 				updatedLocalList := make(components, len(localList))
 				for _, dbModel := range dbList {
 					dbMap := dbModel.ToMap()
-					updatedLocalList[fmt.Sprint(dbModel.GetPrimary().GetVal())] = dbMap
+					updatedLocalList[fmt.Sprint(dbModel.GetPrimaryKey().GetVal())] = dbMap
 				}
 				localList = updatedLocalList
 				// At the end, update the localList in local storage
@@ -295,4 +294,15 @@ func Get(tablename string) components {
 
 func (c *components) Where(id string) component {
 	return (*c)[id]
+}
+
+// it will loop thorugh all the components to find the primary key column name
+func get_primary_key_column(key string, c component) string {
+
+	for k, val := range c {
+		if val == key {
+			return k
+		}
+	}
+	return ""
 }

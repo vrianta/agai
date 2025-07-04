@@ -5,30 +5,31 @@ import (
 	"fmt"
 
 	Config "github.com/vrianta/Server/config"
+	log "github.com/vrianta/Server/log"
 )
 
 // Function to init the Database with the Database/sql object and store it in the program
-func Init() error {
+func Init() {
 
 	if Config.GetDatabaseConfig().Host == "" {
-
-		return nil
+		log.WriteLog("DataBase Config do not have any host in it so We are skipping all database connections")
+		return
 	}
 	var err error
 	if database, err = sql.Open(Config.GetDatabaseDriver(), Config.GetDSN()); err != nil {
-		return err
+		panic("[ERROR] - DB Connection Failed Due to: " + err.Error())
 	}
 
 	Initialized = true
-	return nil
+	fmt.Println("[Info] DataBase Connection Established Successfully")
 }
 
 func GetDatabase() (*sql.DB, error) {
 	if !Initialized {
-		return nil, fmt.Errorf("Database configuration is not set")
+		panic("[ERROR] - You are calling for the Database but Connection with Database is not established properly")
 	}
 	if database == nil {
-		return nil, fmt.Errorf("Database is not initialized")
+		panic("[ERROR] - You are calling for the Database but Connection with Database is not established properly")
 	}
 	return database, nil
 }

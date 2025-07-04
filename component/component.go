@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	config "github.com/vrianta/Server/config"
 	"github.com/vrianta/Server/model"
@@ -20,20 +19,6 @@ import (
  }
 }
 */
-type component map[string]any
-
-// map[string]map[string]any -> "[component_key/field_key value] => { "tableheading" : "value" } "
-type components map[string]component
-
-// [table_name](all the components)
-type storage map[string]components
-
-var (
-	jsonStore        storage // store all the tables
-	jsonStoreMu      sync.RWMutex
-	componentsDir    = "./components"
-	warnedMissingDir = false
-)
 
 // func init() {
 // 	loadAllComponentsFromJSON()

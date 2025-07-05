@@ -101,7 +101,7 @@ func (f Field) Validate() {
 			panic(fmt.Sprintf("Field '%s': TINYINT length must be at least 3", f.name))
 		}
 	case FieldTypes.Bool:
-		if f.Length != 1 {
+		if f.Length < 0 || f.Length > 1 {
 			panic(fmt.Sprintf("Field '%s': BOOLEAN length must be 1", f.name))
 		}
 	case FieldTypes.SmallInt:

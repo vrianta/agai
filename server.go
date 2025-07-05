@@ -132,7 +132,7 @@ func (s *_Struct) initialiseModels() {
 
 	for _, model := range Models.ModelsRegistry {
 		fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)
-		model.GetTableScema()
+		model.SyncModelSchema()
 		model.CreateTableIfNotExists() // creating table if not existed
 		model.Initialised = true
 	}

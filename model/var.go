@@ -1,7 +1,7 @@
 package model
 
 var (
-	FieldsTypes = struct {
+	FieldTypesTypes = struct {
 		String    fieldType
 		Text      fieldType
 		VarChar   fieldType
@@ -47,5 +47,5 @@ var (
 	// 	Spatial:    "SPATIAL",  // Spatial index
 	// }
 
-	ModelsRegistry = map[string]*Struct{}
+	ModelsRegistry = map[string]*Table{}
 )

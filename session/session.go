@@ -37,7 +37,7 @@ import (
 * - SetSessionCookie: Adds a session ID cookie to the HTTP response.
 * - EndSession: Ends the current session by removing associated data and cookies.
 * - ParseRequest: Parses HTTP request parameters for GET and POST data.
-* - ProcessQueryParams: Processes and stores query parameters.
+* - ProcessqueryBuilderParams: Processes and stores queryBuilder parameters.
 * - ProcessPostParams: Processes and stores POST form data.
 *
 * Usage:
@@ -211,7 +211,7 @@ func StartSessionHandler() {
 // Function to handle LRU updates in a separate goroutine
 // This function listens for updates on the lruUpdateChan channel and processes them
 // It handles two operations: "move" to move an existing session to the front of the LRU list
-// and "insert" to add a new session to the LRU list if it doesn't already exist.
+// and "InsertRow" to add a new session to the LRU list if it doesn't already exist.
 
 func StartLRUHandler() {
 	for update := range lruUpdateChan {
@@ -221,7 +221,7 @@ func StartLRUHandler() {
 			if elem, ok := lruMap[update.SessionID]; ok {
 				lruList.MoveToFront(elem)
 			}
-		case "insert":
+		case "InsertRow":
 			if _, ok := lruMap[update.SessionID]; !ok {
 				elem := lruList.PushFront(update.SessionID)
 				lruMap[update.SessionID] = elem

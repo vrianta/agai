@@ -18,7 +18,7 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 11. [Console Commands](#console-commands)
 12. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
 13. [API Reference](#api-reference)
-14. [ModelsHandler (ORM-like Query Builder)](#modelshandler-orm-like-query-builder)
+14. [ModelsHandler (ORM-like queryBuilder Builder)](#modelshandler-orm-like-queryBuilder-builder)
 15. [License](#license)
 16. [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
 
@@ -41,9 +41,9 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 
 ---
 
-## ModelsHandler (ORM-like Query Builder)
+## ModelsHandler (ORM-like queryBuilder Builder)
 
-The framework includes a powerful, human-friendly query builder called **ModelsHandler** for working with your database using Go structs. ModelsHandler provides a chainable API for building and executing SQL queries (SELECT, UPDATE, DELETE) in a style similar to popular ORMs.
+The framework includes a powerful, human-friendly queryBuilder builder called **ModelsHandler** for working with your database using Go structs. ModelsHandler provides a chainable API for building and executing SQL queries (SELECT, UPDATE, DELETE) in a style similar to popular ORMs.
 
 - Define your model as Go structs and map them to database tables.
 - Build queries using a fluent, readable API (e.g., `Users.Get().Where("age").GreaterThan(18).OrderBy("name").Fetch()`).
@@ -55,7 +55,7 @@ The framework includes a powerful, human-friendly query builder called **ModelsH
 
 ### How to Create a Model (Quick Example)
 
-To define a model, use the `models_handler.New` function, specifying the table name and a map of fields:
+To define a model, use the `models_handler.New` function, specifying the table name and a map of FieldTypes:
 
 ```go
 import models_handler "github.com/vrianta/Server/modelsHandler"
@@ -65,13 +65,13 @@ var Users = models_handler.New(
     map[string]models_handler.Field{
         "userId": {
             Name:     "userId",
-            Type:     models_handler.FieldsTypes.VarChar,
+            Type:     models_handler.FieldTypesTypes.VarChar,
             Length:   20,
             Nullable: false,
         },
         "userName": {
             Name:     "userName",
-            Type:     models_handler.FieldsTypes.VarChar,
+            Type:     models_handler.FieldTypesTypes.VarChar,
             Length:   30,
             Nullable: false,
         },
@@ -80,7 +80,7 @@ var Users = models_handler.New(
 ```
 - The first argument is the table name in your database.
 - The second argument is a map where each key is a column name and the value is a `Field` struct describing the column.
-- You can add more fields and options (like indexes, types, etc.) as needed.
+- You can add more FieldTypes and options (like indexes, types, etc.) as needed.
 
 **For full documentation, advanced usage, and API reference, see [`modelsHandler/readme.md`](modelsHandler/readme.md).**
 
@@ -252,7 +252,7 @@ To enable database support in your project, you need to initialize the database 
 
 ### 1. Define Route Handlers
 
-Each handler is a Go package (usually in `Controller/`) that exports a variable of type `Controller.Struct` with fields for the view and HTTP methods. Methods are functions that receive a pointer to the controller struct and return a `*Template.Response` (for GET) or handle logic for POST/DELETE.
+Each handler is a Go package (usually in `Controller/`) that exports a variable of type `Controller.Struct` with FieldTypes for the view and HTTP methods. Methods are functions that receive a pointer to the controller struct and return a `*Template.Response` (for GET) or handle logic for POST/DELETE.
 
 Example:
 ```go
@@ -286,7 +286,7 @@ var Home = Controller.Struct{
 ```
 
 - The `View` field specifies the template to render (e.g., `home.php`).
-- The `GET`, `POST`, and `DELETE` fields are function handlers for each HTTP method.
+- The `GET`, `POST`, and `DELETE` FieldTypes are function handlers for each HTTP method.
 - The `GET` handler returns a `*Template.Response` (a map of data for the template).
 - You can import and use components or data as needed.
 
@@ -300,9 +300,9 @@ This section explains how to create controllers and views, including available p
 A **Controller** is a Go struct that handles HTTP requests for a specific route. It defines handler functions for HTTP methods (GET, POST, etc.), manages session data, and renders views (templates).
 
 ### Controller Structure
-A controller is defined as a variable of type `Controller.Struct`. The main public fields and methods are:
+A controller is defined as a variable of type `Controller.Struct`. The main public FieldTypes and methods are:
 
-#### Public Fields
+#### Public FieldTypes
 - **View**: The name of the view (template) directory for this controller. Example: `"home"` (looks for templates in `Views/home/`).
 - **GET, POST, DELETE, PATCH, PUT, HEAD, OPTIONS**: Handler functions for each HTTP method. Each receives the controller as `self` and returns a `Template.Response` (a map of data for the template).
 
@@ -541,7 +541,7 @@ When the server is running, use these commands in the console:
 
 - `server.New(host, port, routes, config)` - Create a new server instance. `host` and `port` specify the address, `routes` is a map of URL paths to controller structs, and `config` is a pointer to your configuration (or nil for default).
 - `server.Start()` - Start the server and launch the interactive console.
-- `Controller.Struct` - The base struct for all controllers. Fields include:
+- `Controller.Struct` - The base struct for all controllers. FieldTypes include:
   - `View`: The template file to render (e.g., `home.php`).
   - `GET`, `POST`, `DELETE`: Function handlers for each HTTP method.
   - `Session`: The session object for the current request.
@@ -593,7 +593,7 @@ See [LICENSE](LICENSE) for GPLv3 license details.
 - If the default view is missing, the server will panic and log an error. Rendering errors will also panic and log details. Always check your logs for troubleshooting.
 
 **Q: Can I pass complex data (arrays, maps, structs) to templates?**
-- Yes, you can pass any Go data structure in the `Template.Response` map. Use dot notation in templates to access nested fields.
+- Yes, you can pass any Go data structure in the `Template.Response` map. Use dot notation in templates to access nested FieldTypes.
 
 **Q: How is session data secured?**
 - Sessions use secure, random IDs stored in HTTP-only cookies. For best security, run your server over HTTPS and set the `Secure` flag in your cookie configuration.

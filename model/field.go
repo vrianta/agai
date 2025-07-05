@@ -28,9 +28,9 @@ func (f *Field) String() string {
 
 	if f.DefaultValue != "" {
 		switch f.Type {
-		case FieldsTypes.String, FieldsTypes.Text:
+		case FieldTypesTypes.String, FieldTypesTypes.Text:
 			response += "DEFAULT '" + f.DefaultValue + "' "
-		case FieldsTypes.Bool:
+		case FieldTypesTypes.Bool:
 			if f.DefaultValue == "true" || f.DefaultValue == "1" {
 				response += "DEFAULT TRUE "
 			} else {
@@ -74,9 +74,9 @@ func (f *Field) columnDefinition() string {
 
 	if f.DefaultValue != "" {
 		switch f.Type {
-		case FieldsTypes.String, FieldsTypes.Text:
+		case FieldTypesTypes.String, FieldTypesTypes.Text:
 			response += "DEFAULT '" + f.DefaultValue + "' "
-		case FieldsTypes.Bool:
+		case FieldTypesTypes.Bool:
 			if f.DefaultValue == "true" || f.DefaultValue == "1" {
 				response += "DEFAULT TRUE "
 			} else {

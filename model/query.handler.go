@@ -8,10 +8,10 @@ import (
 )
 
 // ===============================
-// Query Builder for ModelsHandler
+// queryBuilder Builder for ModelsHandler
 // ===============================
 //
-// This file provides a human-friendly, chainable query builder for working with database tables using Go structs.
+// This file provides a human-friendly, chainable queryBuilder builder for working with database tables using Go structs.
 // It is designed to make database operations (SELECT, UPDATE, DELETE) easy to read, write, and maintain.
 //
 // The builder mimics the style of popular Object-Relational Mappers (ORMs), allowing you to construct queries
@@ -33,43 +33,43 @@ import (
 //
 // If you are not a Go developer, don't worry! The comments explain the logic in plain English.
 
-// Entry point: create a new query for the given model struct.
-// This function starts a new query chain. By default, it prepares for a SELECT operation.
-// Example: UserModel.Get() returns a Query object you can chain more methods onto.
-func (m *Struct) Get() *Query {
-	return &Query{
-		model:     m,        // The model (table) this query is for
+// Entry point: create a new queryBuilder for the given model struct.
+// This function starts a new queryBuilder chain. By default, it prepares for a SELECT operation.
+// Example: UserModel.Get() returns a queryBuilder object you can chain more methods onto.
+func (m *Table) Get() *queryBuilder {
+	return &queryBuilder{
+		model:     m,        // The model (table) this queryBuilder is for
 		operation: "select", // Default operation is SELECT
 	}
 }
 
-// Refactored: Struct.Create now returns an InsertQuery for insert operations.
-func (m *Struct) Create() *InsertQuery {
-	return &InsertQuery{
-		model:        m,
-		insertFields: make(map[string]any),
+// Refactored: Table.Create now returns an InsertRowBuilder for InsertRow operations.
+func (m *Table) Create() *InsertRowBuilder {
+	return &InsertRowBuilder{
+		model:               m,
+		InsertRowFieldTypes: make(map[string]any),
 	}
 }
 
-func (m *Struct) Update() *Query {
-	return &Query{
+func (m *Table) Update() *queryBuilder {
+	return &queryBuilder{
 		model:     m,
 		operation: "update",
 	}
 }
 
 // =======================
-// DELETE Query Function
+// DELETE queryBuilder Function
 // =======================
 
-// Delete executes a DELETE query using the built WHERE and LIMIT clauses.
+// Delete executes a DELETE queryBuilder using the built WHERE and LIMIT clauses.
 // It removes matching rows from the database table.
 // Prints the number of affected rows for debugging.
-// Delete deletes rows matching the query from the table.
-// Delete starts a DELETE query chain.
+// Delete deletes rows matching the queryBuilder from the table.
+// Delete starts a DELETE queryBuilder chain.
 // Usage: UserModel.Delete().Where("id").Is(5).Exec()
-func (m *Struct) Delete() *Query {
-	return &Query{
+func (m *Table) Delete() *queryBuilder {
+	return &queryBuilder{
 		model:     m,
 		operation: "delete",
 	}
@@ -81,18 +81,18 @@ func (m *Struct) Delete() *Query {
 
 // Where begins a WHERE clause, specifying the column to filter on.
 // Example: .Where("age")
-func (q *Query) Where(column string) *Query {
+func (q *queryBuilder) Where(column string) *queryBuilder {
 	q.lastColumn = column // Remember which column the next condition is for
 	return q
 }
 
 // Is adds an equality condition to the WHERE clause.
 // Example: .Where("age").Is(30)  // WHERE age = 30
-func (q *Query) Is(value any) *Query {
+func (q *queryBuilder) Is(value any) *queryBuilder {
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` = ?", q.lastColumn)) // Add an equality condition for the last column
-	q.whereArgs = append(q.whereArgs, value)                                       // Add the value to the arguments for the query
+	q.whereArgs = append(q.whereArgs, value)                                       // Add the value to the arguments for the queryBuilder
 	q.lastColumn = ""                                                              // Reset lastColumn for safety
-	return q                                                                       // Return the query object for chaining
+	return q                                                                       // Return the queryBuilder object for chaining
 }
 
 // IsNot adds a NOT EQUAL condition (`!=`) to the WHERE clause for the previously specified column.
@@ -100,12 +100,12 @@ func (q *Query) Is(value any) *Query {
 //
 // Example:
 //
-//	query.Where("status").IsNot("inactive")
+//	queryBuilder.Where("status").IsNot("inactive")
 //
 // Generates:
 //
 //	WHERE `status` != 'inactive'
-func (q *Query) IsNot(value any) *Query {
+func (q *queryBuilder) IsNot(value any) *queryBuilder {
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` != ?", q.lastColumn))
 	q.whereArgs = append(q.whereArgs, value)
 	q.lastColumn = ""
@@ -117,12 +117,12 @@ func (q *Query) IsNot(value any) *Query {
 //
 // Example:
 //
-//	query.Where("username").Like("%pritam%")
+//	queryBuilder.Where("username").Like("%pritam%")
 //
 // Generates:
 //
 //	WHERE `username` LIKE '%pritam%'
-func (q *Query) Like(value string) *Query {
+func (q *queryBuilder) Like(value string) *queryBuilder {
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` LIKE ?", q.lastColumn))
 	q.whereArgs = append(q.whereArgs, value)
 	q.lastColumn = ""
@@ -134,12 +134,12 @@ func (q *Query) Like(value string) *Query {
 //
 // Example:
 //
-//	query.Where("role").Is("admin").And().Where("active").Is(true)
+//	queryBuilder.Where("role").Is("admin").And().Where("active").Is(true)
 //
 // Generates:
 //
 //	WHERE `role` = 'admin' AND `active` = true
-func (q *Query) And() *Query {
+func (q *queryBuilder) And() *queryBuilder {
 	q.whereClauses = append(q.whereClauses, "AND")
 	return q
 }
@@ -149,12 +149,12 @@ func (q *Query) And() *Query {
 //
 // Example:
 //
-//	query.Where("role").Is("admin").Or().Where("role").Is("moderator")
+//	queryBuilder.Where("role").Is("admin").Or().Where("role").Is("moderator")
 //
 // Generates:
 //
 //	WHERE `role` = 'admin' OR `role` = 'moderator'
-func (q *Query) Or() *Query {
+func (q *queryBuilder) Or() *queryBuilder {
 	q.whereClauses = append(q.whereClauses, "OR")
 	return q
 }
@@ -164,14 +164,14 @@ func (q *Query) Or() *Query {
 //
 // Example:
 //
-//	query.Where("userId").In(1, 2, 3)
+//	queryBuilder.Where("userId").In(1, 2, 3)
 //
 // Generates:
 //
 //	WHERE `userId` IN (1, 2, 3)
 //
 // Note: The values passed are safely parameterized using `?` placeholders to prevent SQL injection.
-func (q *Query) In(values ...any) *Query {
+func (q *queryBuilder) In(values ...any) *queryBuilder {
 	placeholders := strings.TrimRight(strings.Repeat("?,", len(values)), ",")
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IN (%s)", q.lastColumn, placeholders))
 	q.whereArgs = append(q.whereArgs, values...)
@@ -181,7 +181,7 @@ func (q *Query) In(values ...any) *Query {
 
 // NotIn adds a NOT IN condition to the WHERE clause for excluding values.
 // Usage: .Where("status").NotIn("inactive", "banned")
-func (q *Query) NotIn(values ...any) *Query {
+func (q *queryBuilder) NotIn(values ...any) *queryBuilder {
 	placeholders := strings.TrimRight(strings.Repeat("?,", len(values)), ",")
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` NOT IN (%s)", q.lastColumn, placeholders))
 	q.whereArgs = append(q.whereArgs, values...)
@@ -191,7 +191,7 @@ func (q *Query) NotIn(values ...any) *Query {
 
 // GreaterThan adds a "greater than" condition to the WHERE clause.
 // Usage: .Where("score").GreaterThan(100)
-func (q *Query) GreaterThan(value any) *Query {
+func (q *queryBuilder) GreaterThan(value any) *queryBuilder {
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` > ?", q.lastColumn))
 	q.whereArgs = append(q.whereArgs, value)
 	q.lastColumn = ""
@@ -200,7 +200,7 @@ func (q *Query) GreaterThan(value any) *Query {
 
 // LessThan adds a "less than" condition to the WHERE clause.
 // Usage: .Where("score").LessThan(50)
-func (q *Query) LessThan(value any) *Query {
+func (q *queryBuilder) LessThan(value any) *queryBuilder {
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` < ?", q.lastColumn))
 	q.whereArgs = append(q.whereArgs, value)
 	q.lastColumn = ""
@@ -209,7 +209,7 @@ func (q *Query) LessThan(value any) *Query {
 
 // Between adds a BETWEEN condition to the WHERE clause for a range.
 // Usage: .Where("created_at").Between(start, end)
-func (q *Query) Between(min, max any) *Query {
+func (q *queryBuilder) Between(min, max any) *queryBuilder {
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` BETWEEN ? AND ?", q.lastColumn))
 	q.whereArgs = append(q.whereArgs, min, max)
 	q.lastColumn = ""
@@ -218,7 +218,7 @@ func (q *Query) Between(min, max any) *Query {
 
 // IsNull adds an IS NULL condition to the WHERE clause.
 // Usage: .Where("deleted_at").IsNull()
-func (q *Query) IsNull() *Query {
+func (q *queryBuilder) IsNull() *queryBuilder {
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IS NULL", q.lastColumn))
 	q.lastColumn = ""
 	return q
@@ -226,20 +226,20 @@ func (q *Query) IsNull() *Query {
 
 // IsNotNull adds an IS NOT NULL condition to the WHERE clause.
 // Usage: .Where("deleted_at").IsNotNull()
-func (q *Query) IsNotNull() *Query {
+func (q *queryBuilder) IsNotNull() *queryBuilder {
 	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IS NOT NULL", q.lastColumn))
 	q.lastColumn = ""
 	return q
 }
 
 // =======================
-// UPDATE Query Functions
+// UPDATE queryBuilder Functions
 // =======================
 
 // Set marks the start of an UPDATE operation, specifying which field to update.
 // Call this before .To().
 // Example: .Set("name")
-func (q *Query) Set(field string) *Query {
+func (q *queryBuilder) Set(field string) *queryBuilder {
 	q.lastSet = field
 	if q.operation == "" {
 		q.operation = "update" // default fallback
@@ -249,62 +249,62 @@ func (q *Query) Set(field string) *Query {
 
 // To specifies the value to set for the previously specified field in an UPDATE.
 // Example: .Set("name").To("Alice")
-func (q *Query) To(value any) *Query {
+func (q *queryBuilder) To(value any) *queryBuilder {
 	switch q.operation {
 	case "update":
 		q.setClauses = append(q.setClauses, fmt.Sprintf("`%s` = ?", q.lastSet))
 		q.setArgs = append(q.setArgs, value)
-	case "insert":
-		q.insertFields[q.lastSet] = value
+	case "InsertRow":
+		q.InsertRowFieldTypes[q.lastSet] = value
 	}
 	q.lastSet = ""
 	return q
 }
 
-// Set marks the start of an INSERT operation, specifying which field to insert.
-func (q *InsertQuery) Set(field string) *InsertQuery {
+// Set marks the start of an InsertRow operation, specifying which field to InsertRow.
+func (q *InsertRowBuilder) Set(field string) *InsertRowBuilder {
 	q.lastSet = field
 	return q
 }
 
-// To specifies the value to set for the previously specified field in an INSERT.
+// To specifies the value to set for the previously specified field in an InsertRow.
 // Example: .Set("name").To("Alice")
-func (q *InsertQuery) To(value any) *InsertQuery {
+func (q *InsertRowBuilder) To(value any) *InsertRowBuilder {
 	if q.lastSet != "" {
-		q.insertFields[q.lastSet] = value
+		q.InsertRowFieldTypes[q.lastSet] = value
 		q.lastSet = ""
 	}
 	return q
 }
 
 // =======================
-// SELECT Query Functions
+// SELECT queryBuilder Functions
 // =======================
 
-// Limit restricts the number of results returned by the query.
+// Limit restricts the number of results returned by the queryBuilder.
 // Example: .Limit(10)
-func (q *Query) Limit(n int) *Query {
+func (q *queryBuilder) Limit(n int) *queryBuilder {
 	q.limit = n // Store the limit for later
 	return q
 }
 
-// Fetch executes the built SELECT query and returns all matching rows as a slice of Struct pointers.
+// Fetch executes the built SELECT queryBuilder and returns all matching rows as a slice of Table pointers.
 //
 // ---
 // LAYMAN'S EXPLANATION:
 //
 // Fetch is like asking the database: "Give me all the rows that match my conditions."
-// It builds a SELECT SQL query using the filters (WHERE), limits (LIMIT), and other options you set up by chaining methods.
+// It builds a SELECT SQL queryBuilder using the filters (WHERE), limits (LIMIT), and other options you set up by chaining methods.
 //
 // 1. It gets a database connection.
-// 2. It builds the WHERE and LIMIT parts of the SQL query.
-// 3. It creates the full SQL query string (e.g., SELECT * FROM users WHERE age > 18 LIMIT 10).
-// 4. It runs this query on the database and gets back the rows.
+// 2. It builds the WHERE and LIMIT parts of the SQL queryBuilder.
+// 3. It creates the full SQL queryBuilder string (e.g., SELECT * FROM users WHERE age > 18 LIMIT 10).
+// 4. It runs this queryBuilder on the database and gets back the rows.
 // 5. For each row:
-//   - It creates a new Struct (like a Go object for a row).
+//   - It creates a new Table (like a Go object for a row).
 //   - It copies the model's field definitions.
-//   - It fills in the values from the database into the Struct fields.
-//   - It adds this Struct to the results list.
+//   - It fills in the values from the database into the Table FieldTypes.
+//   - It adds this Table to the results list.
 //
 // 6. It returns the list of Structs (rows) and any error.
 //
@@ -312,11 +312,11 @@ func (q *Query) Limit(n int) *Query {
 //
 //	db: database connection
 //	where, limit: SQL WHERE and LIMIT parts
-//	query: the SQL query string
+//	queryBuilder: the SQL queryBuilder string
 //	rows: the result set from the database
 //	columns: column names in the result
 //	results: the list of Structs to return
-func (q *Query) Fetch() (Results, error) {
+func (q *queryBuilder) Fetch() (Results, error) {
 	db, err := DatabaseHandler.GetDatabase()
 	if err != nil {
 		return nil, err
@@ -325,8 +325,8 @@ func (q *Query) Fetch() (Results, error) {
 	where := q.buildWhere()
 	limit := q.buildLimit()
 
-	query := fmt.Sprintf("SELECT * FROM %s %s %s", q.model.TableName, where, limit)
-	rows, err := db.Query(query, q.whereArgs...)
+	queryBuilder := fmt.Sprintf("SELECT * FROM %s %s %s", q.model.TableName, where, limit)
+	rows, err := db.Query(queryBuilder, q.whereArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -368,12 +368,12 @@ func (q *Query) Fetch() (Results, error) {
 	return results, rows.Err()
 }
 
-// First executes the built SELECT query and returns only the first matching row (or nil if none).
+// First executes the built SELECT queryBuilder and returns only the first matching row (or nil if none).
 //
 // ---
 // LAYMAN'S EXPLANATION:
 //
-// First is a shortcut for "just give me the first row that matches my query."
+// First is a shortcut for "just give me the first row that matches my queryBuilder."
 //
 // 1. If you didn't set a limit, it sets the limit to 1 (so only one row is fetched).
 // 2. It calls Fetch to get the results.
@@ -384,7 +384,7 @@ func (q *Query) Fetch() (Results, error) {
 //
 //	rows: the list of results from Fetch
 //	q.limit: the maximum number of results to get (set to 1 here)
-func (q *Query) First() (Result, error) {
+func (q *queryBuilder) First() (Result, error) {
 	if q.limit == 0 {
 		q.limit = 1
 	}
@@ -399,23 +399,23 @@ func (q *Query) First() (Result, error) {
 }
 
 // =======================
-// UPDATE Query Execution
+// UPDATE queryBuilder Execution
 // =======================
 
-// Exec executes an UPDATE query using the built SET and WHERE clauses.
+// Exec executes an UPDATE queryBuilder using the built SET and WHERE clauses.
 // Only works if the operation is set to "update" (via Set).
 // Prints the number of affected rows for debugging.
 //
 // ---
 // LAYMAN'S EXPLANATION:
 //
-// Exec is used to update rows in the database. It's like saying: "Change these fields for all rows that match my conditions."
+// Exec is used to update rows in the database. It's like saying: "Change these FieldTypes for all rows that match my conditions."
 //
 // 1. It checks if you're actually doing an update (not a select or delete).
 // 2. It gets a database connection.
-// 3. It checks if you specified any fields to update. If not, it returns an error.
-// 4. It builds the SET part (fields and new values) and the WHERE part (which rows to update).
-// 5. It creates the SQL UPDATE query (e.g., UPDATE users SET name = 'Alice' WHERE id = 1).
+// 3. It checks if you specified any FieldTypes to update. If not, it returns an error.
+// 4. It builds the SET part (FieldTypes and new values) and the WHERE part (which rows to update).
+// 5. It creates the SQL UPDATE queryBuilder (e.g., UPDATE users SET name = 'Alice' WHERE id = 1).
 // 6. It combines all the values for the SET and WHERE clauses.
 // 7. It runs the update on the database.
 // 8. It prints how many rows were updated (for debugging).
@@ -424,12 +424,12 @@ func (q *Query) First() (Result, error) {
 // Key variables:
 //
 //	db: database connection
-//	set: SET clause (fields and new values)
+//	set: SET clause (FieldTypes and new values)
 //	where: WHERE clause (which rows to update)
-//	query: the SQL update statement
-//	args: all the values to use in the query
+//	queryBuilder: the SQL update statement
+//	args: all the values to use in the queryBuilder
 //	result: the result of running the update
-func (q *Query) Exec() error {
+func (q *queryBuilder) Exec() error {
 	db, err := DatabaseHandler.GetDatabase()
 	if err != nil {
 		return err
@@ -438,7 +438,7 @@ func (q *Query) Exec() error {
 	switch q.operation {
 	case "update":
 		if len(q.setClauses) == 0 {
-			return fmt.Errorf("update failed: no fields to update")
+			return fmt.Errorf("update failed: no FieldTypes to update")
 		}
 
 		where := q.buildWhere()
@@ -446,7 +446,7 @@ func (q *Query) Exec() error {
 			return fmt.Errorf("unsafe update: WHERE clause is required")
 		}
 
-		query := fmt.Sprintf(
+		queryBuilder := fmt.Sprintf(
 			"UPDATE `%s` SET %s %s",
 			q.model.TableName,
 			strings.Join(q.setClauses, ", "),
@@ -455,9 +455,9 @@ func (q *Query) Exec() error {
 
 		args := append(q.setArgs, q.whereArgs...)
 
-		result, err := db.Exec(query, args...)
+		result, err := db.Exec(queryBuilder, args...)
 		if err != nil {
-			fmt.Printf("[Update Error] Query: %s | Error: %v\n", query, err)
+			fmt.Printf("[Update Error] queryBuilder: %s | Error: %v\n", queryBuilder, err)
 			return err
 		}
 
@@ -467,34 +467,34 @@ func (q *Query) Exec() error {
 			fmt.Printf("[Update] Table: %s | Executed (affected count unknown)\n", q.model.TableName)
 		}
 		return nil
-	case "insert":
-		if len(q.insertFields) == 0 {
-			return fmt.Errorf("no fields to insert")
+	case "InsertRow":
+		if len(q.InsertRowFieldTypes) == 0 {
+			return fmt.Errorf("no FieldTypes to InsertRow")
 		}
 		cols := []string{}
 		vals := []string{}
 		args := []any{}
 
-		for k, v := range q.insertFields {
+		for k, v := range q.InsertRowFieldTypes {
 			cols = append(cols, fmt.Sprintf("`%s`", k))
 			vals = append(vals, "?")
 			args = append(args, v)
 		}
 
-		query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
+		queryBuilder := fmt.Sprintf("InsertRow INTO %s (%s) VALUES (%s)",
 			q.model.TableName,
 			strings.Join(cols, ", "),
 			strings.Join(vals, ", "),
 		)
 
-		result, err := db.Exec(query, args...)
+		result, err := db.Exec(queryBuilder, args...)
 		if err != nil {
 			return err
 		}
 		if id, err := result.LastInsertId(); err == nil {
-			fmt.Printf("[Insert] Table: %s | Last Inserted ID: %d\n", q.model.TableName, id)
+			fmt.Printf("[InsertRow] Table: %s | Last InsertRowed ID: %d\n", q.model.TableName, id)
 		} else {
-			fmt.Printf("[Insert] Table: %s | Row Inserted\n", q.model.TableName)
+			fmt.Printf("[InsertRow] Table: %s | Row InsertRowed\n", q.model.TableName)
 		}
 		return nil
 	case "delete":
@@ -505,10 +505,10 @@ func (q *Query) Exec() error {
 			return fmt.Errorf("unsafe delete: WHERE clause is required")
 		}
 
-		query := fmt.Sprintf("DELETE FROM `%s` %s %s", q.model.TableName, where, limit)
-		result, err := db.Exec(query, q.whereArgs...)
+		queryBuilder := fmt.Sprintf("DELETE FROM `%s` %s %s", q.model.TableName, where, limit)
+		result, err := db.Exec(queryBuilder, q.whereArgs...)
 		if err != nil {
-			fmt.Printf("[Delete] Errored Query: %s\n", query)
+			fmt.Printf("[Delete] Errored queryBuilder: %s\n", queryBuilder)
 			return err
 		}
 
@@ -523,36 +523,36 @@ func (q *Query) Exec() error {
 	}
 }
 
-// Exec executes the insert operation.
-func (q *InsertQuery) Exec() error {
+// Exec executes the InsertRow operation.
+func (q *InsertRowBuilder) Exec() error {
 	db, err := DatabaseHandler.GetDatabase()
 	if err != nil {
 		return err
 	}
-	if len(q.insertFields) == 0 {
-		return fmt.Errorf("no fields to insert")
+	if len(q.InsertRowFieldTypes) == 0 {
+		return fmt.Errorf("no FieldTypes to InsertRow")
 	}
 	cols := []string{}
 	vals := []string{}
 	args := []any{}
-	for k, v := range q.insertFields {
+	for k, v := range q.InsertRowFieldTypes {
 		cols = append(cols, fmt.Sprintf("`%s`", k))
 		vals = append(vals, "?")
 		args = append(args, v)
 	}
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
+	queryBuilder := fmt.Sprintf("InsertRow INTO %s (%s) VALUES (%s)",
 		q.model.TableName,
 		strings.Join(cols, ", "),
 		strings.Join(vals, ", "),
 	)
-	result, err := db.Exec(query, args...)
+	result, err := db.Exec(queryBuilder, args...)
 	if err != nil {
 		return err
 	}
 	if _, err := result.LastInsertId(); err != nil {
-		// 	fmt.Printf("[Insert] Table: %s | Last Inserted ID: %d\n", q.model.TableName, id)
+		// 	fmt.Printf("[InsertRow] Table: %s | Last InsertRowed ID: %d\n", q.model.TableName, id)
 		// } else {
-		fmt.Printf("[Insert] Table: %s | Row Insertion failed: %s\n", q.model.TableName, err.Error())
+		fmt.Printf("[InsertRow] Table: %s | Row InsertRowion failed: %s\n", q.model.TableName, err.Error())
 	}
 	return nil
 }
@@ -563,14 +563,14 @@ func (q *InsertQuery) Exec() error {
 
 // OrderBy sets the ORDER BY clause for sorting results.
 // Usage: .OrderBy("created_at DESC")
-func (q *Query) OrderBy(clause string) *Query {
+func (q *queryBuilder) OrderBy(clause string) *queryBuilder {
 	q.orderBy = clause
 	return q
 }
 
 // GroupBy sets the GROUP BY clause for grouping results.
 // Usage: .GroupBy("status")
-func (q *Query) GroupBy(clause string) *Query {
+func (q *queryBuilder) GroupBy(clause string) *queryBuilder {
 	q.groupBy = clause
 	return q
 }
@@ -581,14 +581,14 @@ func (q *Query) GroupBy(clause string) *Query {
 
 // Offset sets the OFFSET for skipping a number of rows (for pagination).
 // Usage: .Offset(20)
-func (q *Query) Offset(n int) *Query {
+func (q *queryBuilder) Offset(n int) *queryBuilder {
 	q.offset = n
 	return q
 }
 
 // Page sets both LIMIT and OFFSET for paginated queries.
 // Usage: .Page(2, 10) // page 2, 10 results per page
-func (q *Query) Page(page int, pageSize int) *Query {
+func (q *queryBuilder) Page(page int, pageSize int) *queryBuilder {
 	if page < 1 {
 		page = 1
 	}
@@ -603,7 +603,7 @@ func (q *Query) Page(page int, pageSize int) *Query {
 
 // buildWhere constructs the WHERE clause from the accumulated conditions.
 // Returns an empty string if there are no conditions.
-func (q *Query) buildWhere() string {
+func (q *queryBuilder) buildWhere() string {
 	if len(q.whereClauses) == 0 {
 		return ""
 	}
@@ -612,14 +612,14 @@ func (q *Query) buildWhere() string {
 
 // buildLimit constructs the LIMIT clause if a limit is set.
 // Returns an empty string if no limit is specified.
-func (q *Query) buildLimit() string {
+func (q *queryBuilder) buildLimit() string {
 	if q.limit > 0 {
 		return fmt.Sprintf("LIMIT %d", q.limit)
 	}
 	return ""
 }
 
-func (q *Query) Clone() *Query {
+func (q *queryBuilder) Clone() *queryBuilder {
 	copy := *q
 	copy.whereClauses = append([]string{}, q.whereClauses...)
 	copy.whereArgs = append([]any{}, q.whereArgs...)

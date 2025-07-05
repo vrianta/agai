@@ -3,17 +3,17 @@ package model
 import "database/sql"
 
 type (
-	fieldType uint16
-	Fields    map[string]fieldType
-	FieldMap  map[string]*Field
-	Result    map[string]any
-	Results   map[any]Result
+	fieldType    uint16
+	FieldTypes   map[string]fieldType
+	FieldTypeset map[string]*Field
+	Result       map[string]any
+	Results      map[any]Result
 
-	indexInfo struct {
-		ColumnName string
-		IndexName  string
-		NonUnique  bool
-	}
+	// indexInfo struct {
+	// 	ColumnName string
+	// 	IndexName  string
+	// 	NonUnique  bool
+	// }
 
 	Field struct {
 		Name          string
@@ -25,13 +25,13 @@ type (
 		Index         Index // Index type (e.g., "UNIQUE", "INDEX")
 	}
 
-	Struct struct {
-		TableName   string   // Name of the table in the database
-		fields      FieldMap // Map of field names to their types
+	Table struct {
+		TableName   string       // Name of the table in the database
+		FieldTypes  FieldTypeset // Map of field names to their types
 		schemas     []schema
-		Initialised bool                 // Flag to check if the model is initialised
-		primary     *Field               // name of the primary elemet
-		indexes     map[string]indexInfo // columnName -> index info
+		Initialised bool   // Flag to check if the model is initialised
+		primary     *Field // name of the primary elemet
+		// indexes     map[string]indexInfo // columnName -> index info
 	}
 
 	Index struct {
@@ -57,8 +57,8 @@ type (
 		isprimary bool
 	}
 
-	Query struct {
-		model *Struct
+	queryBuilder struct {
+		model *Table
 
 		// WHERE clause
 		whereClauses []string
@@ -76,14 +76,14 @@ type (
 		offset  int
 		orderBy string
 
-		operation    string // "select", "delete", "update"
-		insertFields map[string]any
+		operation           string // "select", "delete", "update"
+		InsertRowFieldTypes map[string]any
 	}
 
-	// InsertQuery is a dedicated struct for insert operations (CREATE), separate from the general Query struct.
-	InsertQuery struct {
-		model        *Struct
-		insertFields map[string]any
-		lastSet      string
+	// InsertRowBuilder is a dedicated struct for InsertRow operations (CREATE), separate from the general queryBuilder struct.
+	InsertRowBuilder struct {
+		model               *Table
+		InsertRowFieldTypes map[string]any
+		lastSet             string
 	}
 )

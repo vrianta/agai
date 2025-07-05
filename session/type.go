@@ -24,6 +24,6 @@ type (
 
 	lruUpdate struct {
 		SessionID string
-		Op        string // "move" or "insert"
+		Op        string // "move" or "InsertRow"
 	}
 )

@@ -15,9 +15,9 @@ func (_c *Struct) ParseRequest() {
 
 	_c.userInputs = make(map[string]interface{}, 30)
 
-	// Log handling of query parameters for non-POST methods
+	// Log handling of queryBuilder parameters for non-POST methods
 	for key, values := range _c.r.URL.Query() {
-		_c.processQueryParams(key, values)
+		_c.processqueryBuilderParams(key, values)
 	}
 
 	if _c.r.Method == http.MethodPost {
@@ -51,7 +51,7 @@ func (_c *Struct) ParseRequest() {
 			break
 		}
 
-		// Log handling of query parameters for non-POST methods
+		// Log handling of queryBuilder parameters for non-POST methods
 		// _c.userInputs = _c.r.PostForm
 
 		for key, values := range _c.r.PostForm {
@@ -61,8 +61,8 @@ func (_c *Struct) ParseRequest() {
 
 }
 
-// handleQueryParams processes parameters found in the URL query
-func (_c *Struct) processQueryParams(key string, values []string) {
+// handlequeryBuilderParams processes parameters found in the URL queryBuilder
+func (_c *Struct) processqueryBuilderParams(key string, values []string) {
 	var err error
 	// Check for multiple values
 

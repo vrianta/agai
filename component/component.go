@@ -127,7 +127,7 @@ Ensure the primary key is present inside the nested object.`,
 
 // InitializeComponent syncs all JSON components with their DB tables.
 // For each table in jsonStore:
-//   - If the DB table is empty, insert all JSON values into the DB.
+//   - If the DB table is empty, InsertRow all JSON values into the DB.
 //   - If the DB table has data, load from DB, update jsonStore, and write to the JSON file.
 func syncComponent() error {
 	if len(jsonStore) == 0 {
@@ -155,7 +155,7 @@ func syncComponent() error {
 			}()
 
 			fmt.Println("[Info] Initializing", tableName, "Component")
-			tableModel := getModelAndInserterByTableName(tableName)
+			tableModel := getModelAndInsertRowerByTableName(tableName)
 			if tableModel == nil {
 				errCh <- fmt.Errorf("[ERROR] No model found for table: %s", tableName)
 				return
@@ -168,15 +168,15 @@ func syncComponent() error {
 			}
 
 			if len(dbResults) == 0 {
-				// DB is empty, insert all local components
+				// DB is empty, InsertRow all local components
 				for _, localItem := range localList {
 					addRow := tableModel.Create()
 					for key, value := range *localItem {
-						fmt.Printf("\t[Info] Inserting into '%s': %s = %v\n", tableName, key, value)
+						fmt.Printf("\t[Info] InsertRowing into '%s': %s = %v\n", tableName, key, value)
 						addRow.Set(key).To(value)
 					}
 					if err := addRow.Exec(); err != nil {
-						errCh <- fmt.Errorf("[ERROR] failed to insert component into %s: %w", tableName, err)
+						errCh <- fmt.Errorf("[ERROR] failed to InsertRow component into %s: %w", tableName, err)
 					}
 				}
 				return
@@ -187,10 +187,10 @@ func syncComponent() error {
 			// Add new components from local file
 			for localItemKey, localItem := range localList {
 				if _, ok := dbResults[localItemKey]; !ok {
-					fmt.Println("[INFO-COMPONENT] Inserting new Component", localItemKey, "in DB table:", tableName)
+					fmt.Println("[INFO-COMPONENT] InsertRowing new Component", localItemKey, "in DB table:", tableName)
 					dbResults[localItemKey] = model.Result(*localItem)
-					if err := tableModel.Insert(*localItem); err != nil {
-						errCh <- fmt.Errorf("[ERROR] failed to insert new component %s into %s: %w", localItemKey, tableName, err)
+					if err := tableModel.InsertRow(*localItem); err != nil {
+						errCh <- fmt.Errorf("[ERROR] failed to InsertRow new component %s into %s: %w", localItemKey, tableName, err)
 					}
 				}
 			}
@@ -237,12 +237,12 @@ func RefreshComponentFromDB() {
 	errCh := make(chan error, len(model.ModelsRegistry))
 	for tableName, tableModel := range model.ModelsRegistry {
 		wb.Add(1)
-		go func(tableName string, tableModel *model.Struct) {
+		go func(tableName string, tableModel *model.Table) {
 			defer wb.Done()
 
 			fmt.Println("[Component] Loading from DB: ", tableName)
 
-			if !tableModel.PrimaryKeyExists() {
+			if !tableModel.HasPrimaryKey() {
 				panic("[Component] Skipping table %s: no primary key found" + tableName)
 			}
 
@@ -290,10 +290,10 @@ func dumpComponentToJSON(tableName string, data any) error {
 	return os.WriteFile(path, bytes, 0644)
 }
 
-// getModelAndInserterByTableName returns the model and an insert function for a given table name
-func getModelAndInserterByTableName(tableName string) *model.Struct {
+// getModelAndInsertRowerByTableName returns the model and an InsertRow function for a given table name
+func getModelAndInsertRowerByTableName(tableName string) *model.Table {
 	if m, ok := model.ModelsRegistry[tableName]; ok {
-		if !m.PrimaryKeyExists() {
+		if !m.HasPrimaryKey() {
 			panic("[ERROR-" + tableName + "] Model need to have Primary Key if that is being used for components")
 		}
 		return m
@@ -303,7 +303,7 @@ func getModelAndInserterByTableName(tableName string) *model.Struct {
 	panic("[ERROR] No Model Found with the Table Name: " + tableName)
 }
 
-func Get(model *model.Struct) *components {
+func Get(model *model.Table) *components {
 	if model == nil {
 		panic("[Component] GetComponentFromModel: modelStruct is nil")
 	}

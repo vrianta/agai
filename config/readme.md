@@ -175,8 +175,8 @@ func main() {
 ---
 
 ## 9. Extending the Config Package
-- Add new fields to the config structs in `type.go` as needed.
-- Update the loader functions to parse new fields.
+- Add new FieldTypes to the config structs in `type.go` as needed.
+- Update the loader functions to parse new FieldTypes.
 - Add new config files (e.g., `Email.Config.json`) for additional features.
 
 ---

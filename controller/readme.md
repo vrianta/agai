@@ -12,9 +12,9 @@ A **Controller** is a Go struct that handles HTTP requests for a specific route.
 
 ## 2. Controller Structure
 
-A controller is defined as a variable of type `Controller.Struct`. The main public fields and methods are:
+A controller is defined as a variable of type `Controller.Struct`. The main public FieldTypes and methods are:
 
-### Public Fields
+### Public FieldTypes
 
 - **View**:  
   The name of the view (template) directory for this controller.  

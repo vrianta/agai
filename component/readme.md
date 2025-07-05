@@ -5,7 +5,7 @@ The `component` package now supports a hybrid file+DB approach for managing appl
 ## Features
 - **File-based storage:** Each component is stored as a JSON file (`table_name.components.json`) in `./components/`.
 - **Type-safe access:** Data is loaded into Go structs and accessible as `map[PrimaryKey]YourStruct`.
-- **Automatic initialization:** On startup, loads from JSON, inserts into DB if needed, or loads from DB and updates JSON.
+- **Automatic initialization:** On startup, loads from JSON, InsertRows into DB if needed, or loads from DB and updates JSON.
 - **Thread-safe:** Uses mutexes for concurrent access.
 - **Centralized registration and initialization.**
 - **Hot reload:** Reload all components from disk at runtime.
@@ -68,7 +68,7 @@ component.ReloadComponents()
 
 ## How It Works
 - On startup, the package loads all JSON files in `./components/`.
-- If the DB table is empty, it inserts the JSON values as defaults.
+- If the DB table is empty, it InsertRows the JSON values as defaults.
 - If the DB table has data, it loads from DB and updates the local JSON file.
 - All data is accessible as a map in Go, keyed by the primary key.
 - You can reload or dump data at any time.

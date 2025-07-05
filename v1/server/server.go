@@ -1,0 +1,143 @@
+package server
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/vrianta/Server/v1/component"
+	"github.com/vrianta/Server/v1/config"
+	"github.com/vrianta/Server/v1/database"
+	Log "github.com/vrianta/Server/v1/log"
+	Models "github.com/vrianta/Server/v1/model"
+	Router "github.com/vrianta/Server/v1/router"
+	Session "github.com/vrianta/Server/v1/session"
+)
+
+/*
+ * server.New(hostname, port, routes, _config) -> function to create a instance of the server
+ * @return -> it will return a pointer to the server with default
+ * host -> is hostname of the server which host name you want to allow * is for everything and localhost to allow only local host connections
+ * port -> the port number the server going to listen to
+ * route ->  routes configaration which tells the
+ * _config -> send the config of the server can be send nill if default is fine for you
+ */
+
+// Start runs the HTTP server
+func Start() *_Struct {
+
+	s := &_Struct{}
+
+	database.Init()
+	s.setup_static_folders()
+	s.setup_css_folder()
+	s.setup_js_folder()
+	s.setup_views()      // Register all the views with the RenderEngine
+	s.initialiseModels() // intialsing model with creating tables and updating them
+	component.Init()
+
+	// Initialize Models Handler
+
+	// Starting Session Handler to Manage Session Expiry
+	go Session.StartSessionHandler()
+	go Session.StartLRUHandler() // Start the LRU handler for session management
+
+	// setting up the Custom Routing Handler for the syste
+	http.HandleFunc("/", Router.Handler)
+
+	// Define the server configuration
+	s.server = &http.Server{
+		Addr: config.GetWebConfig().Host + ":" + config.GetWebConfig().Port, // Host and port
+	}
+
+	if !config.SyncDatabaseEnabled && !config.SyncComponentsEnabled {
+		Log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
+		fmt.Print("---------------------------------------------------------\n")
+		fmt.Print("---------------------------------------------------------\n\n\n")
+
+		if err := s.server.ListenAndServe(); err != nil {
+			panic("[Server] Failed to start: " + err.Error())
+		}
+	}
+
+	return s
+}
+
+func (s *_Struct) setup_static_folders() {
+	// Create a file server handler
+	for _, folder := range config.GetWebConfig().StaticFolders {
+		fs := http.FileServer(http.Dir(folder))
+		http.Handle("/"+folder+"/", http.StripPrefix("/"+folder+"/", fs))
+	}
+}
+
+// Generating Creating Routes for the Css Folders
+func (s *_Struct) setup_css_folder() {
+	for _, folder := range config.GetWebConfig().CssFolders {
+		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("text/css; charset=utf-8"))
+	}
+}
+
+func (s *_Struct) setup_js_folder() {
+	for _, folder := range config.GetWebConfig().JsFolders {
+		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("application/javascript; charset=utf-8"))
+	}
+}
+
+// function to go through all the routes and register their Views and create templates
+func (s *_Struct) setup_views() {
+
+	routes := Router.GetRoutes()
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Views Setup] Registering templates for controllers:\n")
+	fmt.Print("---------------------------------------------------------\n")
+	for route, controller := range *routes {
+		if controller.View != "" {
+			if err := controller.RegisterTemplate(); err != nil {
+				fmt.Printf("[Error]   Template: %-20s | %v\n", controller.View, err)
+				os.Exit(1)
+			} else {
+				fmt.Printf("[Success] Template: %s and Route: %-20s | Registered\n", controller.View, route)
+			}
+		}
+	}
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Views Setup] All views registered successfully.\n")
+	fmt.Print("---------------------------------------------------------\n\n")
+}
+
+func (s *_Struct) initialiseModels() {
+
+	if !database.Initialized {
+		if config.GetDatabaseConfig().Host == "" {
+			fmt.Printf("[Warning] Database not initialized, skipping table creation/modification\n")
+			return
+		} else {
+			panic("[Models] Error: Connecting the Database, please check the database configuration.\n")
+		}
+	}
+
+	// fmt.Println("Build Mode: ", fmt.Sprint(config.GetBuild()), " Sync Flag: ", fmt.Sprint(config.SyncDatabase))
+	if !config.SyncDatabaseEnabled {
+		fmt.Print("[INFO] To do migration please use flag --migrate-model/-mm \n")
+		for _, model := range Models.ModelsRegistry {
+			model.Initialised = true
+		}
+		return
+	}
+
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Models] Initializing model and syncing database tables:\n")
+	fmt.Print("---------------------------------------------------------\n")
+
+	for _, model := range Models.ModelsRegistry {
+		fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)
+		model.SyncModelSchema()
+		model.CreateTableIfNotExists() // creating table if not existed
+		model.Initialised = true
+	}
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Models] Model initialization complete.\n")
+	fmt.Print("---------------------------------------------------------\n\n")
+
+}

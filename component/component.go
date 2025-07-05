@@ -170,14 +170,17 @@ func syncComponent() error {
 			if len(dbResults) == 0 {
 				// DB is empty, InsertRow all local components
 				for _, localItem := range localList {
-					addRow := tableModel.Create()
-					for key, value := range *localItem {
-						fmt.Printf("\t[Info] InsertRowing into '%s': %s = %v\n", tableName, key, value)
-						addRow.Set(key).To(value)
-					}
-					if err := addRow.Exec(); err != nil {
+					if err := tableModel.InsertRow(*localItem); err != nil {
 						errCh <- fmt.Errorf("[ERROR] failed to InsertRow component into %s: %w", tableName, err)
+
 					}
+					// for key, value := range *localItem {
+					// 	fmt.Printf("\t[Info] InsertRowing into '%s': %s = %v\n", tableName, key, value)
+					// 	addRow.Set(key).To(value)
+					// }
+					// if err := addRow.Exec(); err != nil {
+					// 	errCh <- fmt.Errorf("[ERROR] failed to InsertRow component into %s: %w", tableName, err)
+					// }
 				}
 				return
 			}

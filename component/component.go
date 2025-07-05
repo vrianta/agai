@@ -122,7 +122,7 @@ Ensure the primary key is present inside the nested object.`,
 
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Println("[Component] - Done Loading Components from Local JSON")
-	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("---------------------------------------------------------\n\n")
 }
 
 // InitializeComponent syncs all JSON components with their DB tables.
@@ -227,7 +227,7 @@ func syncComponent() error {
 
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Println("[Component] - Done Syncing Component with Database")
-	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("---------------------------------------------------------\n\n")
 	return nil
 }
 

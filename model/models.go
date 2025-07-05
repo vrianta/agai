@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -19,7 +20,7 @@ import (
  * It will provide the default functions to handle the model like Create, Read, Update, Delete
  */
 
-func New(tableName string, fields FieldMap) *Struct {
+func new_model(tableName string, fields FieldMap) Struct {
 	_model := Struct{
 		TableName: tableName,
 		fields:    fields,
@@ -33,18 +34,51 @@ func New(tableName string, fields FieldMap) *Struct {
 		}(fields),
 	}
 
-	// for _, field := range _model.fields {
-	// 	if field.Index.PrimaryKey {
-	// 		_model.primary = &field // take address of copy
-	// 		// _model.primary = &field
-	// 		break
-	// 	}
-	// }
-
 	_model.validate()
 
-	ModelsRegistry[tableName] = &_model
-	return &_model
+	return _model
+}
+
+func New[T any](tableName string, structure T) struct {
+	Struct
+	Model T
+} {
+	t := reflect.TypeOf(structure)
+
+	if t.Kind() != reflect.Struct {
+		panic("structure passed to NewV2 must be a struct")
+	}
+
+	fieldMap := make(FieldMap, t.NumField())
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := reflect.ValueOf(structure).Field(i).Interface()
+
+		f, ok := value.(Field)
+		if !ok {
+			panic(fmt.Sprintf("[Model Error] Field '%s' is not of type model.Field", field.Name))
+		}
+
+		// Set the field name if missing
+		if f.Name == "" {
+			f.Name = field.Name
+		}
+		fieldMap[field.Name] = &f
+	}
+
+	base := new_model(tableName, fieldMap) // Use your existing New()
+
+	response := struct {
+		Struct
+		Model T
+	}{
+		Struct: base,
+		Model:  structure,
+	}
+	ModelsRegistry[tableName] = &response.Struct
+
+	return response
 }
 
 func (m *Struct) validate() {

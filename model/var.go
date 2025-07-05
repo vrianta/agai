@@ -2,27 +2,35 @@ package model
 
 var (
 	FieldsTypes = struct {
-		String  fieldType
-		Text    fieldType
-		VarChar fieldType
-		Int     fieldType
-		Float   fieldType
-		Bool    fieldType
-		Date    fieldType
-		Time    fieldType
-		JSON    fieldType
-		Decimal fieldType
+		String    fieldType
+		Text      fieldType
+		VarChar   fieldType
+		Int       fieldType
+		Float     fieldType
+		Decimal   fieldType
+		Bool      fieldType
+		Date      fieldType
+		Time      fieldType
+		Timestamp fieldType
+		JSON      fieldType
+		Enum      fieldType
+		Binary    fieldType
+		UUID      fieldType
 	}{
-		String:  0, // String type field
-		Text:    1, // Text type field
-		VarChar: 2, // Variable character field
-		Int:     3, // Integer type field
-		Float:   4, // Float type field
-		Bool:    5, // Boolean type field
-		Date:    6, // Date type field
-		Time:    7, // Time type field
-		JSON:    8, // JSON type field
-		Decimal: 9,
+		String:    0,
+		Text:      1,
+		VarChar:   2,
+		Int:       3,
+		Float:     4,
+		Decimal:   5,
+		Bool:      6,
+		Date:      7,
+		Time:      8,
+		Timestamp: 9,
+		JSON:      10,
+		Enum:      11,
+		Binary:    12,
+		UUID:      13,
 	}
 
 	// Indexes = struct {

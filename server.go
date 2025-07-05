@@ -50,11 +50,11 @@ func Start() *_Struct {
 		Addr: config.GetWebConfig().Host + ":" + config.GetWebConfig().Port, // Host and port
 	}
 
-	Log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
-	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("---------------------------------------------------------\n\n\n")
-
 	if !config.SyncDatabaseEnabled && !config.SyncComponentsEnabled {
+		Log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
+		fmt.Print("---------------------------------------------------------\n")
+		fmt.Print("---------------------------------------------------------\n\n\n")
+
 		if err := s.server.ListenAndServe(); err != nil {
 			panic("[Server] Failed to start: " + err.Error())
 		}

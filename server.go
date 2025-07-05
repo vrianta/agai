@@ -54,7 +54,7 @@ func Start() *_Struct {
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Print("---------------------------------------------------------\n\n\n")
 
-	if config.SyncDatabaseEnabled {
+	if !config.SyncDatabaseEnabled && !config.SyncComponentsEnabled {
 		if err := s.server.ListenAndServe(); err != nil {
 			panic("[Server] Failed to start: " + err.Error())
 		}
@@ -119,7 +119,7 @@ func (s *_Struct) initialiseModels() {
 
 	// fmt.Println("Build Mode: ", fmt.Sprint(config.GetBuild()), " Sync Flag: ", fmt.Sprint(config.SyncDatabase))
 	if !config.SyncDatabaseEnabled {
-		fmt.Print("[INFO] Build mode enabled, skipping model initialization.\n To do migration please use flag --migrate-model/-m \n")
+		fmt.Print("[INFO] To do migration please use flag --migrate-model/-mm \n")
 		for _, model := range Models.ModelsRegistry {
 			model.Initialised = true
 		}

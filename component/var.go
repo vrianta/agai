@@ -7,4 +7,5 @@ var (
 	jsonStoreMu      sync.RWMutex
 	componentsDir    = "./components"
 	warnedMissingDir = false
+	wb               = sync.WaitGroup{}
 )

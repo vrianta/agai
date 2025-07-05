@@ -3,9 +3,11 @@ package component
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/vrianta/Server/config"
 	"github.com/vrianta/Server/model"
@@ -26,6 +28,7 @@ func Init() {
 		syncComponent()
 		loadComponents()
 	} else {
+		fmt.Print("[INFO] To do migration of Components please use flag --migrate-component/-mc \n")
 		RefreshComponentFromDB()
 	}
 }
@@ -35,8 +38,10 @@ func ReloadComponents() {
 	loadComponents()
 }
 
-// loadAllComponentsFromJSON loads all JSON files in ./components into jsonStore
 func loadComponents() {
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Println("[Component] - Loading Components from Local JSON")
+	fmt.Print("---------------------------------------------------------\n")
 
 	if _, err := os.Stat(componentsDir); os.IsNotExist(err) {
 		if !warnedMissingDir {
@@ -45,38 +50,79 @@ func loadComponents() {
 		}
 		return
 	}
+
 	files, err := os.ReadDir(componentsDir)
 	if err != nil {
 		fmt.Printf("[Component] Error reading components directory: %v\n", err)
 		return
 	}
 
-	file_count := len(files)
-	jsonStore = make(storage, file_count) // makign the map with fixed size less GC load
-
+	// Step 1: Filter valid component files (*.component.json)
+	var componentFiles []os.DirEntry
 	for _, file := range files {
-		if filepath.Ext(file.Name()) == ".json" {
-			path := filepath.Join(componentsDir, file.Name())
-			data, err := os.ReadFile(path)
-			if err != nil {
-				fmt.Printf("[Component] Error reading %s: %v\n", file.Name(), err)
-				continue
-			}
-			var raw components
-			if err := json.Unmarshal(data, &raw); err != nil {
-				if err.Error() == "json: cannot unmarshal array into Go value of type component.component" {
-					panic("Make sure you component structure is properly structured for reference \n {\n \"Value of the PrimaryKey\":{\n  elemet: \"data\"\n}\n \n}\n and make sure you also have to include the primary key in the json object")
-				}
-				panic("[Component] Error unmarshaling " + file.Name() + " " + err.Error() + "\n")
-			}
-			// tableName := file.Name()[:len(file.Name())-len(".components.json")+1]
-			tableName := strings.TrimSuffix(file.Name(), ".component.json")
-			jsonStore[tableName] = raw
-		} else {
-			// fmt.Println("[Warning] Non json file found in components - FileName: ", file.Name(), " Extension: ", filepath.Ext(file.Name()))
+		if strings.HasSuffix(file.Name(), ".component.json") {
+			componentFiles = append(componentFiles, file)
 		}
 	}
 
+	jsonStore = make(storage, len(componentFiles)) // preallocate only for component files
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	errCh := make(chan error, len(componentFiles))
+
+	for _, file := range componentFiles {
+		wg.Add(1)
+		go func(file os.DirEntry) {
+			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					errCh <- fmt.Errorf("panic while loading %s: %v", file.Name(), r)
+				}
+			}()
+
+			path := filepath.Join(componentsDir, file.Name())
+			data, err := os.ReadFile(path)
+			if err != nil {
+				errCh <- fmt.Errorf("[Component] Error reading %s: %v", file.Name(), err)
+				return
+			}
+
+			var raw components
+			if err := json.Unmarshal(data, &raw); err != nil {
+				if strings.Contains(err.Error(), "cannot unmarshal array into Go value of type component.component") {
+					panic(fmt.Sprintf(`[Component] Malformed structure in %s. JSON should follow:
+{
+  "primaryKeyValue": {
+    "field1": "value",
+    "field2": "value"
+  }
+}
+Ensure the primary key is present inside the nested object.`,
+						file.Name()))
+				}
+				panic("[Component] Error unmarshaling " + file.Name() + ": " + err.Error())
+			}
+
+			tableName := strings.TrimSuffix(file.Name(), ".component.json")
+
+			mu.Lock()
+			jsonStore[tableName] = raw
+			mu.Unlock()
+
+			fmt.Println("Component for Table:", tableName, "is loaded")
+		}(file)
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
+		log.Println(err)
+	}
+
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Println("[Component] - Done Loading Components from Local JSON")
+	fmt.Print("---------------------------------------------------------\n")
 }
 
 // InitializeComponent syncs all JSON components with their DB tables.
@@ -85,110 +131,150 @@ func loadComponents() {
 //   - If the DB table has data, load from DB, update jsonStore, and write to the JSON file.
 func syncComponent() error {
 	if len(jsonStore) == 0 {
+		fmt.Print("---------------------------------------------------------\n")
 		fmt.Println("[Component] No components found to initialize.")
+		fmt.Print("---------------------------------------------------------\n")
 		return nil
 	}
 
-	for tableName := range jsonStore {
-		localList := jsonStore[tableName]
-		fmt.Println("[Component] Initializing ", tableName, " components...")
-		tableModel := getModelAndInserterByTableName(tableName)
-		if tableModel == nil {
-			panic("[ERROR] No Such Model Found for Table while creating the component: " + tableName)
-		}
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Println("[Component] - Syncing Component with Database")
+	fmt.Print("---------------------------------------------------------\n")
 
-		dbResults, err := tableModel.Get().Fetch()
-		if err != nil {
-			fmt.Printf("[Component] Error fetching from DB for '%s': %v\n", tableName, err)
-			continue
-		}
-		// dbResults.PrintAsTable()
+	var wg sync.WaitGroup
+	errCh := make(chan error, len(jsonStore)) // buffered to avoid deadlocks
 
-		if len(dbResults) == 0 {
-			// DB is empty, insert all local components
-			for _, localItem := range localList {
-				addRow := tableModel.Create()
-				for key, value := range *localItem {
-					fmt.Printf("[Component] Inserting into '%s': %s = %v\n", tableName, key, value)
-					addRow.Set(key).To(value)
+	for tableName, localList := range jsonStore {
+		wg.Add(1)
+		go func(tableName string, localList components) {
+			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					errCh <- fmt.Errorf("panic in table %s: %v", tableName, r)
 				}
-				if err := addRow.Exec(); err != nil {
-					panic("[ERROR] - failed on component creation " + err.Error())
+			}()
+
+			fmt.Println("[Info] Initializing", tableName, "Component")
+			tableModel := getModelAndInserterByTableName(tableName)
+			if tableModel == nil {
+				errCh <- fmt.Errorf("[ERROR] No model found for table: %s", tableName)
+				return
+			}
+
+			dbResults, err := tableModel.Get().Fetch()
+			if err != nil {
+				errCh <- fmt.Errorf("[Error] fetching from DB for %s: %w", tableName, err)
+				return
+			}
+
+			if len(dbResults) == 0 {
+				// DB is empty, insert all local components
+				for _, localItem := range localList {
+					addRow := tableModel.Create()
+					for key, value := range *localItem {
+						fmt.Printf("\t[Info] Inserting into '%s': %s = %v\n", tableName, key, value)
+						addRow.Set(key).To(value)
+					}
+					if err := addRow.Exec(); err != nil {
+						errCh <- fmt.Errorf("[ERROR] failed to insert component into %s: %w", tableName, err)
+					}
+				}
+				return
+			}
+
+			fmt.Println("\t[INFO-Component] Syncing Component:", tableName)
+
+			// Add new components from local file
+			for localItemKey, localItem := range localList {
+				if _, ok := dbResults[localItemKey]; !ok {
+					fmt.Println("[INFO-COMPONENT] Inserting new Component", localItemKey, "in DB table:", tableName)
+					dbResults[localItemKey] = model.Result(*localItem)
+					if err := tableModel.Insert(*localItem); err != nil {
+						errCh <- fmt.Errorf("[ERROR] failed to insert new component %s into %s: %w", localItemKey, tableName, err)
+					}
 				}
 			}
-			continue
-		}
 
-		fmt.Println("[INFO-Component] Syncing Component: ", tableName)
-
-		// Add new components from local file
-		for localItemKey, localItem := range localList {
-			if _, ok := dbResults[localItemKey]; !ok {
-				fmt.Println("[INFO-COMPONENT] Inserting new Component ", localItemKey, " in DB table: ", tableName)
-				dbResults[localItemKey] = model.Result(*localItem)
-				tableModel.Insert(*localItem)
-			}
-		}
-
-		// Remove DB entries not present in local
-		for pk := range dbResults {
-			if _, ok := localList[fmt.Sprint(pk)]; !ok {
-				fmt.Printf("[INFO-COMPONENT] Deleting %s From %s\n", pk, tableName)
-				println(localList)
-				if err := tableModel.Delete().Where(tableModel.GetPrimaryKey().Name).Is(pk).Exec(); err != nil {
-					panic("[ERROR] - Failed to Delete " + fmt.Sprint(pk) + " in table " + tableName)
+			// Remove DB entries not present in local
+			for pk := range dbResults {
+				if _, ok := localList[fmt.Sprint(pk)]; !ok {
+					fmt.Printf("\t[INFO-COMPONENT] Deleting %s From %s\n", pk, tableName)
+					if err := tableModel.Delete().Where(tableModel.GetPrimaryKey().Name).Is(pk).Exec(); err != nil {
+						errCh <- fmt.Errorf("[ERROR] failed to delete %v in table %s: %w", pk, tableName, err)
+					}
 				}
 			}
-		}
 
-		// Update local JSON file with DB state
-		updatedLocalList := make(components, len(dbResults))
-		for pk, dbItem := range dbResults {
-			comp := component(dbItem)
-			i := fmt.Sprint(pk)
-			updatedLocalList[i] = &comp
-		}
-		if err := dumpComponentToJSON(tableName, updatedLocalList); err != nil {
-			fmt.Printf("[Component] Error updating JSON file for '%s': %v\n", tableName, err)
-		}
-
+			// Update local JSON file with DB state
+			updatedLocalList := make(components, len(dbResults))
+			for pk, dbItem := range dbResults {
+				comp := component(dbItem)
+				pkStr := fmt.Sprint(pk)
+				updatedLocalList[pkStr] = &comp
+			}
+			if err := dumpComponentToJSON(tableName, updatedLocalList); err != nil {
+				errCh <- fmt.Errorf("[Component] error updating JSON file for '%s': %v", tableName, err)
+			}
+		}(tableName, localList) // capture loop vars properly
 	}
+
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
+		log.Println(err)
+	}
+
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Println("[Component] - Done Syncing Component with Database")
+	fmt.Print("---------------------------------------------------------\n")
 	return nil
 }
 
 func RefreshComponentFromDB() {
-	jsonStoreMu.Lock()
-	defer jsonStoreMu.Unlock()
 
+	jsonStore = make(storage, len(model.ModelsRegistry))
+	errCh := make(chan error, len(model.ModelsRegistry))
 	for tableName, tableModel := range model.ModelsRegistry {
-		fmt.Println("[Component] Refreshing from DB: ", tableName)
+		wb.Add(1)
+		go func(tableName string, tableModel *model.Struct) {
+			defer wb.Done()
 
-		if !tableModel.PrimaryKeyExists() {
-			fmt.Printf("[Component] Skipping table %s: no primary key found.\n", tableName)
-			continue
-		}
+			fmt.Println("[Component] Loading from DB: ", tableName)
 
-		dbResults, err := tableModel.Get().Fetch()
-		if err != nil {
-			fmt.Printf("[Component] Failed to fetch from DB for table %s: %v\n", tableName, err)
-			continue
-		}
+			if !tableModel.PrimaryKeyExists() {
+				panic("[Component] Skipping table %s: no primary key found" + tableName)
+			}
 
-		updated := make(components, len(dbResults))
+			dbResults, err := tableModel.Get().Fetch()
+			if err != nil {
+				panic("[Component] Failed to fetch from DB for table " + tableName + " : " + err.Error())
+			}
 
-		for pk, row := range dbResults {
-			comp := component(row)  // convert model.Result to component (map[string]any)
-			pkStr := fmt.Sprint(pk) // convert primary key to string
-			updated[pkStr] = &comp
-		}
+			updated := make(components, len(dbResults))
 
-		// Update jsonStore directly
-		jsonStore[tableName] = updated
+			for pk, row := range dbResults {
+				comp := component(row)  // convert model.Result to component (map[string]any)
+				pkStr := fmt.Sprint(pk) // convert primary key to string
+				updated[pkStr] = &comp
+			}
 
-		// Optionally dump to file
-		if err := dumpComponentToJSON(tableName, updated); err != nil {
-			fmt.Printf("[Component] Failed to write %s.component.json: %v\n", tableName, err)
-		}
+			// Update jsonStore directly
+			jsonStoreMu.Lock()
+			jsonStore[tableName] = updated
+			jsonStoreMu.Unlock()
+
+			// Optionally dump to file
+			if err := dumpComponentToJSON(tableName, updated); err != nil {
+				errCh <- fmt.Errorf("[Component] Failed to write %s.component.json: %v", tableName, err)
+			}
+		}(tableName, tableModel)
+	}
+
+	wb.Wait()
+	close(errCh)
+	for err := range errCh {
+		log.Println(err)
 	}
 }
 

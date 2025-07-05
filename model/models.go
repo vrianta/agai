@@ -2,11 +2,10 @@ package model
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
-	"sync"
 
 	config "github.com/vrianta/Server/config"
 	DatabaseHandler "github.com/vrianta/Server/database"
@@ -27,7 +26,6 @@ func New(tableName string, fields FieldMap) *Struct {
 		primary: func(fields FieldMap) *Field {
 			for _, field := range fields {
 				if field.Index.PrimaryKey {
-					fmt.Println("Found Primary Key: ", tableName)
 					return field // Return the pointer directly from the map
 				}
 			}
@@ -35,14 +33,13 @@ func New(tableName string, fields FieldMap) *Struct {
 		}(fields),
 	}
 
-	for _, field := range _model.fields {
-		if field.Index.PrimaryKey {
-			fmt.Println("Found Primary Key: ", tableName) // create local copy
-			_model.primary = field                        // take address of copy
-			// _model.primary = &field
-			break
-		}
-	}
+	// for _, field := range _model.fields {
+	// 	if field.Index.PrimaryKey {
+	// 		_model.primary = &field // take address of copy
+	// 		// _model.primary = &field
+	// 		break
+	// 	}
+	// }
 
 	_model.validate()
 
@@ -462,44 +459,35 @@ func (m *Struct) GetTableName() string {
 	return m.TableName
 }
 
-// function to get data of a field
-func (m *Struct) GetFieldValue(field_name string) (any, error) {
-	if field, ok := m.fields[field_name]; !ok {
-		return nil, errors.New("")
-	} else {
-		return field.value, nil
-	}
-}
-
 // Convert the Fetched Data to a of objects
 // This function will convert the Struct to a map[string]any for easy access and manipulation
-func (m *Struct) ToMap() map[string]any {
-	response := make(map[string]any, len(m.fields))
-	var wg sync.WaitGroup
-	var mu sync.Mutex
+// func (m *Struct) ToMap() map[string]any {
+// 	response := make(map[string]any, len(m.fields))
+// 	var wg sync.WaitGroup
+// 	var mu sync.Mutex
 
-	for _, field := range m.fields {
-		wg.Add(1)
+// 	for _, field := range m.fields {
+// 		wg.Add(1)
 
-		go func(f *Field) {
-			defer wg.Done()
+// 		go func(f *Field) {
+// 			defer wg.Done()
 
-			var value any
-			if f.value != nil {
-				value = f.value
-			} else {
-				value = nil
-			}
+// 			var value any
+// 			if f.value != nil {
+// 				value = f.value
+// 			} else {
+// 				value = nil
+// 			}
 
-			mu.Lock()
-			response[f.Name] = value
-			mu.Unlock()
-		}(field)
-	}
+// 			mu.Lock()
+// 			response[f.Name] = value
+// 			mu.Unlock()
+// 		}(&field)
+// 	}
 
-	wg.Wait()
-	return response
-}
+// 	wg.Wait()
+// 	return response
+// }
 
 // Insert inserts a new record into the table using the provided values map.
 // This is a dedicated Create/Insert function that does not overlap with table creation or schema management.
@@ -536,4 +524,64 @@ func (m *Struct) PrimaryKeyExists() bool {
 	}
 
 	return false
+}
+
+/*
+GetField(fieldname) -> return pointer of the field
+*/
+
+func (m *Struct) GetField(field_name string) *Field {
+	field, ok := m.fields[field_name]
+	if !ok {
+		return nil
+	}
+	return field
+}
+
+/*
+GetField(fieldname) -> return pointer of the field
+*/
+
+func (m *Struct) GetFields() *FieldMap {
+	return &m.fields
+}
+
+// Print the Objects of the models as the good for debug perpose
+func (r *Results) PrintAsTable() {
+	if len(*r) == 0 {
+		return
+	}
+
+	// Collect all unique column names across all rows
+	colSet := map[string]struct{}{}
+	for _, row := range *r {
+		for col := range row {
+			colSet[col] = struct{}{}
+		}
+	}
+
+	// Sort column names for consistent display
+	var colNames []string
+	for col := range colSet {
+		colNames = append(colNames, col)
+	}
+	sort.Strings(colNames)
+
+	// Print header
+	for _, col := range colNames {
+		fmt.Printf("| %-15s", col)
+	}
+	fmt.Println("|")
+
+	// Print separator
+	fmt.Println(strings.Repeat("-", len(colNames)*18))
+
+	// Print each row
+	for _, row := range *r {
+		for _, col := range colNames {
+			val := row[col]
+			fmt.Printf("| %-15v", val)
+		}
+		fmt.Println("|")
+	}
 }

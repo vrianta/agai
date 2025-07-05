@@ -112,7 +112,3 @@ func (f *Field) addIndexStatement() string {
 
 	return response
 }
-
-func (f *Field) GetVal() string {
-	return fmt.Sprint(f.value)
-}

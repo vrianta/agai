@@ -6,6 +6,8 @@ type (
 	fieldType uint16
 	Fields    map[string]fieldType
 	FieldMap  map[string]*Field
+	Result    map[string]any
+	Results   map[any]Result
 
 	indexInfo struct {
 		ColumnName string
@@ -21,7 +23,6 @@ type (
 		DefaultValue  string
 		AutoIncrement bool
 		Index         Index // Index type (e.g., "UNIQUE", "INDEX")
-		value         any   // a variable where the value of the field will be stored
 	}
 
 	Struct struct {

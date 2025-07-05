@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	config "github.com/vrianta/Server/config"
+	"github.com/vrianta/Server/config"
 	"github.com/vrianta/Server/model"
 )
 
@@ -20,17 +20,24 @@ import (
 }
 */
 
-// func init() {
-// 	loadAllComponentsFromJSON()
-// }
+func Init() {
+	if config.SyncComponentsEnabled {
+		loadComponents()
+		syncComponent()
+		loadComponents()
+	} else {
+		RefreshComponentFromDB()
+	}
+}
 
 // ReloadComponents reloads all JSON files from disk
 func ReloadComponents() {
-	LoadAllComponentsFromJSON()
+	loadComponents()
 }
 
 // loadAllComponentsFromJSON loads all JSON files in ./components into jsonStore
-func LoadAllComponentsFromJSON() {
+func loadComponents() {
+
 	if _, err := os.Stat(componentsDir); os.IsNotExist(err) {
 		if !warnedMissingDir {
 			fmt.Printf("[Component] Warning: components directory '%s' does not exist.\n", componentsDir)
@@ -66,11 +73,123 @@ func LoadAllComponentsFromJSON() {
 			tableName := strings.TrimSuffix(file.Name(), ".component.json")
 			jsonStore[tableName] = raw
 		} else {
-			fmt.Println("[Warning] Non json file found in components - FileName: ", file.Name(), " Extension: ", filepath.Ext(file.Name()))
+			// fmt.Println("[Warning] Non json file found in components - FileName: ", file.Name(), " Extension: ", filepath.Ext(file.Name()))
 		}
 	}
 
-	initializeComponent()
+}
+
+// InitializeComponent syncs all JSON components with their DB tables.
+// For each table in jsonStore:
+//   - If the DB table is empty, insert all JSON values into the DB.
+//   - If the DB table has data, load from DB, update jsonStore, and write to the JSON file.
+func syncComponent() error {
+	if len(jsonStore) == 0 {
+		fmt.Println("[Component] No components found to initialize.")
+		return nil
+	}
+
+	for tableName := range jsonStore {
+		localList := jsonStore[tableName]
+		fmt.Println("[Component] Initializing ", tableName, " components...")
+		tableModel := getModelAndInserterByTableName(tableName)
+		if tableModel == nil {
+			panic("[ERROR] No Such Model Found for Table while creating the component: " + tableName)
+		}
+
+		dbResults, err := tableModel.Get().Fetch()
+		if err != nil {
+			fmt.Printf("[Component] Error fetching from DB for '%s': %v\n", tableName, err)
+			continue
+		}
+		// dbResults.PrintAsTable()
+
+		if len(dbResults) == 0 {
+			// DB is empty, insert all local components
+			for _, localItem := range localList {
+				addRow := tableModel.Create()
+				for key, value := range *localItem {
+					fmt.Printf("[Component] Inserting into '%s': %s = %v\n", tableName, key, value)
+					addRow.Set(key).To(value)
+				}
+				if err := addRow.Exec(); err != nil {
+					panic("[ERROR] - failed on component creation " + err.Error())
+				}
+			}
+			continue
+		}
+
+		fmt.Println("[INFO-Component] Syncing Component: ", tableName)
+
+		// Add new components from local file
+		for localItemKey, localItem := range localList {
+			if _, ok := dbResults[localItemKey]; !ok {
+				fmt.Println("[INFO-COMPONENT] Inserting new Component ", localItemKey, " in DB table: ", tableName)
+				dbResults[localItemKey] = model.Result(*localItem)
+				tableModel.Insert(*localItem)
+			}
+		}
+
+		// Remove DB entries not present in local
+		for pk := range dbResults {
+			if _, ok := localList[fmt.Sprint(pk)]; !ok {
+				fmt.Printf("[INFO-COMPONENT] Deleting %s From %s\n", pk, tableName)
+				println(localList)
+				if err := tableModel.Delete().Where(tableModel.GetPrimaryKey().Name).Is(pk).Exec(); err != nil {
+					panic("[ERROR] - Failed to Delete " + fmt.Sprint(pk) + " in table " + tableName)
+				}
+			}
+		}
+
+		// Update local JSON file with DB state
+		updatedLocalList := make(components, len(dbResults))
+		for pk, dbItem := range dbResults {
+			comp := component(dbItem)
+			i := fmt.Sprint(pk)
+			updatedLocalList[i] = &comp
+		}
+		if err := DumpComponentToJSON(tableName, updatedLocalList); err != nil {
+			fmt.Printf("[Component] Error updating JSON file for '%s': %v\n", tableName, err)
+		}
+
+	}
+	return nil
+}
+
+func RefreshComponentFromDB() {
+	jsonStoreMu.Lock()
+	defer jsonStoreMu.Unlock()
+
+	for tableName, tableModel := range model.ModelsRegistry {
+		fmt.Println("[Component] Refreshing from DB: ", tableName)
+
+		if !tableModel.PrimaryKeyExists() {
+			fmt.Printf("[Component] Skipping table %s: no primary key found.\n", tableName)
+			continue
+		}
+
+		dbResults, err := tableModel.Get().Fetch()
+		if err != nil {
+			fmt.Printf("[Component] Failed to fetch from DB for table %s: %v\n", tableName, err)
+			continue
+		}
+
+		updated := make(components, len(dbResults))
+
+		for pk, row := range dbResults {
+			comp := component(row)  // convert model.Result to component (map[string]any)
+			pkStr := fmt.Sprint(pk) // convert primary key to string
+			updated[pkStr] = &comp
+		}
+
+		// Update jsonStore directly
+		jsonStore[tableName] = updated
+
+		// Optionally dump to file
+		if err := DumpComponentToJSON(tableName, updated); err != nil {
+			fmt.Printf("[Component] Failed to write %s.component.json: %v\n", tableName, err)
+		}
+	}
 }
 
 // GetComponentJSON returns the raw JSON object for a table name
@@ -114,153 +233,6 @@ func GetComponentMap(tableName string) (components, bool) {
 	return obj, true
 }
 
-// InitializeComponent syncs all JSON components with their DB tables.
-// For each table in jsonStore:
-//   - If the DB table is empty, insert all JSON values into the DB.
-//   - If the DB table has data, load from DB, update jsonStore, and write to the JSON file.
-func initializeComponent() error {
-	if len(jsonStore) == 0 {
-		fmt.Println("[Component] No components found to initialize.")
-		return nil
-	}
-	fmt.Println("[Component] Initializing components...")
-	for tableName, localList := range jsonStore {
-		// Get the model for this table
-		tableModel := getModelAndInserterByTableName(tableName)
-		if tableModel == nil {
-			panic("[ERROR] No Such Model Found for Table while creating the component: " + tableName)
-		}
-
-		// Get all rows from the database
-		dbList, err := tableModel.Get().Fetch()
-		if err != nil {
-			fmt.Printf("[Component] Error fetching from DB for '%s': %v\n", tableName, err)
-			continue
-		}
-		if len(dbList) == 0 {
-			// If the database is empty, add everything from the local list
-			for _, localItem := range localList {
-				addRow := tableModel.Create()
-				for key, value := range *localItem {
-					fmt.Printf("[Component] Inserting into '%s': %s = %v\n", tableName, key, value)
-					addRow.Set(key).To(value)
-				}
-				if err := addRow.Exec(); err != nil {
-					panic("[ERROR] - failed on component creation " + err.Error())
-				}
-			}
-		} else {
-			if config.GetBuild() {
-				// localItem_key -> primary key value
-				for localItem_key, localItem := range localList {
-					if component, err := tableModel.Get().Where(dbList[0].GetPrimaryKey().Name).Is(localItem_key).First(); err != nil {
-						// means error on DB Connection or Failed to get the item
-						panic(err.Error())
-					} else if component == nil {
-						// need to create this component in the DB with default value
-						tableModel.Insert(*localItem)
-					} else {
-						// no need to do anything
-					}
-				}
-				// delete items from DB if it is present in the DB but not in local
-				for _, dbModel := range dbList {
-					// dbMap := dbModel.ToMap()
-					if _, ok := localList[dbModel.GetPrimaryKey().GetVal()]; !ok {
-						// removed from the local file
-						dbModel.Delete().Where(dbModel.GetPrimaryKey().Name).Is(dbModel.GetPrimaryKey().GetVal())
-					}
-				}
-				// if it is build then we have to sync with the Database
-				updatedLocalList := make(components, len(localList))
-				for _, dbModel := range dbList {
-					dbMap := dbModel.ToMap()
-					comp := component(dbMap)
-					updatedLocalList[fmt.Sprint(dbModel.GetPrimaryKey().GetVal())] = &comp
-				}
-				localList = updatedLocalList
-				// At the end, update the localList in local storage
-				if err := DumpComponentToJSON(tableName, updatedLocalList); err != nil {
-					fmt.Printf("[Component] Error updating JSON file for '%s': %v\n", tableName, err)
-				}
-			} else {
-				// sync the files with database
-				// update the database according to the local file if the component is not present in the DB create it in DB
-				// if the item is present in db but not in local component then delete it from db
-				// basicaly sync it with DB
-
-				// 1. Remove DB items not present in local
-				for _, dbModel := range dbList {
-					dbMap := dbModel.ToMap()
-					found := false
-					for _, localItem := range localList {
-						match := true
-						for key, value := range *localItem {
-							if dbVal, ok := dbMap[key]; !ok || dbVal != value {
-								match = false
-								break
-							}
-						}
-						if match {
-							found = true
-							break
-						}
-					}
-					if !found {
-						// Not found in local, so delete from DB
-						deleteQuery := dbModel.Delete()
-						ifFirst := false
-						for key, val := range dbMap {
-							if ifFirst {
-								deleteQuery.And()
-							}
-							deleteQuery.Where(key).Is(val)
-							if !ifFirst {
-								ifFirst = true
-							}
-						}
-						if err := deleteQuery.Exec(); err != nil {
-							fmt.Println("[Component] Error deleting DB item not in local:", err)
-						}
-					}
-				}
-
-				// 2. Add missing local items to DB
-				for _, localItem := range localList {
-					found := false
-					for _, dbModel := range dbList {
-						dbMap := dbModel.ToMap()
-						match := true
-						for key, value := range *localItem {
-							if dbVal, ok := dbMap[key]; !ok || dbVal != value {
-								match = false
-								break
-							}
-						}
-						if match {
-							found = true
-							break
-						}
-					}
-					if !found {
-						// Not found in DB, so insert into DB
-						addRow := tableModel.Create()
-						for key, value := range *localItem {
-							addRow.Set(key).To(value)
-						}
-						if err := addRow.Exec(); err != nil {
-							fmt.Println("[Component] Error inserting missing local item into DB:", err)
-						}
-					}
-				}
-
-			}
-
-		}
-	}
-	return nil
-}
-
 // getModelAndInserterByTableName returns the model and an insert function for a given table name
 func getModelAndInserterByTableName(tableName string) *model.Struct {
 	if m, ok := model.ModelsRegistry[tableName]; ok {
@@ -274,21 +246,29 @@ func getModelAndInserterByTableName(tableName string) *model.Struct {
 	panic("[ERROR] No Model Found with the Table Name: " + tableName)
 }
 
-func Get(tablename string) components {
-	return jsonStore[tablename]
+func Get(model *model.Struct) *components {
+	if model == nil {
+		panic("[Component] GetComponentFromModel: modelStruct is nil")
+	}
+
+	data, ok := jsonStore[model.TableName]
+	if !ok {
+		panic("[Component] No component data found in jsonStore for table: " + model.TableName)
+	}
+
+	return &data
 }
 
 func (c *components) Where(id string) *component {
 	return (*c)[id]
 }
 
-// it will loop thorugh all the components to find the primary key column name
-// func get_primary_key_column(key string, c component) string {
-
-// 	for k, val := range c {
-// 		if val == key {
-// 			return k
-// 		}
-// 	}
-// 	return ""
-// }
+func (c *components) Is(field string, value any) components {
+	result := make(components)
+	for id, comp := range *c {
+		if v, ok := (*comp)[field]; ok && v == value {
+			result[id] = comp
+		}
+	}
+	return result
+}

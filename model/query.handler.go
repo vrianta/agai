@@ -51,15 +51,11 @@ func (m *Struct) Create() *InsertQuery {
 	}
 }
 
-// Update starts an update query for the given key (usually primary key value) and value.
-// Example: m.Update("userId").To("Alice").Exec()
-func (m *Struct) Update(key string) *Query {
-	q := &Query{
+func (m *Struct) Update() *Query {
+	return &Query{
 		model:     m,
 		operation: "update",
 	}
-	q.Set(key)
-	return q
 }
 
 // =======================
@@ -320,62 +316,56 @@ func (q *Query) Limit(n int) *Query {
 //	rows: the result set from the database
 //	columns: column names in the result
 //	results: the list of Structs to return
-func (q *Query) Fetch() ([]*Struct, error) {
-	db, err := DatabaseHandler.GetDatabase() // Step 1: Get a database connection
+func (q *Query) Fetch() (Results, error) {
+	db, err := DatabaseHandler.GetDatabase()
 	if err != nil {
-		return nil, err // If connection fails, return error
+		return nil, err
 	}
 
-	where := q.buildWhere() // Step 2: Build WHERE clause from conditions
-	limit := q.buildLimit() // Step 2: Build LIMIT clause if set
+	where := q.buildWhere()
+	limit := q.buildLimit()
 
-	// Step 3: Build the SQL SELECT statement dynamically
-	query := fmt.Sprintf("SELECT * FROM %s %s %s", q.model.TableName, where, limit) // Compose the SQL query string
-	rows, err := db.Query(query, q.whereArgs...)                                    // Step 4: Run the query on the database
+	query := fmt.Sprintf("SELECT * FROM %s %s %s", q.model.TableName, where, limit)
+	rows, err := db.Query(query, q.whereArgs...)
 	if err != nil {
-		return nil, err // If query fails, return error
+		return nil, err
 	}
-	defer rows.Close() // Make sure to close the rows when done
+	defer rows.Close()
 
-	columns, err := rows.Columns() // Get the column names in the result
+	columns, err := rows.Columns()
 	if err != nil {
-		return nil, err // If failed to get columns, return error
+		return nil, err
 	}
 
-	var results []*Struct // Prepare a slice to hold all result Structs
-	for rows.Next() {     // Step 5: Loop through each row in the result
-		pointers := make([]any, len(columns)) // Prepare a slice of pointers for Scan
-		holders := make([]any, len(columns))  // Prepare a slice to hold the values
+	results := make(Results)
+
+	for rows.Next() {
+		pointers := make([]any, len(columns))
+		holders := make([]any, len(columns))
 		for i := range columns {
-			pointers[i] = &holders[i] // Each pointer points to a holder
+			pointers[i] = &holders[i]
 		}
 
-		if err := rows.Scan(pointers...); err != nil { // Scan the row into holders
-			return nil, err // If scan fails, return error
+		if err := rows.Scan(pointers...); err != nil {
+			return nil, err
 		}
 
-		row := &Struct{ // Create a new Struct for this row
-			TableName: q.model.TableName, // Set the table name
-			primary:   q.model.primary,
-			fields:    make(FieldMap), // Prepare the fields map
-		}
-		for k, v := range q.model.fields { // Copy the model's field definitions
-			row.fields[k] = v
-		}
-		for i, col := range columns { // Assign scanned values to the Struct fields
-			val := holders[i] // Get the value from holders
-			// Convert []byte to string for text columns
+		row := make(Result)
+		for i, col := range columns {
+			val := holders[i]
 			if b, ok := val.([]byte); ok {
 				val = string(b)
 			}
-			if f, ok := row.fields[col]; ok { // If field exists in Struct
-				f.value = val       // Set the value
-				row.fields[col] = f // Update the field in the map
-			}
+			row[col] = val
 		}
-		results = append(results, row) // Add the Struct to the results slice
+
+		// Extract the primary key value from the row
+		primary := q.model.GetPrimaryKey()
+		primaryVal := row[primary.Name]
+		results[primaryVal] = row
 	}
-	return results, rows.Err() // Step 6: Return the results and any error
+
+	return results, rows.Err()
 }
 
 // First executes the built SELECT query and returns only the first matching row (or nil if none).
@@ -394,18 +384,18 @@ func (q *Query) Fetch() ([]*Struct, error) {
 //
 //	rows: the list of results from Fetch
 //	q.limit: the maximum number of results to get (set to 1 here)
-func (q *Query) First() (*Struct, error) {
-	if q.limit == 0 { // Step 1: If no limit set, set limit to 1
+func (q *Query) First() (Result, error) {
+	if q.limit == 0 {
 		q.limit = 1
 	}
-	rows, err := q.Fetch() // Step 2: Call Fetch to get results
+	resMap, err := q.Fetch()
 	if err != nil {
-		return nil, err // If Fetch fails, return error
+		return nil, err
 	}
-	if len(rows) == 0 { // Step 3: If no results, return nil
-		return nil, nil
+	for _, row := range resMap {
+		return row, nil // Return first row encountered
 	}
-	return rows[0], nil // Step 4: Return the first result
+	return nil, nil
 }
 
 // =======================
@@ -447,7 +437,36 @@ func (q *Query) Exec() error {
 
 	switch q.operation {
 	case "update":
-		// (your existing update logic)
+		if len(q.setClauses) == 0 {
+			return fmt.Errorf("update failed: no fields to update")
+		}
+
+		where := q.buildWhere()
+		if where == "" {
+			return fmt.Errorf("unsafe update: WHERE clause is required")
+		}
+
+		query := fmt.Sprintf(
+			"UPDATE `%s` SET %s %s",
+			q.model.TableName,
+			strings.Join(q.setClauses, ", "),
+			where,
+		)
+
+		args := append(q.setArgs, q.whereArgs...)
+
+		result, err := db.Exec(query, args...)
+		if err != nil {
+			fmt.Printf("[Update Error] Query: %s | Error: %v\n", query, err)
+			return err
+		}
+
+		if affected, err := result.RowsAffected(); err == nil {
+			fmt.Printf("[Update] Table: %s | Rows Affected: %d\n", q.model.TableName, affected)
+		} else {
+			fmt.Printf("[Update] Table: %s | Executed (affected count unknown)\n", q.model.TableName)
+		}
+		return nil
 	case "insert":
 		if len(q.insertFields) == 0 {
 			return fmt.Errorf("no fields to insert")
@@ -502,8 +521,6 @@ func (q *Query) Exec() error {
 	default:
 		return fmt.Errorf("invalid Exec call: unknown operation '%s'", q.operation)
 	}
-
-	return nil
 }
 
 // Exec executes the insert operation.
@@ -532,10 +549,10 @@ func (q *InsertQuery) Exec() error {
 	if err != nil {
 		return err
 	}
-	if id, err := result.LastInsertId(); err == nil {
-		fmt.Printf("[Insert] Table: %s | Last Inserted ID: %d\n", q.model.TableName, id)
-	} else {
-		fmt.Printf("[Insert] Table: %s | Row Inserted\n", q.model.TableName)
+	if _, err := result.LastInsertId(); err != nil {
+		// 	fmt.Printf("[Insert] Table: %s | Last Inserted ID: %d\n", q.model.TableName, id)
+		// } else {
+		fmt.Printf("[Insert] Table: %s | Row Insertion failed: %s\n", q.model.TableName, err.Error())
 	}
 	return nil
 }

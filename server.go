@@ -23,16 +23,6 @@ import (
  * _config -> send the config of the server can be send nill if default is fine for you
  */
 
-// func init() {
-// 	srvInstance = &_Struct{}
-// 	srvInstance.start()
-// }
-
-func new() *_Struct {
-	srvInstance = &_Struct{}
-	return srvInstance
-}
-
 // Start runs the HTTP server
 func Start() *_Struct {
 
@@ -44,7 +34,7 @@ func Start() *_Struct {
 	s.setup_js_folder()
 	s.setup_views()      // Register all the views with the RenderEngine
 	s.initialiseModels() // intialsing model with creating tables and updating them
-	component.LoadAllComponentsFromJSON()
+	component.Init()
 
 	// Initialize Models Handler
 
@@ -64,8 +54,10 @@ func Start() *_Struct {
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Print("---------------------------------------------------------\n\n\n")
 
-	if err := s.server.ListenAndServe(); err != nil {
-		panic("[Server] Failed to start: " + err.Error())
+	if config.SyncDatabaseEnabled {
+		if err := s.server.ListenAndServe(); err != nil {
+			panic("[Server] Failed to start: " + err.Error())
+		}
 	}
 
 	return s
@@ -126,7 +118,7 @@ func (s *_Struct) initialiseModels() {
 	}
 
 	// fmt.Println("Build Mode: ", fmt.Sprint(config.GetBuild()), " Sync Flag: ", fmt.Sprint(config.SyncDatabase))
-	if config.GetBuild() && !config.SyncDatabase {
+	if !config.SyncDatabaseEnabled {
 		fmt.Print("[INFO] Build mode enabled, skipping model initialization.\n To do migration please use flag --migrate-model/-m \n")
 		for _, model := range Models.ModelsRegistry {
 			model.Initialised = true

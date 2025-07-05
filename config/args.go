@@ -8,8 +8,9 @@ import (
 // storing all the argument flags
 
 // this will only be in consideration if the build mode is enabled
-var SyncDatabase = false
+var SyncDatabaseEnabled = false
 var RunServer = false
+var SyncComponentsEnabled = false
 
 func init() {
 	// go through all the arugments and enable some flags
@@ -19,8 +20,10 @@ func init() {
 	}
 	for _, arg := range os.Args[1:] {
 		switch arg {
-		case "--migrate-model", "-m":
-			SyncDatabase = true
+		case "--migrate-model", "-mm":
+			SyncDatabaseEnabled = true
+		case "--migrate-component", "-mc":
+			SyncComponentsEnabled = true
 		default:
 			panic("Unknown Argument has been passed please check")
 		}

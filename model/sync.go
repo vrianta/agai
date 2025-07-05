@@ -20,18 +20,18 @@ func (m *Table) syncTableSchema() {
 
 	FieldTypeset := make(FieldTypeset, len(m.FieldTypes))
 	for _, f := range m.FieldTypes {
-		FieldTypeset[f.Name] = f
+		FieldTypeset[f.name] = f
 	}
 
 	reader := bufio.NewReader(os.Stdin)
 
 	for _, field := range m.FieldTypes {
-		schema, exists := schemaMap[field.Name]
+		schema, exists := schemaMap[field.name]
 		if !exists {
 			if config.GetBuild() {
-				fmt.Printf("Field '%s' not in DB. Add? (y/n): ", field.Name)
+				fmt.Printf("Field '%s' not in DB. Add? (y/n): ", field.name)
 				if input, _ := reader.ReadString('\n'); strings.TrimSpace(input) != "y" {
-					fmt.Printf("[AddField] Skipped: %s\n", field.Name)
+					fmt.Printf("[AddField] Skipped: %s\n", field.name)
 					continue
 				}
 			}
@@ -70,10 +70,10 @@ func (m *Table) syncTableSchema() {
 
 		if shouldChange {
 			if config.GetBuild() {
-				fmt.Printf("Field '%s' requires update (%s). Proceed? (y/n): ", field.Name, strings.Join(reasons, ", "))
+				fmt.Printf("Field '%s' requires update (%s). Proceed? (y/n): ", field.name, strings.Join(reasons, ", "))
 				input, _ := reader.ReadString('\n')
 				if strings.TrimSpace(input) != "y" {
-					fmt.Printf("[Modify] Skipped update of: %s\n", field.Name)
+					fmt.Printf("[Modify] Skipped update of: %s\n", field.name)
 					continue
 				}
 			}
@@ -83,10 +83,10 @@ func (m *Table) syncTableSchema() {
 		// Index differences
 		if schema.isunique != field.Index.Unique {
 			if config.GetBuild() {
-				fmt.Printf("UNIQUE index mismatch on '%s'. Sync? (y/n): ", field.Name)
+				fmt.Printf("UNIQUE index mismatch on '%s'. Sync? (y/n): ", field.name)
 				input, _ := reader.ReadString('\n')
 				if strings.TrimSpace(input) != "y" {
-					fmt.Printf("[Index] Skipped UNIQUE sync on: %s\n", field.Name)
+					fmt.Printf("[Index] Skipped UNIQUE sync on: %s\n", field.name)
 				} else {
 					m.syncUniqueIndex(field, &schema)
 				}
@@ -97,10 +97,10 @@ func (m *Table) syncTableSchema() {
 
 		if schema.isprimary != field.Index.PrimaryKey {
 			if config.GetBuild() {
-				fmt.Printf("PRIMARY KEY mismatch on '%s'. Sync? (y/n): ", field.Name)
+				fmt.Printf("PRIMARY KEY mismatch on '%s'. Sync? (y/n): ", field.name)
 				input, _ := reader.ReadString('\n')
 				if strings.TrimSpace(input) != "y" {
-					fmt.Printf("[Index] Skipped PRIMARY KEY sync on: %s\n", field.Name)
+					fmt.Printf("[Index] Skipped PRIMARY KEY sync on: %s\n", field.name)
 				} else {
 					m.syncPrimaryKey(field, &schema)
 				}
@@ -111,10 +111,10 @@ func (m *Table) syncTableSchema() {
 
 		if schema.isindex != field.Index.Index {
 			if config.GetBuild() {
-				fmt.Printf("INDEX mismatch on '%s'. Sync? (y/n): ", field.Name)
+				fmt.Printf("INDEX mismatch on '%s'. Sync? (y/n): ", field.name)
 				input, _ := reader.ReadString('\n')
 				if strings.TrimSpace(input) != "y" {
-					fmt.Printf("[Index] Skipped INDEX sync on: %s\n", field.Name)
+					fmt.Printf("[Index] Skipped INDEX sync on: %s\n", field.name)
 				} else {
 					m.syncIndex(field, &schema)
 				}
@@ -154,14 +154,14 @@ func (m *Table) loadSchemaFromDB() {
 
 	for _, field := range m.FieldTypes {
 		// Check for duplicate field names
-		if _, exists := fieldNames[field.Name]; exists {
-			panic(fmt.Sprintf("[Validation Error] Duplicate field name '%s' in Table '%s'.\n", field.Name, m.TableName))
+		if _, exists := fieldNames[field.name]; exists {
+			panic(fmt.Sprintf("[Validation Error] Duplicate field name '%s' in Table '%s'.\n", field.name, m.TableName))
 		}
-		fieldNames[field.Name] = struct{}{}
+		fieldNames[field.name] = struct{}{}
 
 		// PRIMARY KEY and UNIQUE cannot both be true
 		if field.Index.PrimaryKey && field.Index.Unique {
-			panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' cannot be both PRIMARY KEY and UNIQUE.\n", field.Name, m.TableName))
+			panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' cannot be both PRIMARY KEY and UNIQUE.\n", field.name, m.TableName))
 		}
 
 		// Count primary keys
@@ -169,22 +169,22 @@ func (m *Table) loadSchemaFromDB() {
 			primaryKeyCount++
 			// PRIMARY KEY must not be nullable
 			if field.Nullable {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is PRIMARY KEY but marked as nullable.\n", field.Name, m.TableName))
+				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is PRIMARY KEY but marked as nullable.\n", field.name, m.TableName))
 			}
 			// PRIMARY KEY should not have default value
 			if field.DefaultValue != "" {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is PRIMARY KEY but has a default value.\n", field.Name, m.TableName))
+				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is PRIMARY KEY but has a default value.\n", field.name, m.TableName))
 			}
 		}
 
 		// AutoIncrement should only be on integer types and primary key
 		if field.AutoIncrement {
 			if !field.Index.PrimaryKey {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is AUTO_INCREMENT but not PRIMARY KEY.\n", field.Name, m.TableName))
+				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is AUTO_INCREMENT but not PRIMARY KEY.\n", field.name, m.TableName))
 			}
 			// You may want to check for integer type here, e.g.:
 			if !strings.HasPrefix(strings.ToLower(field.Type.string()), "int") {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is AUTO_INCREMENT but not of integer type.\n", field.Name, m.TableName))
+				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is AUTO_INCREMENT but not of integer type.\n", field.name, m.TableName))
 			}
 		}
 	}

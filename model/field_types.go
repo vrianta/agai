@@ -6,31 +6,31 @@ package model
 
 func (f fieldType) string() string {
 	switch f {
-	case FieldTypesTypes.String, FieldTypesTypes.VarChar:
+	case FieldTypes.String, FieldTypes.VarChar:
 		return "VARCHAR"
-	case FieldTypesTypes.Text:
+	case FieldTypes.Text:
 		return "TEXT"
-	case FieldTypesTypes.Int:
+	case FieldTypes.Int:
 		return "INT"
-	case FieldTypesTypes.Float:
+	case FieldTypes.Float:
 		return "FLOAT"
-	case FieldTypesTypes.Decimal:
+	case FieldTypes.Decimal:
 		return "DECIMAL(10,2)"
-	case FieldTypesTypes.Bool:
+	case FieldTypes.Bool:
 		return "TINYINT"
-	case FieldTypesTypes.Date:
+	case FieldTypes.Date:
 		return "DATE"
-	case FieldTypesTypes.Time:
+	case FieldTypes.Time:
 		return "DATETIME"
-	case FieldTypesTypes.Timestamp:
+	case FieldTypes.Timestamp:
 		return "TIMESTAMP"
-	case FieldTypesTypes.JSON:
+	case FieldTypes.JSON:
 		return "LONGTEXT"
-	case FieldTypesTypes.Enum:
+	case FieldTypes.Enum:
 		return "ENUM" // You can customize enum values at the field level
-	case FieldTypesTypes.Binary:
+	case FieldTypes.Binary:
 		return "BLOB"
-	case FieldTypesTypes.UUID:
+	case FieldTypes.UUID:
 		return "CHAR(36)" // UUIDs typically stored as 36-char strings
 	default:
 		return "TEXT" // Safe fallback

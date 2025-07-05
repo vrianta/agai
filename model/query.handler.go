@@ -361,7 +361,7 @@ func (q *queryBuilder) Fetch() (Results, error) {
 
 		// Extract the primary key value from the row
 		primary := q.model.GetPrimaryKey()
-		primaryVal := row[primary.Name]
+		primaryVal := row[primary.name]
 		results[primaryVal] = row
 	}
 

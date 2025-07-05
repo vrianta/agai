@@ -4,7 +4,6 @@ import "database/sql"
 
 type (
 	fieldType    uint16
-	FieldTypes   map[string]fieldType
 	FieldTypeset map[string]*Field
 	Result       map[string]any
 	Results      map[any]Result
@@ -16,7 +15,7 @@ type (
 	// }
 
 	Field struct {
-		Name          string
+		name          string
 		Type          fieldType
 		Length        int
 		Nullable      bool

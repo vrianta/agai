@@ -199,7 +199,7 @@ func syncComponent() error {
 			for pk := range dbResults {
 				if _, ok := localList[fmt.Sprint(pk)]; !ok {
 					fmt.Printf("\t[INFO-COMPONENT] Deleting %s From %s\n", pk, tableName)
-					if err := tableModel.Delete().Where(tableModel.GetPrimaryKey().Name).Is(pk).Exec(); err != nil {
+					if err := tableModel.Delete().Where(tableModel.GetPrimaryKey().Name()).Is(pk).Exec(); err != nil {
 						errCh <- fmt.Errorf("[ERROR] failed to delete %v in table %s: %w", pk, tableName, err)
 					}
 				}

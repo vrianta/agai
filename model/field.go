@@ -16,7 +16,7 @@ import "fmt"
 
 // returnt he string of the total field expression mostly will be used for table creation
 func (f *Field) String() string {
-	response := f.Name + " " + f.Type.string()
+	response := f.name + " " + f.Type.string()
 	if f.Length > 0 {
 		response += "(" + fmt.Sprint(f.Length) + ") "
 	}
@@ -28,9 +28,9 @@ func (f *Field) String() string {
 
 	if f.DefaultValue != "" {
 		switch f.Type {
-		case FieldTypesTypes.String, FieldTypesTypes.Text:
+		case FieldTypes.String, FieldTypes.Text:
 			response += "DEFAULT '" + f.DefaultValue + "' "
-		case FieldTypesTypes.Bool:
+		case FieldTypes.Bool:
 			if f.DefaultValue == "true" || f.DefaultValue == "1" {
 				response += "DEFAULT TRUE "
 			} else {
@@ -43,26 +43,26 @@ func (f *Field) String() string {
 	}
 
 	if f.Index.PrimaryKey { // it is a primary key
-		response += ", Primary Key pk_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", Primary Key pk_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 	if f.Index.Index {
-		response += ", INDEX idx_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", INDEX idx_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 	if f.Index.FullText {
-		response += ", FULLTEXT ftxt_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", FULLTEXT ftxt_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 	if f.Index.Spatial {
-		response += ", SPATIAL sp_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", SPATIAL sp_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 	if f.Index.Unique {
-		response += ", UNIQUE unq_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", UNIQUE unq_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 
 	return response
 }
 
 func (f *Field) columnDefinition() string {
-	response := f.Name + " " + f.Type.string()
+	response := f.name + " " + f.Type.string()
 	if f.Length > 0 {
 		response += "(" + fmt.Sprint(f.Length) + ") "
 	}
@@ -74,9 +74,9 @@ func (f *Field) columnDefinition() string {
 
 	if f.DefaultValue != "" {
 		switch f.Type {
-		case FieldTypesTypes.String, FieldTypesTypes.Text:
+		case FieldTypes.String, FieldTypes.Text:
 			response += "DEFAULT '" + f.DefaultValue + "' "
-		case FieldTypesTypes.Bool:
+		case FieldTypes.Bool:
 			if f.DefaultValue == "true" || f.DefaultValue == "1" {
 				response += "DEFAULT TRUE "
 			} else {
@@ -95,20 +95,24 @@ func (f *Field) addIndexStatement() string {
 	// ADD INDEX (`newel`);
 	var response string
 	if f.Index.PrimaryKey { // it is a primary key
-		response += ", ADD Primary Key pk_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", ADD Primary Key pk_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 	if f.Index.Index {
-		response += ", ADD INDEX idx_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", ADD INDEX idx_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 	if f.Index.FullText {
-		response += ", ADD FULLTEXT ftxt_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", ADD FULLTEXT ftxt_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 	if f.Index.Spatial {
-		response += ", ADD SPATIAL sp_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", ADD SPATIAL sp_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 	if f.Index.Unique {
-		response += ", ADD UNIQUE unq_" + string(f.Name) + " (" + string(f.Name) + ")"
+		response += ", ADD UNIQUE unq_" + string(f.name) + " (" + string(f.name) + ")"
 	}
 
 	return response
+}
+
+func (f *Field) Name() string {
+	return f.name
 }

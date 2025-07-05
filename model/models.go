@@ -41,27 +41,27 @@ func New[T any](tableName string, structure T) struct {
 	Definition T
 } {
 	t := reflect.TypeOf(structure)
+	v := reflect.ValueOf(structure)
 
 	if t.Kind() != reflect.Struct {
-		panic("structure passed to NewV2 must be a struct")
+		panic("structure passed to New must be a struct")
 	}
 
 	FieldTypeset := make(FieldTypeset, t.NumField())
 
 	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		value := reflect.ValueOf(structure).Field(i).Interface()
+		structField := t.Field(i) // get metadata (e.g. "Element", "Value")
+		value := v.Field(i).Interface()
 
-		f, ok := value.(Field)
+		field, ok := value.(Field)
 		if !ok {
-			panic(fmt.Sprintf("[Model Error] Field '%s' is not of type model.Field", field.Name))
+			panic(fmt.Sprintf("[Model Error] Field '%s' is not of type model.Field", structField.Name))
 		}
 
-		// Set the field name if missing
-		if f.Name == "" {
-			f.Name = field.Name
-		}
-		FieldTypeset[field.Name] = &f
+		// Always override the Name field based on struct variable name
+		field.name = structField.Name
+
+		FieldTypeset[structField.Name] = &field
 	}
 
 	response := struct {
@@ -71,8 +71,8 @@ func New[T any](tableName string, structure T) struct {
 		Table:      newModel(tableName, FieldTypeset),
 		Definition: structure,
 	}
-	ModelsRegistry[tableName] = &response.Table
 
+	ModelsRegistry[tableName] = &response.Table
 	return response
 }
 
@@ -154,12 +154,12 @@ func (m *Table) syncPrimaryKey(field *Field, schema *schema) {
 		if _, err := databaseObj.Exec(queryBuilder); err != nil {
 			fmt.Println("[Index] Error dropping PRIMARY KEY:", err)
 		} else {
-			fmt.Printf("[Index] PRIMARY KEY dropped for field: %s\n", field.Name)
+			fmt.Printf("[Index] PRIMARY KEY dropped for field: %s\n", field.name)
 		}
 	}
 	if !schema.isprimary && field.Index.PrimaryKey {
 		// Add primary key
-		queryBuilder := "ALTER TABLE " + m.TableName + " ADD PRIMARY KEY (" + field.Name + ")"
+		queryBuilder := "ALTER TABLE " + m.TableName + " ADD PRIMARY KEY (" + field.name + ")"
 		if _, err := databaseObj.Query(queryBuilder); err != nil {
 			fmt.Println("[ERROR] failed to Add Primary Key ", err.Error())
 			fmt.Println("[FAILED] Failed queryBuilder to Update Primary Key is: ", queryBuilder)
@@ -174,23 +174,23 @@ func (m *Table) syncUniqueIndex(field *Field, schema *schema) {
 		fmt.Println("Error updating unique index:", err)
 		return
 	}
-	indexName := fmt.Sprintf("unq_%s", field.Name)
+	indexName := fmt.Sprintf("unq_%s", field.name)
 	if schema.isunique && !field.Index.Unique {
 		// Drop unique index
 		queryBuilder := fmt.Sprintf("ALTER TABLE `%s` DROP INDEX `%s`;", m.TableName, indexName)
 		if _, err := databaseObj.Exec(queryBuilder); err != nil {
 			fmt.Println("[Index] Error dropping UNIQUE:", err)
 		} else {
-			fmt.Printf("[Index] UNIQUE dropped for field: %s\n", field.Name)
+			fmt.Printf("[Index] UNIQUE dropped for field: %s\n", field.name)
 		}
 	}
 	if !schema.isunique && field.Index.Unique {
 		// Add unique index
-		queryBuilder := fmt.Sprintf("ALTER TABLE `%s` ADD UNIQUE `%s` (`%s`);", m.TableName, indexName, field.Name)
+		queryBuilder := fmt.Sprintf("ALTER TABLE `%s` ADD UNIQUE `%s` (`%s`);", m.TableName, indexName, field.name)
 		if _, err := databaseObj.Exec(queryBuilder); err != nil {
 			fmt.Println("[Index] Error adding UNIQUE:", err)
 		} else {
-			fmt.Printf("[Index] UNIQUE added for field: %s\n", field.Name)
+			fmt.Printf("[Index] UNIQUE added for field: %s\n", field.name)
 		}
 	}
 }
@@ -202,23 +202,23 @@ func (m *Table) syncIndex(field *Field, schema *schema) {
 		fmt.Println("Error updating index:", err)
 		return
 	}
-	indexName := fmt.Sprintf("idx_%s", field.Name)
+	indexName := fmt.Sprintf("idx_%s", field.name)
 	if schema.isindex && !field.Index.Index {
 		// Drop index
 		queryBuilder := fmt.Sprintf("ALTER TABLE `%s` DROP INDEX `%s`;", m.TableName, indexName)
 		if _, err := databaseObj.Exec(queryBuilder); err != nil {
 			fmt.Println("[Index] Error dropping INDEX:", err)
 		} else {
-			fmt.Printf("[Index] INDEX dropped for field: %s\n", field.Name)
+			fmt.Printf("[Index] INDEX dropped for field: %s\n", field.name)
 		}
 	}
 	if !schema.isindex && field.Index.Index {
 		// Add index
-		queryBuilder := fmt.Sprintf("ALTER TABLE `%s` ADD INDEX `%s` (`%s`);", m.TableName, indexName, field.Name)
+		queryBuilder := fmt.Sprintf("ALTER TABLE `%s` ADD INDEX `%s` (`%s`);", m.TableName, indexName, field.name)
 		if _, err := databaseObj.Exec(queryBuilder); err != nil {
 			fmt.Println("[Index] Error adding INDEX:", err)
 		} else {
-			fmt.Printf("[Index] INDEX added for field: %s\n", field.Name)
+			fmt.Printf("[Index] INDEX added for field: %s\n", field.name)
 		}
 	}
 }

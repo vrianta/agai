@@ -1,7 +1,7 @@
 package model
 
 var (
-	FieldTypesTypes = struct {
+	FieldTypes = struct {
 		String    fieldType
 		Text      fieldType
 		VarChar   fieldType

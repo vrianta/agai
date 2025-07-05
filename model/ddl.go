@@ -23,7 +23,7 @@ func (m *Table) addField(field *Field) {
 		if _, sql_err := databaseObj.Exec(response); sql_err != nil {
 			panic("Error While Updating the Table Field" + sql_err.Error())
 		} else {
-			fmt.Printf("[AddField]      Table: %-20s | Field Added: %-20s\n", m.TableName, field.Name)
+			fmt.Printf("[AddField]      Table: %-20s | Field Added: %-20s\n", m.TableName, field.name)
 		}
 	}
 }
@@ -32,7 +32,7 @@ func (m *Table) addField(field *Field) {
 func (m *Table) modifyDBField(field *Field) {
 	// ALTER TABLE `users` CHANGE `userId` `userId` INT(30) NOT NULL AUTO_INCREMENT;
 	response := "ALTER TABLE `" + m.TableName + "` "
-	response += "CHANGE `" + field.Name + "` " + field.columnDefinition() + ";"
+	response += "CHANGE `" + field.name + "` " + field.columnDefinition() + ";"
 
 	if databaseObj, err := DatabaseHandler.GetDatabase(); err != nil {
 		panic("Error While Changing Field" + err.Error())
@@ -40,7 +40,7 @@ func (m *Table) modifyDBField(field *Field) {
 		if _, sql_err := databaseObj.Exec(response); sql_err != nil {
 			panic("Error While Changing the Table Field" + sql_err.Error() + "SQL queryBuilder: " + response)
 		} else {
-			fmt.Printf("[modifyDBField]   Table: %-20s | Field Updated: %-20s\n", m.TableName, field.Name)
+			fmt.Printf("[modifyDBField]   Table: %-20s | Field Updated: %-20s\n", m.TableName, field.name)
 		}
 	}
 }

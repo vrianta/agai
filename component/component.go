@@ -148,7 +148,7 @@ func syncComponent() error {
 			i := fmt.Sprint(pk)
 			updatedLocalList[i] = &comp
 		}
-		if err := DumpComponentToJSON(tableName, updatedLocalList); err != nil {
+		if err := dumpComponentToJSON(tableName, updatedLocalList); err != nil {
 			fmt.Printf("[Component] Error updating JSON file for '%s': %v\n", tableName, err)
 		}
 
@@ -186,22 +186,14 @@ func RefreshComponentFromDB() {
 		jsonStore[tableName] = updated
 
 		// Optionally dump to file
-		if err := DumpComponentToJSON(tableName, updated); err != nil {
+		if err := dumpComponentToJSON(tableName, updated); err != nil {
 			fmt.Printf("[Component] Failed to write %s.component.json: %v\n", tableName, err)
 		}
 	}
 }
 
-// GetComponentJSON returns the raw JSON object for a table name
-func GetComponentJSON(tableName string) (any, bool) {
-	jsonStoreMu.RLock()
-	defer jsonStoreMu.RUnlock()
-	obj, ok := jsonStore[tableName]
-	return obj, ok
-}
-
-// DumpComponentToJSON writes the in-memory component data to its JSON file
-func DumpComponentToJSON(tableName string, data any) error {
+// dumpComponentToJSON writes the in-memory component data to its JSON file
+func dumpComponentToJSON(tableName string, data any) error {
 	jsonStoreMu.Lock()
 	defer jsonStoreMu.Unlock()
 	bytes, err := json.MarshalIndent(data, "", "  ")
@@ -210,27 +202,6 @@ func DumpComponentToJSON(tableName string, data any) error {
 	}
 	path := filepath.Join(componentsDir, tableName+".component.json")
 	return os.WriteFile(path, bytes, 0644)
-}
-
-// GetComponentMap returns the unmarshaled JSON as a slice of map[string]any for a table name
-func GetComponentMap(tableName string) (components, bool) {
-	jsonStoreMu.RLock()
-	defer jsonStoreMu.RUnlock()
-	obj, ok := jsonStore[tableName]
-	if !ok {
-		return nil, false
-	}
-	// bytes, err := json.Marshal(obj)
-	// if err != nil {
-	// 	return nil, false
-	// }
-	// var arr []map[string]any
-	// if err := json.Unmarshal(bytes, &arr); err != nil {
-	// 	return nil, false
-	// }
-	// return arr, true
-
-	return obj, true
 }
 
 // getModelAndInserterByTableName returns the model and an insert function for a given table name

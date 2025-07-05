@@ -481,7 +481,7 @@ func (q *queryBuilder) Exec() error {
 			args = append(args, v)
 		}
 
-		queryBuilder := fmt.Sprintf("InsertRow INTO %s (%s) VALUES (%s)",
+		queryBuilder := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
 			q.model.TableName,
 			strings.Join(cols, ", "),
 			strings.Join(vals, ", "),
@@ -540,7 +540,7 @@ func (q *InsertRowBuilder) Exec() error {
 		vals = append(vals, "?")
 		args = append(args, v)
 	}
-	queryBuilder := fmt.Sprintf("InsertRow INTO %s (%s) VALUES (%s)",
+	queryBuilder := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
 		q.model.TableName,
 		strings.Join(cols, ", "),
 		strings.Join(vals, ", "),

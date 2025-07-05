@@ -31,7 +31,7 @@ func newModel(tableName string, FieldTypes FieldTypeset) Table {
 		}(FieldTypes),
 	}
 
-	_model.loadSchemaFromDB()
+	_model.validate()
 
 	return _model
 }

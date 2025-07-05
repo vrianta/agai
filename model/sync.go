@@ -43,12 +43,12 @@ func (m *Table) syncTableSchema() {
 		shouldChange := false
 		reasons := []string{}
 
-		if filed_type != field.Type.string() {
-			reasons = append(reasons, "type mismatch")
+		if !field.Compare(filed_type) {
+			reasons = append(reasons, fmt.Sprintf("type mismatch(old:%s,new:%s)", filed_type, field.Type.string()))
 			shouldChange = true
 		}
 		if !(field_length == 1 && field.Length == 0) && field_length != field.Length {
-			reasons = append(reasons, "length mismatch")
+			reasons = append(reasons, fmt.Sprintf("length mismatch(old:%d:new:%d)", field_length, field.Length))
 			shouldChange = true
 		}
 		if schema.defaultVal.String != field.DefaultValue {
@@ -73,7 +73,7 @@ func (m *Table) syncTableSchema() {
 				fmt.Printf("Field '%s' requires update (%s). Proceed? (y/n): ", field.name, strings.Join(reasons, ", "))
 				input, _ := reader.ReadString('\n')
 				if strings.TrimSpace(input) != "y" {
-					fmt.Printf("[Modify] Skipped update of: %s\n", field.name)
+					fmt.Printf("\n[Modify] Skipped update of: %s\n", field.name)
 					continue
 				}
 			}
@@ -145,53 +145,6 @@ func (m *Table) syncTableSchema() {
 				}
 			}
 		}
-	}
-}
-
-func (m *Table) loadSchemaFromDB() {
-	primaryKeyCount := 0
-	fieldNames := make(map[string]struct{})
-
-	for _, field := range m.FieldTypes {
-		// Check for duplicate field names
-		if _, exists := fieldNames[field.name]; exists {
-			panic(fmt.Sprintf("[Validation Error] Duplicate field name '%s' in Table '%s'.\n", field.name, m.TableName))
-		}
-		fieldNames[field.name] = struct{}{}
-
-		// PRIMARY KEY and UNIQUE cannot both be true
-		if field.Index.PrimaryKey && field.Index.Unique {
-			panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' cannot be both PRIMARY KEY and UNIQUE.\n", field.name, m.TableName))
-		}
-
-		// Count primary keys
-		if field.Index.PrimaryKey {
-			primaryKeyCount++
-			// PRIMARY KEY must not be nullable
-			if field.Nullable {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is PRIMARY KEY but marked as nullable.\n", field.name, m.TableName))
-			}
-			// PRIMARY KEY should not have default value
-			if field.DefaultValue != "" {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is PRIMARY KEY but has a default value.\n", field.name, m.TableName))
-			}
-		}
-
-		// AutoIncrement should only be on integer types and primary key
-		if field.AutoIncrement {
-			if !field.Index.PrimaryKey {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is AUTO_INCREMENT but not PRIMARY KEY.\n", field.name, m.TableName))
-			}
-			// You may want to check for integer type here, e.g.:
-			if !strings.HasPrefix(strings.ToLower(field.Type.string()), "int") {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is AUTO_INCREMENT but not of integer type.\n", field.name, m.TableName))
-			}
-		}
-	}
-
-	// Only one primary key allowed
-	if primaryKeyCount > 1 {
-		panic(fmt.Sprintf("[Validation Error] Table '%s' has more than one PRIMARY KEY field.\n", m.TableName))
 	}
 }
 

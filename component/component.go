@@ -142,7 +142,7 @@ func syncComponent() error {
 	fmt.Print("---------------------------------------------------------\n")
 
 	var wg sync.WaitGroup
-	errCh := make(chan error, len(jsonStore)) // buffered to avoid deadlocks
+	errCh := make(chan error, len(jsonStore)*5) // buffered to avoid deadlocks
 
 	for tableName, localList := range jsonStore {
 		wg.Add(1)
@@ -235,36 +235,40 @@ func RefreshComponentFromDB() {
 
 	jsonStore = make(storage, len(model.ModelsRegistry))
 	errCh := make(chan error, len(model.ModelsRegistry))
-	for tableName, tableModel := range model.ModelsRegistry {
+	for tableName := range jsonStore {
+		tableModel, exists := model.ModelsRegistry[tableName]
+		if !exists {
+			log.Printf("[Component] Skipping '%s' (no registered model found)\n", tableName)
+			continue
+		}
+
 		wb.Add(1)
 		go func(tableName string, tableModel *model.Table) {
 			defer wb.Done()
 
-			fmt.Println("[Component] Loading from DB: ", tableName)
+			fmt.Println("[Component] Loading from DB:", tableName)
 
 			if !tableModel.HasPrimaryKey() {
-				panic("[Component] Skipping table %s: no primary key found" + tableName)
+				log.Printf("[Component] Skipping '%s': no primary key\n", tableName)
+				return
 			}
 
 			dbResults, err := tableModel.Get().Fetch()
 			if err != nil {
-				panic("[Component] Failed to fetch from DB for table " + tableName + " : " + err.Error())
+				log.Printf("[Component] Failed to fetch from DB for %s: %v\n", tableName, err)
+				return
 			}
 
 			updated := make(components, len(dbResults))
-
 			for pk, row := range dbResults {
-				comp := component(row)  // convert model.Result to component (map[string]any)
-				pkStr := fmt.Sprint(pk) // convert primary key to string
-				updated[pkStr] = &comp
+				comp := component(row)
+				updated[fmt.Sprint(pk)] = &comp
 			}
 
-			// Update jsonStore directly
 			jsonStoreMu.Lock()
 			jsonStore[tableName] = updated
 			jsonStoreMu.Unlock()
 
-			// Optionally dump to file
 			if err := dumpComponentToJSON(tableName, updated); err != nil {
 				errCh <- fmt.Errorf("[Component] Failed to write %s.component.json: %v", tableName, err)
 			}

@@ -17,6 +17,8 @@ func (f fieldType) string() string {
 	case FieldTypes.Decimal:
 		return "DECIMAL(10,2)"
 	case FieldTypes.Bool:
+		return "BOOLEAN"
+	case FieldTypes.TinyInt:
 		return "TINYINT"
 	case FieldTypes.Date:
 		return "DATE"
@@ -34,5 +36,18 @@ func (f fieldType) string() string {
 		return "CHAR(36)" // UUIDs typically stored as 36-char strings
 	default:
 		return "TEXT" // Safe fallback
+	}
+}
+
+func (ft fieldType) IsNumeric() bool {
+	switch ft {
+	case FieldTypes.Bool,
+		FieldTypes.Int,
+		FieldTypes.TinyInt,
+		FieldTypes.Float,
+		FieldTypes.Decimal:
+		return true
+	default:
+		return false
 	}
 }

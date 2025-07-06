@@ -39,7 +39,6 @@ func (m *meta) loadComponentFromDisk() {
 	}
 
 	m.components = raw
-	fmt.Println("components: ", m.components)
 	fmt.Printf("[component] Component for table '%s' loaded with %d items\n", m.TableName, len(raw))
 }
 

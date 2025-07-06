@@ -106,15 +106,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		go Session.Store(&sessionID, sess)
 	}
 
+	var tempController *Controller.Struct
 	if _controller, found := routeTable[r.URL.Path]; found {
-		_controller.InitWR(w, r)
-		_controller.InitSession(sess)
-		_controller.RunRequest(sess)
+		tempController = _controller.Copy()
+		tempController.Init(w, r, sess)
 	} else {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
 		return
 	}
-
 	// duration := time.Since(start)
 	// log.Printf("Handler took %s to complete\n", duration)
 }

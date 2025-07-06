@@ -14,8 +14,8 @@ Key Concepts:
 - The Controller provides helper methods for:
     - Validating configuration (Validate)
     - Registering and executing templates (RegisterTemplate, ExecuteTemplate)
-    - Initializing request/response/session objects (InitWR, InitSession)
-    - Running the correct handler for an HTTP request (RunRequest)
+    - Initializing request/response/session objects (InitWR, initSession)
+    - Running the correct handler for an HTTP request (runRequest)
     - Copying controller instances (Copy)
     - Accessing the session safely (GetSession)
 
@@ -54,13 +54,13 @@ This file contains local methods for the Controller struct, providing default an
 */
 
 /*
-RunRequest dispatches the HTTP request to the appropriate handler method (GET, POST, etc.)
+runRequest dispatches the HTTP request to the appropriate handler method (GET, POST, etc.)
 and renders the corresponding template. It also assigns and updates the session for the request.
 
 Parameters:
 - session: pointer to the current Session.Struct for the request.
 */
-func (c *Struct) RunRequest(session *Session.Struct) {
+func (c *Struct) runRequest(session *Session.Struct) {
 	c.assignSession(session) // Assign the session to the controller
 	if session != nil {
 		session.Update(c.w, c.r) // Update session with current writer and request
@@ -296,18 +296,21 @@ Parameters:
 - w: http.ResponseWriter for the response.
 - r: *http.Request for the incoming request.
 */
-func (c *Struct) InitWR(w http.ResponseWriter, r *http.Request) {
+func (c *Struct) Init(w http.ResponseWriter, r *http.Request, sess *Session.Struct) {
 	c.w = w
 	c.r = r
+
+	c.initSession(sess)
+	c.runRequest(sess)
 }
 
 /*
-InitSession assigns the given session to the controller.
+initSession assigns the given session to the controller.
 Call this to set up session state for the request.
 
 Parameters:
 - __s: pointer to Session.Struct to assign.
 */
-func (c *Struct) InitSession(__s *Session.Struct) {
+func (c *Struct) initSession(__s *Session.Struct) {
 	c.session = __s
 }

@@ -129,7 +129,7 @@ var (
 	// 	Spatial:    "SPATIAL",  // Spatial index
 	// }
 
-	ModelsRegistry = map[string]*Table{}
+	ModelsRegistry = map[string]*meta{}
 
 	sqlKeywords = map[string]bool{
 		"ADD": true, "ALL": true, "ALTER": true, "AND": true, "ANY": true,
@@ -146,4 +146,12 @@ var (
 		"TRUNCATE": true, "UNION": true, "UNIQUE": true, "UPDATE": true,
 		"VALUES": true, "VIEW": true, "WHERE": true, "WITH": true,
 	}
+
+	//
+	// jsonStoreMu      sync.RWMutex
+	componentsDir = "./components"
+	// warnedMissingDir = false
+	// wb               = sync.WaitGroup{}
+
+	initialsed = false
 )

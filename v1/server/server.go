@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/vrianta/Server/v1/component"
 	"github.com/vrianta/Server/v1/config"
 	"github.com/vrianta/Server/v1/database"
 	Log "github.com/vrianta/Server/v1/log"
-	Models "github.com/vrianta/Server/v1/model"
+	"github.com/vrianta/Server/v1/model"
 	Router "github.com/vrianta/Server/v1/router"
 	Session "github.com/vrianta/Server/v1/session"
 )
@@ -24,17 +23,17 @@ import (
  */
 
 // Start runs the HTTP server
-func Start() *_Struct {
+func Start() *instance {
 
-	s := &_Struct{}
+	s := &instance{}
 
 	database.Init()
 	s.setup_static_folders()
 	s.setup_css_folder()
 	s.setup_js_folder()
-	s.setup_views()      // Register all the views with the RenderEngine
-	s.initialiseModels() // intialsing model with creating tables and updating them
-	component.Init()
+	s.setup_views() // Register all the views with the RenderEngine
+
+	model.Init() // intialsing model with creating tables and updating them
 
 	// Initialize Models Handler
 
@@ -50,7 +49,7 @@ func Start() *_Struct {
 		Addr: config.GetWebConfig().Host + ":" + config.GetWebConfig().Port, // Host and port
 	}
 
-	if !config.SyncDatabaseEnabled && !config.SyncComponentsEnabled {
+	if config.StartServer {
 		Log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
 		fmt.Print("---------------------------------------------------------\n")
 		fmt.Print("---------------------------------------------------------\n\n\n")
@@ -63,7 +62,7 @@ func Start() *_Struct {
 	return s
 }
 
-func (s *_Struct) setup_static_folders() {
+func (s *instance) setup_static_folders() {
 	// Create a file server handler
 	for _, folder := range config.GetWebConfig().StaticFolders {
 		fs := http.FileServer(http.Dir(folder))
@@ -72,20 +71,20 @@ func (s *_Struct) setup_static_folders() {
 }
 
 // Generating Creating Routes for the Css Folders
-func (s *_Struct) setup_css_folder() {
+func (s *instance) setup_css_folder() {
 	for _, folder := range config.GetWebConfig().CssFolders {
 		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("text/css; charset=utf-8"))
 	}
 }
 
-func (s *_Struct) setup_js_folder() {
+func (s *instance) setup_js_folder() {
 	for _, folder := range config.GetWebConfig().JsFolders {
 		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("application/javascript; charset=utf-8"))
 	}
 }
 
 // function to go through all the routes and register their Views and create templates
-func (s *_Struct) setup_views() {
+func (s *instance) setup_views() {
 
 	routes := Router.GetRoutes()
 	fmt.Print("---------------------------------------------------------\n")
@@ -104,40 +103,4 @@ func (s *_Struct) setup_views() {
 	fmt.Print("---------------------------------------------------------\n")
 	fmt.Print("[Views Setup] All views registered successfully.\n")
 	fmt.Print("---------------------------------------------------------\n\n")
-}
-
-func (s *_Struct) initialiseModels() {
-
-	if !database.Initialized {
-		if config.GetDatabaseConfig().Host == "" {
-			fmt.Printf("[Warning] Database not initialized, skipping table creation/modification\n")
-			return
-		} else {
-			panic("[Models] Error: Connecting the Database, please check the database configuration.\n")
-		}
-	}
-
-	// fmt.Println("Build Mode: ", fmt.Sprint(config.GetBuild()), " Sync Flag: ", fmt.Sprint(config.SyncDatabase))
-	if !config.SyncDatabaseEnabled {
-		fmt.Print("[INFO] To do migration please use flag --migrate-model/-mm \n")
-		for _, model := range Models.ModelsRegistry {
-			model.Initialised = true
-		}
-		return
-	}
-
-	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("[Models] Initializing model and syncing database tables:\n")
-	fmt.Print("---------------------------------------------------------\n")
-
-	for _, model := range Models.ModelsRegistry {
-		fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)
-		model.SyncModelSchema()
-		model.CreateTableIfNotExists() // creating table if not existed
-		model.Initialised = true
-	}
-	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("[Models] Model initialization complete.\n")
-	fmt.Print("---------------------------------------------------------\n\n")
-
 }

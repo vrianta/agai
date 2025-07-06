@@ -8,11 +8,24 @@ type (
 	Result       map[string]any
 	Results      map[any]Result
 
-	// indexInfo struct {
-	// 	ColumnName string
-	// 	IndexName  string
-	// 	NonUnique  bool
-	// }
+	component map[string]any // how elements of a component would look
+	// map[string]map[string]any -> "[component_key/field_key value] => { "tableheading" : "value" } "
+	components map[string]component
+
+	Table[T any] struct {
+		meta
+		Definition T
+	}
+
+	meta struct {
+		components
+		TableName   string       // Name of the table in the database
+		FieldTypes  FieldTypeset // Map of field names to their types
+		schemas     []schema
+		initialised bool   // Flag to check if the model is initialised
+		primary     *Field // name of the primary elemet
+		// indexes     map[string]indexInfo // columnName -> index info
+	}
 
 	Field struct {
 		name          string
@@ -22,15 +35,6 @@ type (
 		DefaultValue  string
 		AutoIncrement bool
 		Index         Index // Index type (e.g., "UNIQUE", "INDEX")
-	}
-
-	Table struct {
-		TableName   string       // Name of the table in the database
-		FieldTypes  FieldTypeset // Map of field names to their types
-		schemas     []schema
-		Initialised bool   // Flag to check if the model is initialised
-		primary     *Field // name of the primary elemet
-		// indexes     map[string]indexInfo // columnName -> index info
 	}
 
 	Index struct {
@@ -57,7 +61,7 @@ type (
 	}
 
 	queryBuilder struct {
-		model *Table
+		model *meta
 
 		// WHERE clause
 		whereClauses []string
@@ -81,7 +85,7 @@ type (
 
 	// InsertRowBuilder is a dedicated struct for InsertRow operations (CREATE), separate from the general queryBuilder struct.
 	InsertRowBuilder struct {
-		model               *Table
+		model               *meta
 		InsertRowFieldTypes map[string]any
 		lastSet             string
 	}

@@ -11,6 +11,7 @@ import (
 var SyncDatabaseEnabled = false
 var RunServer = false
 var SyncComponentsEnabled = false
+var StartServer = false
 
 func init() {
 	// go through all the arugments and enable some flags
@@ -24,6 +25,8 @@ func init() {
 			SyncDatabaseEnabled = true
 		case "--migrate-component", "-mc":
 			SyncComponentsEnabled = true
+		case "--start-server", "-ss":
+			StartServer = true
 		default:
 			panic("Unknown Argument has been passed please check")
 		}

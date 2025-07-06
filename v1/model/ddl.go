@@ -7,7 +7,7 @@ import (
 )
 
 // function to add the new field in the table
-func (m *Table) addField(field *Field) {
+func (m *meta) addField(field *Field) {
 	/*
 		ALTER TABLE `users`
 		ADD `newel` VARCHAR(20) NULL DEFAULT 'dwads' AFTER `userId`,
@@ -29,7 +29,7 @@ func (m *Table) addField(field *Field) {
 }
 
 // function to change the field details
-func (m *Table) modifyDBField(field *Field) {
+func (m *meta) modifyDBField(field *Field) {
 	// ALTER TABLE `users` CHANGE `userId` `userId` INT(30) NOT NULL AUTO_INCREMENT;
 	response := "ALTER TABLE `" + m.TableName + "` "
 	response += "CHANGE `" + field.name + "` " + field.columnDefinition() + ";"
@@ -46,7 +46,7 @@ func (m *Table) modifyDBField(field *Field) {
 }
 
 // Drop a field from the databasess
-func (m *Table) removeDBField(fieldName string) {
+func (m *meta) removeDBField(fieldName string) {
 	//ALTER TABLE `users` DROP `userId`;
 	queryBuilder := "ALTER TABLE `" + m.TableName + "` DROP `" + fieldName + "`;"
 	if databaseObj, err := DatabaseHandler.GetDatabase(); err != nil {

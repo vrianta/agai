@@ -36,7 +36,7 @@ import (
 // Entry point: create a new queryBuilder for the given model struct.
 // This function starts a new queryBuilder chain. By default, it prepares for a SELECT operation.
 // Example: UserModel.Get() returns a queryBuilder object you can chain more methods onto.
-func (m *Table) Get() *queryBuilder {
+func (m *meta) Get() *queryBuilder {
 	return &queryBuilder{
 		model:     m,        // The model (table) this queryBuilder is for
 		operation: "select", // Default operation is SELECT
@@ -44,14 +44,14 @@ func (m *Table) Get() *queryBuilder {
 }
 
 // Refactored: Table.Create now returns an InsertRowBuilder for InsertRow operations.
-func (m *Table) Create() *InsertRowBuilder {
+func (m *meta) Create() *InsertRowBuilder {
 	return &InsertRowBuilder{
 		model:               m,
 		InsertRowFieldTypes: make(map[string]any),
 	}
 }
 
-func (m *Table) Update() *queryBuilder {
+func (m *meta) Update() *queryBuilder {
 	return &queryBuilder{
 		model:     m,
 		operation: "update",
@@ -68,7 +68,7 @@ func (m *Table) Update() *queryBuilder {
 // Delete deletes rows matching the queryBuilder from the table.
 // Delete starts a DELETE queryBuilder chain.
 // Usage: UserModel.Delete().Where("id").Is(5).Exec()
-func (m *Table) Delete() *queryBuilder {
+func (m *meta) Delete() *queryBuilder {
 	return &queryBuilder{
 		model:     m,
 		operation: "delete",
@@ -288,7 +288,7 @@ func (q *queryBuilder) Limit(n int) *queryBuilder {
 	return q
 }
 
-// Fetch executes the built SELECT queryBuilder and returns all matching rows as a slice of Table pointers.
+// Fetch executes the built SELECT queryBuilder and returns all matching rows as a slice of meta pointers.
 //
 // ---
 // LAYMAN'S EXPLANATION:
@@ -301,10 +301,10 @@ func (q *queryBuilder) Limit(n int) *queryBuilder {
 // 3. It creates the full SQL queryBuilder string (e.g., SELECT * FROM users WHERE age > 18 LIMIT 10).
 // 4. It runs this queryBuilder on the database and gets back the rows.
 // 5. For each row:
-//   - It creates a new Table (like a Go object for a row).
+//   - It creates a new meta (like a Go object for a row).
 //   - It copies the model's field definitions.
-//   - It fills in the values from the database into the Table FieldTypes.
-//   - It adds this Table to the results list.
+//   - It fills in the values from the database into the meta FieldTypes.
+//   - It adds this meta to the results list.
 //
 // 6. It returns the list of Structs (rows) and any error.
 //

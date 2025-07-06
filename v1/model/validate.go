@@ -7,7 +7,7 @@ import (
 	"unicode"
 )
 
-func (m *Table) validate() {
+func (m *meta) validate() {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 

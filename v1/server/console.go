@@ -13,7 +13,7 @@ import (
 	Log "github.com/vrianta/Server/v1/log"
 )
 
-func (s *_Struct) ServeConsole() {
+func (s *instance) ServeConsole() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt) // Listen for Ctrl+C
 
@@ -56,7 +56,7 @@ func (s *_Struct) ServeConsole() {
 	}
 }
 
-func (s *_Struct) startServer() {
+func (s *instance) startServer() {
 	if s.state {
 		fmt.Println("Server is in Starting State so skipping the process...")
 		return
@@ -72,7 +72,7 @@ func (s *_Struct) startServer() {
 	s.state = true
 }
 
-func (s *_Struct) stopServer() {
+func (s *instance) stopServer() {
 	if !s.state {
 		fmt.Println("Server is Already Stopped | can't stop it...")
 		return

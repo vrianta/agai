@@ -6,8 +6,58 @@ import (
 	"sort"
 	"strings"
 
-	DatabaseHandler "github.com/vrianta/Server/v1/database"
+	"github.com/vrianta/Server/v1/config"
+	"github.com/vrianta/Server/v1/database"
 )
+
+func Init() {
+
+	if !database.Initialized {
+		if config.GetDatabaseConfig().Host == "" {
+			fmt.Printf("[Warning] Database not initialized, skipping table creation/modification\n")
+			return
+		} else {
+			panic("[Models] Error: Connecting the Database, please check the database configuration.\n")
+		}
+	}
+
+	if initialsed {
+		fmt.Println("[Warning] - Models are already initialsed Skipping it")
+	}
+
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Models] Initializing model and syncing database tables:\n")
+	fmt.Print("---------------------------------------------------------\n")
+	for _, model := range ModelsRegistry {
+		if config.SyncDatabaseEnabled {
+			fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)
+			model.SyncModelSchema()
+			model.CreateTableIfNotExists() // creating table if not existed
+		} else {
+			fmt.Println("[Model] Skipping Table: ", model.TableName)
+		}
+
+		if config.SyncComponentsEnabled {
+			model.loadComponentFromDisk()
+			model.syncComponentWithDB()
+			model.loadComponentFromDisk()
+		} else {
+			fmt.Print("[INFO] To do migration of Components please use flag --migrate-component/-mc \n")
+			model.loadComponentFromDisk()
+			model.refreshComponentFromDB()
+		}
+
+		fmt.Println("Last Components ", model.components)
+
+		model.initialised = true
+	}
+
+	fmt.Print("---------------------------------------------------------\n")
+	fmt.Print("[Models] Model initialization complete.\n")
+	fmt.Print("---------------------------------------------------------\n\n")
+
+	initialsed = true
+}
 
 /*
  * This Package is to handle model in the database checking and creating tables and providing default functions to handle them
@@ -17,8 +67,9 @@ import (
  * It will provide the default functions to handle the model like Create, Read, Update, Delete
  */
 
-func newModel(tableName string, FieldTypes FieldTypeset) Table {
-	_model := Table{
+func newModel(tableName string, FieldTypes FieldTypeset) meta {
+	_model := meta{
+		components: make(components),
 		TableName:  tableName,
 		FieldTypes: FieldTypes,
 		primary: func(FieldTypes FieldTypeset) *Field {
@@ -36,10 +87,7 @@ func newModel(tableName string, FieldTypes FieldTypeset) Table {
 	return _model
 }
 
-func New[T any](tableName string, structure T) struct {
-	Table
-	Definition T
-} {
+func New[T any](tableName string, structure T) *Table[T] {
 	t := reflect.TypeOf(structure)
 	v := reflect.ValueOf(structure)
 
@@ -64,19 +112,16 @@ func New[T any](tableName string, structure T) struct {
 		FieldTypeset[structField.Name] = &field
 	}
 
-	response := struct {
-		Table
-		Definition T
-	}{
-		Table:      newModel(tableName, FieldTypeset),
+	response := &Table[T]{
+		meta:       newModel(tableName, FieldTypeset),
 		Definition: structure,
 	}
 
-	ModelsRegistry[tableName] = &response.Table
+	ModelsRegistry[tableName] = &response.meta
 	return response
 }
 
-func (m *Table) CreateTableIfNotExists() {
+func (m *meta) CreateTableIfNotExists() {
 	if len(m.schemas) > 0 { // if the lenth is more that 0 that means talbe is already created and no need to create it again instead we should focus on updating it
 		// if !Config.GetBuild() { // table syncing will only work only if it is a build version
 		m.syncTableSchema()
@@ -95,7 +140,7 @@ func (m *Table) CreateTableIfNotExists() {
 
 	fmt.Println("\n[SQL] Table Creation Statement:\n" + sql + "\n")
 
-	databaseObj, err := DatabaseHandler.GetDatabase()
+	databaseObj, err := database.GetDatabase()
 	if err != nil {
 		panic("Error getting database: " + err.Error())
 	}
@@ -109,7 +154,7 @@ func (m *Table) CreateTableIfNotExists() {
 }
 
 // func (m *Table) loadIndexMetadata() {
-// 	db, err := DatabaseHandler.GetDatabase()
+// 	db, err := database.GetDatabase()
 // 	if err != nil {
 // 		panic(err)
 // 	}
@@ -142,8 +187,8 @@ func (m *Table) CreateTableIfNotExists() {
 // }
 
 // Handles adding/dropping PRIMARY KEY
-func (m *Table) syncPrimaryKey(field *Field, schema *schema) {
-	databaseObj, err := DatabaseHandler.GetDatabase()
+func (m *meta) syncPrimaryKey(field *Field, schema *schema) {
+	databaseObj, err := database.GetDatabase()
 	if err != nil {
 		fmt.Println("Error updating primary key:", err)
 		return
@@ -168,8 +213,8 @@ func (m *Table) syncPrimaryKey(field *Field, schema *schema) {
 }
 
 // Handles adding/dropping UNIQUE index
-func (m *Table) syncUniqueIndex(field *Field, schema *schema) {
-	databaseObj, err := DatabaseHandler.GetDatabase()
+func (m *meta) syncUniqueIndex(field *Field, schema *schema) {
+	databaseObj, err := database.GetDatabase()
 	if err != nil {
 		fmt.Println("Error updating unique index:", err)
 		return
@@ -196,8 +241,8 @@ func (m *Table) syncUniqueIndex(field *Field, schema *schema) {
 }
 
 // Handles adding/dropping normal INDEX
-func (m *Table) syncIndex(field *Field, schema *schema) {
-	databaseObj, err := DatabaseHandler.GetDatabase()
+func (m *meta) syncIndex(field *Field, schema *schema) {
+	databaseObj, err := database.GetDatabase()
 	if err != nil {
 		fmt.Println("Error updating index:", err)
 		return
@@ -224,7 +269,7 @@ func (m *Table) syncIndex(field *Field, schema *schema) {
 }
 
 // get the table name
-func (m *Table) GetTableName() string {
+func (m *meta) GetTableName() string {
 	return m.TableName
 }
 
@@ -260,7 +305,7 @@ func (m *Table) GetTableName() string {
 
 // InsertRow InsertRows a new record into the table using the provided values map.
 // This is a dedicated Create/InsertRow function that does not overlap with table creation or schema management.
-func (m *Table) InsertRow(values map[string]any) error {
+func (m *meta) InsertRow(values map[string]any) error {
 	q := m.Create()
 	for k, v := range values {
 		q.InsertRowFieldTypes[k] = v
@@ -268,7 +313,7 @@ func (m *Table) InsertRow(values map[string]any) error {
 	return q.Exec()
 }
 
-func (m *Table) GetPrimaryKey() *Field {
+func (m *meta) GetPrimaryKey() *Field {
 	if !m.HasPrimaryKey() {
 		panic("Primary Key is Required for but the Model(" + m.TableName + ") ")
 	}
@@ -281,7 +326,7 @@ To check if the model has primary key or not
 true ->  if exists
 false -> if not exists
 */
-func (m *Table) HasPrimaryKey() bool {
+func (m *meta) HasPrimaryKey() bool {
 	if m.primary != nil {
 		return true
 	}
@@ -299,7 +344,7 @@ func (m *Table) HasPrimaryKey() bool {
 GetField(fieldname) -> return pointer of the field
 */
 
-func (m *Table) GetField(field_name string) *Field {
+func (m *meta) GetField(field_name string) *Field {
 	field, ok := m.FieldTypes[field_name]
 	if !ok {
 		return nil
@@ -311,7 +356,7 @@ func (m *Table) GetField(field_name string) *Field {
 GetField(fieldname) -> return pointer of the field
 */
 
-func (m *Table) GetFieldTypes() *FieldTypeset {
+func (m *meta) GetFieldTypes() *FieldTypeset {
 	return &m.FieldTypes
 }
 

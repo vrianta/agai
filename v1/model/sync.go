@@ -12,7 +12,7 @@ import (
 
 // Function to get the table topology and compare with the latest FieldTypes and generate a new SQL queryBuilder to alter the table
 // This function will be used to update the table structure if there are any changes in the FieldTypes
-func (m *Table) syncTableSchema() {
+func (m *meta) syncTableSchema() {
 	schemaMap := make(map[string]schema, len(m.schemas))
 	for _, s := range m.schemas {
 		schemaMap[s.field] = s
@@ -149,7 +149,7 @@ func (m *Table) syncTableSchema() {
 }
 
 // Function to get the table scema of the mdoels and store them in the object
-func (m *Table) SyncModelSchema() {
+func (m *meta) SyncModelSchema() {
 	databaseObj, err := DatabaseHandler.GetDatabase()
 	if err != nil {
 		panic("Error getting database: " + err.Error())

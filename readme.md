@@ -1,14 +1,28 @@
-# Go Server Framework - Complete User Guide
+# Go Server Framework – v0.2.1 User Guide
 
-Welcome to the Go Server Framework! This guide will help you set up, configure, and use every feature of your server, including advanced PHP-style template parsing, session management, static file serving, and more.
+The **Go Server Framework** is a lightweight, modular, and extendable web framework built from the ground up in Go. It’s designed for developers who prefer simplicity, structure, and full control over how their web server runs — without sacrificing flexibility.
+
+This framework supports everything you need to build production-ready web applications:
+
+* Component-based architecture
+* Model-driven development with auto schema migration
+* Clean routing system
+* Customizable views with PHP-style templating
+* Session storage (in-memory or disk)
+* A growing CLI toolkit to bootstrap, migrate, and manage your application lifecycle
+
+Version `v0.2.1` introduces major improvements including a new model migration engine, disk-based session storage, a per-model component system, crash-safe concurrency fixes, and cleaner project structure under the new `v1/` module path.
+
+This documentation will walk you through every feature — from setup to advanced usage — while keeping the philosophy simple: **write less, control more, stay fast.**
 
 ---
 
 ## Table of Contents
+
 1. [Features](#features)
 2. [Installation](#installation)
 3. [Project Structure](#project-structure)
-4. [Configuration (`Config.json`)](#configuration-configjson)
+4. [Configuration (`web.config.json` & `database.config.json`)](#configuration-webconfigjson--databaseconfigjson)
 5. [Database Initialization](#database-initialization)
 6. [Server Creation & Routing](#server-creation--routing)
 7. [Creating Controllers and Views](#creating-controllers-and-views)
@@ -17,29 +31,71 @@ Welcome to the Go Server Framework! This guide will help you set up, configure, 
 10. [SMTP/Email Support](#smtpemail-support)
 11. [Console Commands](#console-commands)
 12. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
-13. [API Reference](#api-reference)
-14. [ModelsHandler (ORM-like queryBuilder Builder)](#modelshandler-orm-like-queryBuilder-builder)
+13. [Component System](#component-system)
+14. [ModelsHandler (ORM-like QueryBuilder)](#modelshandler-orm-like-querybuilder)
 15. [License](#license)
 16. [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
 
 ---
 
 ## Features
-- **Custom HTTP Server**: Easily start and stop the server with interactive console commands. Configurable via `Config.json` (HTTP/HTTPS, static/view folders, build mode).
-- **Routing System**: Map URL paths to controller structs. Supports GET, POST, DELETE HTTP methods. Dynamic handler invocation based on request method.
-- **Controller Architecture**: Modular controller packages. Each controller defines its own view and HTTP method handlers. Handlers return data for templates or perform logic.
-- **Session Management**: Secure, cookie-based session tracking. Session creation, retrieval, update, and destruction. Session variables (`Store` map) for user data. Login/logout helpers and authentication checks.
-- **Static File Serving**: Serve static, CSS, and JS files from configurable folders. Static file caching with last-modified checks. Efficient file read and cache update logic.
-- **Advanced Template Engine**: Write templates in PHP-style syntax (`<?= $var ?>`, `<?php ... ?>`). Automatic conversion to Go’s `html/template` syntax. Supports variables, loops, conditionals, and custom operators. Template caching and reloading on file change.
-- **Request Parsing**: Automatic parsing of GET and POST parameters. Easy access to request data in controllers.
-- **Response Rendering**: Render templates with data from controllers. Render plain strings or error responses. Disable client-side caching for sensitive pages.
-- **SMTP/Email Support**: Built-in SMTP client for sending emails. Configurable SMTP server, port, user, and password.
-- **Logging**: Centralized logging for errors and server events.
-- **Console Commands**: Start, stop, restart, and exit server from the console. Help command for available options.
-- **Utilities**: Cookie management helpers. File utilities for reading and caching. Type definitions for routes, sessions, and templates.
-- **Extensible & Secure**: Easily add new controllers, routes, and templates. Secure session IDs, cache control, and best practices. Template and static file caching, mutex-protected maps, and efficient request handling.
+
+* **Custom HTTP Server**: Easily start and stop the server with CLI or embedded logic.
+* **Routing System**: Register URL paths with HTTP method handlers.
+* **Controller Architecture**: Clean modular logic with view bindings.
+* **Session Management**: Now supports in-memory and disk-based storage with LRU logic.
+* **Static File Serving**: Serve static, CSS, and JS files from configurable folders.
+* **Advanced Template Engine**: PHP-style syntax rendered as Go templates.
+* **Request Parsing**: Automatically parses GET and POST parameters.
+* **Response Rendering**: Return a `*Template.Response` with typed data.
+* **Component System**: Define reusable JSON or DB-synced structured data.
+* **Model Migration Support**: Auto schema diffing and sync via `Build: false`.
+* **Logging**: Error-aware logging with helper functions.
+* **Console Commands**: Launch server, generate app structure, run migrations.
+* **Environment Overrides**: Override all config settings with environment variables.
 
 ---
+
+## Installation
+
+```sh
+go get github.com/vrianta/Server
+```
+
+Import as needed:
+
+```go
+import "github.com/vrianta/Server"
+```
+
+---
+
+## Project Structure
+
+```
+├───.vscode
+├───changelog
+└───v1
+    ├───component          # Component JSON <-> DB layer
+    ├───config             # Configuration and environment overrides
+    ├───controller         # Application logic handlers
+    ├───cookies            # Cookie utilities
+    ├───database           # DB-specific connection and metadata
+    ├───internal
+    │   └───session        # Session heap, LRU management
+    ├───log                # Logging utility
+    ├───model              # Model definitions and schema logic
+    ├───render_engine      # PHP-style parsing and template renderer
+    ├───response           # HTTP response codes/types
+    ├───router             # Internal request router
+    ├───server             # Server and entry handler
+    ├───smtp               # Email client
+    ├───template           # View rendering helpers
+    └───utils              # File I/O and helpers
+```
+
+---
+
 
 ## ModelsHandler (ORM-like queryBuilder Builder)
 

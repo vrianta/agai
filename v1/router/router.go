@@ -5,8 +5,8 @@ import (
 	"os"
 
 	Controller "github.com/vrianta/Server/v1/controller"
+	Session "github.com/vrianta/Server/v1/internal/session"
 	Log "github.com/vrianta/Server/v1/log"
-	Session "github.com/vrianta/Server/v1/session"
 	Utils "github.com/vrianta/Server/v1/utils"
 )
 

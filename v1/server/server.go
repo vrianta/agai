@@ -7,10 +7,10 @@ import (
 
 	"github.com/vrianta/Server/v1/config"
 	"github.com/vrianta/Server/v1/database"
+	Session "github.com/vrianta/Server/v1/internal/session"
 	Log "github.com/vrianta/Server/v1/log"
 	"github.com/vrianta/Server/v1/model"
 	Router "github.com/vrianta/Server/v1/router"
-	Session "github.com/vrianta/Server/v1/session"
 )
 
 /*

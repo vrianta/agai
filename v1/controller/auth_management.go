@@ -3,8 +3,8 @@ package controller
 import (
 	"net/http"
 
+	Session "github.com/vrianta/Server/v1/internal/session"
 	Log "github.com/vrianta/Server/v1/log"
-	Session "github.com/vrianta/Server/v1/session"
 	Utils "github.com/vrianta/Server/v1/utils"
 )
 

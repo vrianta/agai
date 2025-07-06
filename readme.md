@@ -261,7 +261,7 @@ package Home
 import (
 	components "github.com/pritam-is-next/resume/Components"
 	Controller "github.com/vrianta/Server/v1/Controller"
-	"github.com/vrianta/Server/v1/Session"
+	"github.com/vrianta/Server/v1/internal/session"
 	"github.com/vrianta/Server/v1/Template"
 )
 

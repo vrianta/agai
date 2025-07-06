@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	Session "github.com/vrianta/Server/v1/session"
+	Session "github.com/vrianta/Server/v1/internal/session"
 	Template "github.com/vrianta/Server/v1/template"
 )
 

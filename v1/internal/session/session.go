@@ -254,15 +254,15 @@ func loadAllSessionsFromDisk() error {
 	sessionMutex.Unlock()
 
 	fmt.Printf("[Sessions] Loaded %d sessions from sessions.data\n", len(all))
-	for id, session := range all {
-		fmt.Printf("Session ID: %s\n", id)
-		fmt.Printf("  POST: %+v\n", session.POST)
-		fmt.Printf("  GET: %+v\n", session.GET)
-		fmt.Printf("  Store: %+v\n", session.Store)
-		fmt.Printf("  isLoggedIn: %v\n", session.LoggedIn)
-		fmt.Printf("  Expiry: %s\n", session.Expiry)
-		fmt.Println("------------------------")
-	}
+	// for id, session := range all {
+	// 	fmt.Printf("Session ID: %s\n", id)
+	// 	fmt.Printf("  POST: %+v\n", session.POST)
+	// 	fmt.Printf("  GET: %+v\n", session.GET)
+	// 	fmt.Printf("  Store: %+v\n", session.Store)
+	// 	fmt.Printf("  isLoggedIn: %v\n", session.LoggedIn)
+	// 	fmt.Printf("  Expiry: %s\n", session.Expiry)
+	// 	fmt.Println("------------------------")
+	// }
 	return nil
 }
 

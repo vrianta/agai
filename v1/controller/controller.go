@@ -44,8 +44,8 @@ import (
 	"strings"
 
 	Config "github.com/vrianta/Server/v1/config"
+	Session "github.com/vrianta/Server/v1/internal/session"
 	Log "github.com/vrianta/Server/v1/log"
-	Session "github.com/vrianta/Server/v1/session"
 	Template "github.com/vrianta/Server/v1/template"
 )
 

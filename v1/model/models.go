@@ -47,7 +47,7 @@ func Init() {
 			model.refreshComponentFromDB()
 		}
 
-		fmt.Println("Last Components ", model.components)
+		// fmt.Println("Last Components ", model.components)
 
 		model.initialised = true
 	}

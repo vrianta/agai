@@ -26,6 +26,7 @@ func (__c *Struct) IsLoggedIn() bool {
 func (__c *Struct) Login() bool {
 
 	// No session, create a new one
+	Session.RemoveSession(&__c.session.ID)
 	__c.session = Session.New()
 	sessionID, err := Utils.GenerateSessionID()
 	if err != nil {

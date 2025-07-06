@@ -5,6 +5,7 @@ import (
 )
 
 type (
+	SessionHeap []*Struct
 	SessionVars map[string]any
 	PostParams  map[string]string
 	GetParams   map[string]string
@@ -16,10 +17,10 @@ type (
 		GET   GetParams
 		Store SessionVars
 
-		isLoggedIn bool
+		LoggedIn bool
 
-		Expiry   time.Time // Expiry time for the session
-		LastUsed time.Time // Last access time for LRU
+		Expiry time.Time // Expiry time for the session
+		// lastUsed atomic.Int64
 	}
 
 	lruUpdate struct {

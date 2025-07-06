@@ -1,7 +1,12 @@
 package session
 
 import (
+	"container/heap"
+	"encoding/gob"
+	"fmt"
 	"net/http"
+	"os"
+	"sync/atomic"
 	"time"
 
 	Config "github.com/vrianta/Server/v1/config"
@@ -65,19 +70,29 @@ import (
 * - Use HTTPS to encrypt cookies for improved security.
 * - Regularly invalidate stale sessions to reduce security risks.
 *
-* Author: [Your Name]
-* Date: [Current Date]
+* Author: Pritam Dutta
+* Date: NA
  */
+
+func init() {
+	gob.Register(map[string]*Struct{})
+	gob.Register(&Struct{})
+	gob.Register(atomic.Int64{})
+	heap.Init(&sessionHeap)
+	// LoadAllSessionsFromDisk()
+	if err := loadAllSessionsFromDisk(); err != nil {
+		fmt.Println("Getting error on sessions loading: ", err.Error())
+	}
+}
 
 func New() *Struct {
 	return &Struct{
-		POST:       make(PostParams, 20),
-		GET:        make(GetParams, 20),
-		isLoggedIn: false,
-		Expiry:     time.Now().Add(time.Second * 30),
+		POST:     make(PostParams, 20),
+		GET:      make(GetParams, 20),
+		LoggedIn: false,
+		Expiry:   time.Now().Add(time.Second * 30),
 		Store: SessionVars{
-			"uid":        "Guest",
-			"isLoggedIn": false,
+			"uid": "Guest",
 		},
 	}
 }
@@ -98,11 +113,13 @@ func RemoveSession(sessionID *string) {
 	}
 
 	// Lock the mutex for writing
-	mutex.Lock()
-	defer mutex.Unlock()
+	sessionMutex.Lock()
+	defer sessionMutex.Unlock()
 
 	// Delete the session from the map
 	delete(all, (*sessionID))
+
+	go saveAllSessionsToDisk()
 }
 
 // Function to Get Session using Session ID in
@@ -111,17 +128,36 @@ func Get(sessionID *string) (*Struct, bool) {
 	if sessionID == nil {
 		return nil, false
 	}
-	mutex.Lock()
-	defer mutex.Unlock()
+
+	// for id, session := range all {
+	// 	fmt.Printf("Session ID: %s\n", id)
+	// 	fmt.Printf("  POST: %+v\n", session.POST)
+	// 	fmt.Printf("  GET: %+v\n", session.GET)
+	// 	fmt.Printf("  Store: %+v\n", session.Store)
+	// 	fmt.Printf("  isLoggedIn: %v\n", session.isLoggedIn)
+	// 	fmt.Printf("  Expiry: %s\n", session.Expiry)
+	// 	fmt.Println("------------------------")
+	// }
+
+	sessionMutex.Lock()
 	session, exists := all[*sessionID]
 	if !exists {
+		sessionMutex.Unlock()
 		return nil, false
 	}
-	// Move to front in LRU
-	if elem, ok := lruMap[*sessionID]; ok {
-		lruList.MoveToFront(elem)
-	}
-	session.LastUsed = time.Now()
+	sessionMutex.Unlock()
+
+	// session.lastUsed.Store(time.Now().UnixMicro())
+
+	go func(sessionID string) {
+		// Move to front in LRU
+		lruMutex.Lock()
+		if elem, ok := lruMap[sessionID]; ok {
+			lruList.MoveToFront(elem)
+		}
+		lruMutex.Unlock()
+	}(*sessionID)
+
 	return session, true
 }
 
@@ -129,25 +165,105 @@ func Store(sessionID *string, session *Struct) {
 	if sessionID == nil || session == nil {
 		return
 	}
-	mutex.Lock()
+
+	sessionMutex.Lock()
 	if len(all) >= Config.GetWebConfig().MaxSessionCount {
 		evictLRUSession()
 	}
-	session.LastUsed = time.Now()
+	// session.lastUsed.Store(time.Now().UnixMicro())
 	all[*sessionID] = session
-	mutex.Unlock()
+	sessionMutex.Unlock()
 
-	// Send LRU update (non-blocking)
+	heapMutex.Lock()
+	heap.Push(&sessionHeap, session)
+	heapMutex.Unlock()
+
+	go saveAllSessionsToDisk()
+
 	select {
 	case lruUpdateChan <- lruUpdate{SessionID: *sessionID, Op: "move"}:
 	default:
-		// Drop if channel is full to avoid blocking
 	}
-
 	select {
 	case sessionWakeupChan <- struct{}{}:
 	default:
 	}
+}
+
+func saveAllSessionsToDisk() error {
+	// Check if the file exists
+	_, err := os.Stat("sessions.data")
+	// fileExists := !os.IsNotExist(err)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("error checking session file: %w", err)
+	}
+
+	// Open file for write (create if not exists, truncate if exists)
+	f, err := os.Create("sessions.data")
+	if err != nil {
+		return fmt.Errorf("failed to create or open session store file: %w", err)
+	}
+	defer f.Close()
+
+	// Encode the sessions
+	enc := gob.NewEncoder(f)
+
+	sessionMutex.RLock()
+	defer sessionMutex.RUnlock()
+
+	if err := enc.Encode(all); err != nil {
+		panic(err.Error())
+		// fmt.Printf("failed to encode session map: %w", err)
+		// return err
+	}
+
+	// if fileExists {
+	// 	fmt.Println("[Sessions] sessions.data updated with latest sessions")
+	// } else {
+	// 	fmt.Println("[Sessions] sessions.data created and sessions saved")
+	// }
+
+	return nil
+}
+
+func loadAllSessionsFromDisk() error {
+	// Check if sessions.data exists
+	if _, err := os.Stat("sessions.data"); os.IsNotExist(err) {
+		fmt.Println("[Sessions] sessions.data not found — skipping load")
+		return nil
+	} else if err != nil {
+		// Some other filesystem error
+		return fmt.Errorf("error checking session file: %w", err)
+	}
+
+	// Open file and decode
+	f, err := os.Open("sessions.data")
+	if err != nil {
+		return fmt.Errorf("failed to open session store file: %w", err)
+	}
+	defer f.Close()
+
+	var loaded map[string]*Struct
+	dec := gob.NewDecoder(f)
+	if err := dec.Decode(&loaded); err != nil {
+		return fmt.Errorf("failed to decode session map: %w", err)
+	}
+
+	sessionMutex.Lock()
+	all = loaded
+	sessionMutex.Unlock()
+
+	fmt.Printf("[Sessions] Loaded %d sessions from sessions.data\n", len(all))
+	for id, session := range all {
+		fmt.Printf("Session ID: %s\n", id)
+		fmt.Printf("  POST: %+v\n", session.POST)
+		fmt.Printf("  GET: %+v\n", session.GET)
+		fmt.Printf("  Store: %+v\n", session.Store)
+		fmt.Printf("  isLoggedIn: %v\n", session.LoggedIn)
+		fmt.Printf("  Expiry: %s\n", session.Expiry)
+		fmt.Println("------------------------")
+	}
+	return nil
 }
 
 func evictLRUSession() {
@@ -169,41 +285,31 @@ func evictLRUSession() {
 // then it will again go on loop to to repeast the process.
 func StartSessionHandler() {
 	for {
-		if all == nil {
-			time.Sleep(30 * time.Minute) // Sleep if no sessions are found
+		heapMutex.Lock()
+		if sessionHeap.Len() == 0 {
+			heapMutex.Unlock()
+			time.Sleep(30 * time.Minute)
 			continue
 		}
 
-		mutex.Lock()
-		var minExpiry *Struct
-		for _, sess := range all {
-			if minExpiry == nil || sess.Expiry.Before(minExpiry.Expiry) {
-				minExpiry = sess
-			}
-		}
-		mutex.Unlock()
+		next := sessionHeap[0] // Peek the earliest
+		heapMutex.Unlock()
 
-		if minExpiry != nil && minExpiry.Expiry.Before(time.Now()) {
-			RemoveSession(&minExpiry.ID)
-			Log.WriteLog("Session expired: " + minExpiry.ID)
-			continue // Immediately check for next expiry
+		now := time.Now()
+		if next.Expiry.Before(now) {
+			RemoveSession(&next.ID)
+			Log.WriteLog("Session expired: " + next.ID)
+			continue
 		}
 
-		var sleepDuration time.Duration
-		if minExpiry != nil {
-			sleepDuration = time.Until(minExpiry.Expiry)
-			if sleepDuration < 0 {
-				sleepDuration = 0
-			}
-		} else {
-			sleepDuration = 30 * time.Minute
+		sleepDuration := time.Until(next.Expiry)
+		if sleepDuration < 0 {
+			sleepDuration = 0
 		}
 
 		select {
 		case <-time.After(sleepDuration):
-			// Timer expired, loop to clean up
 		case <-sessionWakeupChan:
-			// New session or expiry update, re-evaluate minExpiry
 		}
 	}
 }
@@ -212,10 +318,9 @@ func StartSessionHandler() {
 // This function listens for updates on the lruUpdateChan channel and processes them
 // It handles two operations: "move" to move an existing session to the front of the LRU list
 // and "InsertRow" to add a new session to the LRU list if it doesn't already exist.
-
 func StartLRUHandler() {
 	for update := range lruUpdateChan {
-		mutex.Lock()
+		sessionMutex.Lock()
 		switch update.Op {
 		case "move":
 			if elem, ok := lruMap[update.SessionID]; ok {
@@ -227,12 +332,12 @@ func StartLRUHandler() {
 				lruMap[update.SessionID] = elem
 			}
 		}
-		mutex.Unlock()
+		sessionMutex.Unlock()
 	}
 }
 
 func (sh *Struct) Login(w http.ResponseWriter, r *http.Request) {
-	sh.isLoggedIn = true
+	sh.LoggedIn = true
 	sh.SetSessionCookie(&sh.ID, w, r)
 }
 
@@ -241,7 +346,7 @@ func (sh *Struct) Login(w http.ResponseWriter, r *http.Request) {
  * @return false -> if the user is not logged in
  */
 func (s *Struct) IsLoggedIn() bool {
-	return s.isLoggedIn
+	return s.LoggedIn
 }
 
 // StartSession attempts to retrieve or create a new session and returnt he created session ID
@@ -260,7 +365,7 @@ func (sh *Struct) Update(_w http.ResponseWriter, _r *http.Request) {
 	updateMutex.Lock()
 	defer updateMutex.Unlock()
 
-	sh.LastUsed = time.Now()
+	// sh.lastUsed.Store(time.Now().UnixMicro())
 }
 
 // function to clear value of POST and GET from the Session
@@ -295,7 +400,7 @@ func (sh *Struct) CreateNewSession(sessionID *string, w http.ResponseWriter, r *
 func (sh *Struct) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	sh.Expiry = now.Add(30 * time.Minute).UTC()
-	sh.LastUsed = now
+	// sh.lastUsed.Store(now.UnixMicro())
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,

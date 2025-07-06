@@ -67,13 +67,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	var sess *Session.Struct
 	var ok bool
 
-	// var tempController *Controller.Struct
-	// if _controller, found := routeTable[r.URL.Path]; found {
-	// 	tempController = _controller.Copy()
-	// } else {
-	// 	http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
-	// 	return
-	// }
+	// fmt.Println("Session ID: ", *sessionID)
 
 	if sessionID != nil {
 		sess, ok = Session.Get(sessionID)

@@ -80,8 +80,10 @@ func init() {
 	gob.Register(atomic.Int64{})
 	heap.Init(&sessionHeap)
 	// LoadAllSessionsFromDisk()
-	if err := loadAllSessionsFromDisk(); err != nil {
-		fmt.Println("Getting error on sessions loading: ", err.Error())
+
+	switch Config.GetWebConfig().SessionStoreType {
+	case "disk":
+		loadAllSessionsFromDisk()
 	}
 }
 
@@ -178,7 +180,10 @@ func Store(sessionID *string, session *Struct) {
 	heap.Push(&sessionHeap, session)
 	heapMutex.Unlock()
 
-	go saveAllSessionsToDisk()
+	switch Config.GetWebConfig().SessionStoreType {
+	case "disk":
+		go saveAllSessionsToDisk()
+	}
 
 	select {
 	case lruUpdateChan <- lruUpdate{SessionID: *sessionID, Op: "move"}:

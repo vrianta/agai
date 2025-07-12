@@ -16,14 +16,14 @@ import (
 /*
  * Check if the User is Logged in to the system or not
  */
-func (__c *Struct) IsLoggedIn() bool {
+func (__c *Context) IsLoggedIn() bool {
 	return __c.session != nil && __c.session.IsLoggedIn()
 }
 
 /*
  * Login the user to the system
  */
-func (__c *Struct) Login() bool {
+func (__c *Context) Login() bool {
 
 	// No session, create a new one
 	Session.RemoveSession(&__c.session.ID)
@@ -45,7 +45,7 @@ func (__c *Struct) Login() bool {
 
 }
 
-func (_c *Struct) Logout() {
+func (_c *Context) Logout() {
 
 	_c.w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	_c.w.Header().Set("Pragma", "no-cache")

@@ -9,7 +9,7 @@ import (
 
 // Routes is a map of HTTP methods to their respective controllers
 type (
-	_Func      func(self *Struct) *Template.Response // Map of HTTP methods to their respective handler functions
+	_Func      func(self *Context) *Template.Response // Map of HTTP methods to their respective handler functions
 	_Templates struct {
 		View    *Template.Struct // default template store
 		Get     *Template.Struct // Template for GET requests
@@ -21,7 +21,7 @@ type (
 		OPTIONS *Template.Struct // Template for OPTIONS requests
 	}
 
-	Struct struct {
+	Context struct {
 		View      string     // name of the View have to mention it at the begining
 		templates _Templates // storing pointer to a Template Struct store execute struct
 		// HTTP methods with their respective handlers

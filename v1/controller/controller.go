@@ -60,7 +60,7 @@ and renders the corresponding template. It also assigns and updates the session 
 Parameters:
 - session: pointer to the current Session.Struct for the request.
 */
-func (c *Struct) runRequest(session *Session.Struct) {
+func (c *Context) runRequest(session *Session.Struct) {
 	c.assignSession(session) // Assign the session to the controller
 	if session != nil {
 		session.Update(c.w, c.r) // Update session with current writer and request
@@ -103,7 +103,7 @@ Parameters:
 Returns:
 - *Template.Response: the response to render.
 */
-func (c *Struct) isMethodNull(method _Func) *Template.Response {
+func (c *Context) isMethodNull(method _Func) *Template.Response {
 	if method != nil {
 		return method(c)
 	}
@@ -116,7 +116,7 @@ assignSession assigns the given session to the controller instance.
 Parameters:
 - session: pointer to Session.Struct to assign.
 */
-func (c *Struct) assignSession(session *Session.Struct) {
+func (c *Context) assignSession(session *Session.Struct) {
 	c.session = session
 }
 
@@ -124,7 +124,7 @@ func (c *Struct) assignSession(session *Session.Struct) {
 Validate checks if the controller's View field is set.
 Panics if the View is not defined, ensuring every controller has an associated view.
 */
-func (c *Struct) Validate() {
+func (c *Context) Validate() {
 	if c.View == "" {
 		panic(fmt.Errorf("view is not defined for the controller %T", c))
 	}
@@ -134,7 +134,7 @@ func (c *Struct) Validate() {
 GetSession safely returns the controller's session pointer.
 Use this instead of accessing the session field directly.
 */
-func (c *Struct) GetSession() *Session.Struct {
+func (c *Context) GetSession() *Session.Struct {
 	return c.session
 }
 
@@ -149,7 +149,7 @@ Parameters:
 Returns:
 - error: if rendering fails.
 */
-func (c *Struct) RenderView(view string, data *Template.Response) error {
+func (c *Context) RenderView(view string, data *Template.Response) error {
 	if view == "" {
 		return nil // No view to render
 	}
@@ -173,7 +173,7 @@ Panics if no default view is found.
 Returns:
 - error: if reading the directory or registering a template fails.
 */
-func (c *Struct) RegisterTemplate() error {
+func (c *Context) RegisterTemplate() error {
 	view_path := "./" + Config.GetWebConfig().ViewFolder + "/" + c.View // Path to the controller's view folder
 	// fmt.Printf("Registering templates for controller: %T, view path: %s\n", c, view_path)
 	files, err := os.ReadDir(view_path)
@@ -239,7 +239,7 @@ Parameters:
 Returns:
 - error: if updating the template fails (in dev mode).
 */
-func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
+func (c *Context) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
 	if __template == nil {
 		if c.templates.View != nil {
 			__template = c.templates.View
@@ -273,8 +273,8 @@ Useful for creating per-request controller instances.
 Returns:
 - *Struct: pointer to the copied controller struct.
 */
-func (c *Struct) Copy() *Struct {
-	return &Struct{
+func (c *Context) Copy() *Context {
+	return &Context{
 		View:      c.View,
 		templates: c.templates,
 		GET:       c.GET,
@@ -297,14 +297,14 @@ Parameters:
 - w: http.ResponseWriter for the response.
 - r: *http.Request for the incoming request.
 */
-func (c *Struct) Init(w http.ResponseWriter, r *http.Request, sess *Session.Struct) {
+func (c *Context) Init(w http.ResponseWriter, r *http.Request, sess *Session.Struct) {
 	c.w = w
 	c.r = r
 
 	c.initSession(sess)
 	c.runRequest(sess)
 }
-func (c *Struct) Run(w http.ResponseWriter, r *http.Request, sess *Session.Struct) {
+func (c *Context) Run(w http.ResponseWriter, r *http.Request, sess *Session.Struct) {
 	c.w = w
 	c.r = r
 
@@ -319,6 +319,6 @@ Call this to set up session state for the request.
 Parameters:
 - __s: pointer to Session.Struct to assign.
 */
-func (c *Struct) initSession(__s *Session.Struct) {
+func (c *Context) initSession(__s *Session.Struct) {
 	c.session = __s
 }

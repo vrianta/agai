@@ -11,7 +11,7 @@ import (
  * This File is to handle User Inputs
  */
 
-func (_c *Struct) ParseRequest() {
+func (_c *Context) ParseRequest() {
 
 	_c.userInputs = make(map[string]interface{}, 30)
 
@@ -62,7 +62,7 @@ func (_c *Struct) ParseRequest() {
 }
 
 // handlequeryBuilderParams processes parameters found in the URL queryBuilder
-func (_c *Struct) processqueryBuilderParams(key string, values []string) {
+func (_c *Context) processqueryBuilderParams(key string, values []string) {
 	var err error
 	// Check for multiple values
 
@@ -77,7 +77,7 @@ func (_c *Struct) processqueryBuilderParams(key string, values []string) {
 }
 
 // handlePostParams processes parameters found in the POST data
-func (_c *Struct) processPostParams(key string, values []string) {
+func (_c *Context) processPostParams(key string, values []string) {
 	var err error
 	if len(values) > 1 {
 		if _c.userInputs[key], err = Utils.JsonToString(values); err != nil {
@@ -90,7 +90,7 @@ func (_c *Struct) processPostParams(key string, values []string) {
 }
 
 // Return all Inputs at once
-func (_c *Struct) GetInputs() *map[string]interface{} {
+func (_c *Context) GetInputs() *map[string]interface{} {
 	if _c.userInputs == nil {
 		_c.ParseRequest()
 	}
@@ -99,7 +99,7 @@ func (_c *Struct) GetInputs() *map[string]interface{} {
 
 // Return specific input
 // if present then value else nil
-func (_c *Struct) GetInput(key string) interface{} {
+func (_c *Context) GetInput(key string) interface{} {
 	if _c.userInputs == nil {
 		_c.ParseRequest()
 	}

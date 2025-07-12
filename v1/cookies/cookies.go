@@ -1,4 +1,4 @@
-package server
+package cookies
 
 import (
 	"fmt"
@@ -18,7 +18,6 @@ func GetCookie(cookie_name string, r *http.Request) *http.Cookie {
 // Return true if it created te cookie else false means cookie is already present in the session
 func AddCookie(cookie_config *http.Cookie, w http.ResponseWriter, r *http.Request) {
 	cookie_header := formHeader(cookie_config)
-	WriteConsole("cookie header: ", cookie_header)
 	w.Header().Add("Set-Cookie", cookie_header)
 	w.Header().Add("X-Custom-Header", "MyHeaderValue")
 	w.Header().Set("Set-Cookie", cookie_header)

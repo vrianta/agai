@@ -1,4 +1,4 @@
-package server
+package utils
 
 import (
 	"crypto/hmac"
@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -53,7 +54,7 @@ func GenerateSessionID() (string, error) {
 }
 
 // stringToJson converts a slice of strings to a JSON-encoded string
-func StringArrayToJson(data []string) (string, error) {
+func JsonToString(data []string) (string, error) {
 	// Marshal the slice of strings into a JSON-encoded byte slice
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -65,8 +66,8 @@ func StringArrayToJson(data []string) (string, error) {
 }
 
 // HashPassword hashes a password using bcrypt
-func HashPassword(password *string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+func HashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
 	}
@@ -77,4 +78,13 @@ func HashPassword(password *string) (string, error) {
 func CheckPassword(hashedPassword, plainPassword string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
 	return err == nil // Returns true if passwords match
+}
+
+// GetEnvString returns the value of the environment variable as a *string, or nil if not set
+func GetEnvString(key string) *string {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		return nil
+	}
+	return &val
 }

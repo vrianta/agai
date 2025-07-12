@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/internal/config"
 	"github.com/vrianta/agai/v1/database"
 )
 

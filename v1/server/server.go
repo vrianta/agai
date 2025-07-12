@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/internal/config"
 	"github.com/vrianta/agai/v1/database"
 	Session "github.com/vrianta/agai/v1/internal/session"
 	Log "github.com/vrianta/agai/v1/log"
@@ -51,8 +51,7 @@ func Start() *instance {
 
 	if config.StartServer {
 		Log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
-		fmt.Print("---------------------------------------------------------\n")
-		fmt.Print("---------------------------------------------------------\n\n\n")
+		fmt.Print("---------------------------------------------------------\n\n")
 
 		if err := s.server.ListenAndServe(); err != nil {
 			panic("[Server] Failed to start: " + err.Error())

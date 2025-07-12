@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	Config "github.com/vrianta/agai/v1/config"
+	Config "github.com/vrianta/agai/v1/internal/config"
 )
 
 func WriteLog(massages ...any) {

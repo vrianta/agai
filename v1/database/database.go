@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	Config "github.com/vrianta/agai/v1/config"
+	Config "github.com/vrianta/agai/v1/internal/config"
 	log "github.com/vrianta/agai/v1/log"
 )
 

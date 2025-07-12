@@ -43,7 +43,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	Config "github.com/vrianta/agai/v1/config"
+	Config "github.com/vrianta/agai/v1/internal/config"
 	Session "github.com/vrianta/agai/v1/internal/session"
 	Log "github.com/vrianta/agai/v1/log"
 	Template "github.com/vrianta/agai/v1/template"

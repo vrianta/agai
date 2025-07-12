@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/internal/config"
 	DatabaseHandler "github.com/vrianta/agai/v1/database"
 )
 

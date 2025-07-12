@@ -84,7 +84,7 @@ Config/
 
 ## Usage Example
 ```go
-import "github.com/vrianta/agai/v1/Config"
+import "github.com/vrianta/agai/v1/internal/config"
 
 func main() {
     config := Config.Load() // Loads and parses Config.json

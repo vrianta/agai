@@ -8,7 +8,7 @@ import "net/http"
 // 	"net/http"
 // 	"os"
 
-// 	"github.com/vrianta/agai/v1/Config"
+// 	"github.com/vrianta/agai/v1/internal/config"
 // 	"github.com/vrianta/agai/v1/Response"
 // 	"github.com/vrianta/agai/v1/Template"
 // 	"github.com/vrianta/agai/v1/Utils"

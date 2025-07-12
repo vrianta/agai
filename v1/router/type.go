@@ -3,7 +3,7 @@ package router
 import (
 	"time"
 
-	Controller "github.com/vrianta/Server/v1/controller"
+	Controller "github.com/vrianta/agai/v1/controller"
 )
 
 type (

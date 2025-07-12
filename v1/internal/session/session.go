@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	Config "github.com/vrianta/Server/v1/config"
-	Cookies "github.com/vrianta/Server/v1/cookies"
-	Log "github.com/vrianta/Server/v1/log"
+	Config "github.com/vrianta/agai/v1/config"
+	Cookies "github.com/vrianta/agai/v1/cookies"
+	Log "github.com/vrianta/agai/v1/log"
 )
 
 /*

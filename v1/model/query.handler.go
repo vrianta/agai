@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	DatabaseHandler "github.com/vrianta/Server/v1/database"
+	DatabaseHandler "github.com/vrianta/agai/v1/database"
 )
 
 // ===============================

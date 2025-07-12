@@ -48,8 +48,8 @@ A controller is defined as a variable of type `Controller.Struct`. The main publ
 package Home
 
 import (
-    "github.com/vrianta/Server/v1/Controller"
-    "github.com/vrianta/Server/v1/Template"
+    "github.com/vrianta/agai/v1/Controller"
+    "github.com/vrianta/agai/v1/Template"
 )
 
 var Home = Controller.Struct{
@@ -123,7 +123,7 @@ Register your controllers with the router using the `Router.Route` and `Router.R
 
 ```go
 import (
-    "github.com/vrianta/Server/v1/router"
+    "github.com/vrianta/agai/v1/router"
     "yourapp/Controller/Home"
 )
 

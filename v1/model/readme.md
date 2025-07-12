@@ -38,7 +38,7 @@ To use ModelsHandler, define your model struct and register it. For example, to 
 ```go
 package model
 
-import models_handler "github.com/vrianta/Server/v1/modelsHandler"
+import models_handler "github.com/vrianta/agai/v1/modelsHandler"
 
 var Users = models_handler.New(
     "users", // Table name

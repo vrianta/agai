@@ -3,8 +3,8 @@ package controller
 import (
 	"net/http"
 
-	Session "github.com/vrianta/Server/v1/internal/session"
-	Template "github.com/vrianta/Server/v1/template"
+	Session "github.com/vrianta/agai/v1/internal/session"
+	Template "github.com/vrianta/agai/v1/template"
 )
 
 // Routes is a map of HTTP methods to their respective controllers

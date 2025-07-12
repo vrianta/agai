@@ -156,7 +156,7 @@ Environment variables take precedence over values in `Database.Config.json`.
 ## 7. Usage Example
 
 ```go
-import "github.com/vrianta/Server/v1/Config"
+import "github.com/vrianta/agai/v1/Config"
 
 func main() {
     config := Config.Load() // Loads and parses Config.json

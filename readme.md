@@ -59,13 +59,13 @@ This documentation will walk you through every feature — from setup to advance
 ## Installation
 
 ```sh
-go get github.com/vrianta/Server
+go get github.com/vrianta/agai
 ```
 
 Import as needed:
 
 ```go
-import "github.com/vrianta/Server"
+import "github.com/vrianta/agai"
 ```
 
 ---
@@ -114,7 +114,7 @@ The framework includes a powerful, human-friendly queryBuilder builder called **
 To define a model, use the `models_handler.New` function, specifying the table name and a map of FieldTypes:
 
 ```go
-import models_handler "github.com/vrianta/Server/v1/modelsHandler"
+import models_handler "github.com/vrianta/agai/v1/modelsHandler"
 
 var Users = models_handler.New(
     "users", // Table name
@@ -146,11 +146,11 @@ var Users = models_handler.New(
 
 1. Clone the repository or add it to your Go project:
    ```sh
-   go get github.com/vrianta/Server
+   go get github.com/vrianta/agai
    ```
 2. Import the package:
    ```go
-   import "github.com/vrianta/Server"
+   import "github.com/vrianta/agai"
    ```
 
 ---
@@ -288,7 +288,7 @@ To enable database support in your project, you need to initialize the database 
    package main
 
    import (
-       "github.com/vrianta/Server"
+       "github.com/vrianta/agai"
    )
 
    func main() {
@@ -316,9 +316,9 @@ package Home
 
 import (
 	components "github.com/pritam-is-next/resume/Components"
-	Controller "github.com/vrianta/Server/v1/Controller"
-	"github.com/vrianta/Server/v1/internal/session"
-	"github.com/vrianta/Server/v1/Template"
+	Controller "github.com/vrianta/agai/v1/Controller"
+	"github.com/vrianta/agai/v1/internal/session"
+	"github.com/vrianta/agai/v1/Template"
 )
 
 var Home = Controller.Struct{
@@ -383,8 +383,8 @@ A controller is defined as a variable of type `Controller.Struct`. The main publ
 package Home
 
 import (
-    "github.com/vrianta/Server/v1/Controller"
-    "github.com/vrianta/Server/v1/Template"
+    "github.com/vrianta/agai/v1/Controller"
+    "github.com/vrianta/agai/v1/Template"
 )
 
 var Home = Controller.Struct{
@@ -512,7 +512,7 @@ Session data and helpers are accessed via the `self.Session` variable inside you
 
 Send emails easily:
 ```go
-import "github.com/vrianta/Server/v1/smtp"
+import "github.com/vrianta/agai/v1/smtp"
 smtp.Client.InitSMTPClient("smtp.example.com", 587, "user", "pass")
 err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
 ```

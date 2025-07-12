@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 
-	DatabaseHandler "github.com/vrianta/Server/v1/database"
+	DatabaseHandler "github.com/vrianta/agai/v1/database"
 )
 
 // function to add the new field in the table

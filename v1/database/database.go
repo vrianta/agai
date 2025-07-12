@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	Config "github.com/vrianta/Server/v1/config"
-	log "github.com/vrianta/Server/v1/log"
+	Config "github.com/vrianta/agai/v1/config"
+	log "github.com/vrianta/agai/v1/log"
 )
 
 // Function to init the Database with the Database/sql object and store it in the program

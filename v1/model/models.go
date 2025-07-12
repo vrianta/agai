@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/vrianta/Server/v1/config"
-	"github.com/vrianta/Server/v1/database"
+	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/database"
 )
 
 func Init() {

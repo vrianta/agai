@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"os"
 
-	Controller "github.com/vrianta/Server/v1/controller"
-	Session "github.com/vrianta/Server/v1/internal/session"
-	Log "github.com/vrianta/Server/v1/log"
-	Utils "github.com/vrianta/Server/v1/utils"
+	Controller "github.com/vrianta/agai/v1/controller"
+	Session "github.com/vrianta/agai/v1/internal/session"
+	Log "github.com/vrianta/agai/v1/log"
+	Utils "github.com/vrianta/agai/v1/utils"
 )
 
 /*

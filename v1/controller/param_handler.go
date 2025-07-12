@@ -3,8 +3,8 @@ package controller
 import (
 	"net/http"
 
-	Log "github.com/vrianta/Server/v1/log"
-	Utils "github.com/vrianta/Server/v1/utils"
+	Log "github.com/vrianta/agai/v1/log"
+	Utils "github.com/vrianta/agai/v1/utils"
 )
 
 /*

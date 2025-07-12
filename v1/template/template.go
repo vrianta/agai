@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	Utils "github.com/vrianta/Server/v1/utils"
+	Utils "github.com/vrianta/agai/v1/utils"
 )
 
 type (

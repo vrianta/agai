@@ -8,10 +8,10 @@ import "net/http"
 // 	"net/http"
 // 	"os"
 
-// 	"github.com/vrianta/Server/v1/Config"
-// 	"github.com/vrianta/Server/v1/Response"
-// 	"github.com/vrianta/Server/v1/Template"
-// 	"github.com/vrianta/Server/v1/Utils"
+// 	"github.com/vrianta/agai/v1/Config"
+// 	"github.com/vrianta/agai/v1/Response"
+// 	"github.com/vrianta/agai/v1/Template"
+// 	"github.com/vrianta/agai/v1/Utils"
 // )
 
 func New(_w http.ResponseWriter) Struct {

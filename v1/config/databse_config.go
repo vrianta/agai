@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 
-	Utils "github.com/vrianta/Server/v1/utils"
+	Utils "github.com/vrianta/agai/v1/utils"
 )
 
 func init() {

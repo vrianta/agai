@@ -39,7 +39,7 @@ var SettingsModel = models.New("settings", map[string]models.Field{
 
 ### 3. Register a Component
 ```go
-import "github.com/vrianta/Server/v1/component"
+import "github.com/vrianta/agai/v1/component"
 
 var SettingsComponent = component.New[Setting, string](
     SettingsModel, // your *models.Struct

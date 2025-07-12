@@ -3,9 +3,9 @@ package controller
 import (
 	"net/http"
 
-	Session "github.com/vrianta/Server/v1/internal/session"
-	Log "github.com/vrianta/Server/v1/log"
-	Utils "github.com/vrianta/Server/v1/utils"
+	Session "github.com/vrianta/agai/v1/internal/session"
+	Log "github.com/vrianta/agai/v1/log"
+	Utils "github.com/vrianta/agai/v1/utils"
 )
 
 /*

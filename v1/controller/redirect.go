@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	Response "github.com/vrianta/Server/v1/response"
+	Response "github.com/vrianta/agai/v1/response"
 )
 
 // Redirects to the URI user provided

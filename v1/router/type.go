@@ -9,9 +9,9 @@ import (
 type (
 	route struct {
 		path             string
-		controllerObject Controller.Struct
+		controllerObject Controller.Context
 	}
-	routes map[string]*Controller.Struct // Type for routes, mapping URL paths to Controller structs
+	routes map[string]*Controller.Context // Type for routes, mapping URL paths to Controller structs
 
 	Struct struct {
 		defaultRoute string

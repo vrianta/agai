@@ -40,7 +40,7 @@ func (_r *Struct) RegisterRoutes(_routes ...route) error {
 /*
  * Create Route Object
  */
-func Route(path string, obj Controller.Struct) route {
+func Route(path string, obj Controller.Context) route {
 	return route{
 		path:             path,
 		controllerObject: obj,
@@ -90,7 +90,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		go Session.Store(&sessionID, sess)
 	}
 
-	var tempController *Controller.Struct
+	var tempController *Controller.Context
 	if _controller, found := routeTable[r.URL.Path]; found {
 		tempController = _controller.Copy()
 		tempController.Init(w, r, sess)

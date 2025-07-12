@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	Config "github.com/vrianta/agai/v1/internal/config"
 	Cookies "github.com/vrianta/agai/v1/cookies"
+	Config "github.com/vrianta/agai/v1/internal/config"
 	Log "github.com/vrianta/agai/v1/log"
 )
 
@@ -82,7 +82,7 @@ func init() {
 	// LoadAllSessionsFromDisk()
 
 	switch Config.GetWebConfig().SessionStoreType {
-	case "disk":
+	case "disk", "storage":
 		loadAllSessionsFromDisk()
 	}
 }
@@ -121,7 +121,10 @@ func RemoveSession(sessionID *string) {
 	// Delete the session from the map
 	delete(all, (*sessionID))
 
-	go saveAllSessionsToDisk()
+	switch Config.GetWebConfig().SessionStoreType {
+	case "disk", "storage":
+		go saveAllSessionsToDisk()
+	}
 }
 
 // Function to Get Session using Session ID in
@@ -181,7 +184,7 @@ func Store(sessionID *string, session *Struct) {
 	heapMutex.Unlock()
 
 	switch Config.GetWebConfig().SessionStoreType {
-	case "disk":
+	case "disk", "storage":
 		go saveAllSessionsToDisk()
 	}
 

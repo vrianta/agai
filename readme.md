@@ -21,17 +21,15 @@ This documentation will walk you through every feature — from setup to advance
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Installation](#installation)
+  - [Run Application](#run-application)
+    - [Flags](#flags)
   - [Project Structure](#project-structure)
-  - [ModelsHandler (ORM-like queryBuilder Builder)](#modelshandler-orm-like-querybuilder-builder)
     - [How to Create a Model (Quick Example)](#how-to-create-a-model-quick-example)
-  - [Installation](#installation-1)
-  - [Project Structure](#project-structure-1)
+  - [Model Query Builder System](#model-query-builder-system)
   - [Configuration (`web.config.json`)](#configuration-webconfigjson)
     - [Database Configuration (`Database.Config.json`)](#database-configuration-databaseconfigjson)
       - [Supported Environment Variables](#supported-environment-variables)
-  - [Configuration and the Config Package](#configuration-and-the-config-package)
-  - [Database Initialization](#database-initialization)
-    - [How to Initialize the Database](#how-to-initialize-the-database)
+  - [How to Initialize the Database](#how-to-initialize-the-database)
   - [Server Creation \& Routing](#server-creation--routing)
     - [1. Define Route Handlers](#1-define-route-handlers)
   - [Creating Controllers and Views](#creating-controllers-and-views)
@@ -46,25 +44,18 @@ This documentation will walk you through every feature — from setup to advance
     - [Creating Views](#creating-views)
       - [View Directory Structure](#view-directory-structure)
       - [Supported Template Files](#supported-template-files)
-      - [Template Syntax](#template-syntax)
-  - [Views Folder Structure](#views-folder-structure)
     - [Location](#location)
-    - [Organization](#organization)
     - [Template Files](#template-files)
     - [Example Structure](#example-structure)
-    - [Including Shared Templates](#including-shared-templates)
-  - [Session Management](#session-management-1)
   - [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
   - [SMTP/Email Support](#smtpemail-support)
-  - [Console Commands](#console-commands)
   - [Template Engine \& PHP Parsing Syntax](#template-engine--php-parsing-syntax)
     - [Write Templates in PHP-Style!](#write-templates-in-php-style)
       - [Supported Syntax](#supported-syntax)
       - [Example Template](#example-template)
       - [How It Works](#how-it-works)
-  - [API Reference](#api-reference)
-  - [License](#license)
   - [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
+  - [License](#license)
 
 ## Features
 
@@ -76,6 +67,7 @@ This documentation will walk you through every feature — from setup to advance
 * **Advanced Template Engine**: PHP-style syntax rendered as Go templates.
 * **Request Parsing**: Automatically parses GET and POST parameters.
 * **Response Rendering**: Return a `*Template.Response` with typed data.
+* **JSON Response**: Reponse Json Data on Empty Views of controller, usefull for api building, where it converts  `*Template.Response` to json
 * **Component System**: Define reusable JSON or DB-synced structured data. mostly usefull for web components like navigation items settings etc
 * **Model Migration Support**: Auto schema diffing and sync via `Build: false`.
 * **Logging**: Error-aware logging with helper functions.
@@ -94,7 +86,47 @@ Import as needed:
 import "github.com/vrianta/agai"
 ```
 
----
+## Run Application
+
+After Creating Folder structure
+
+```go
+go run . --flags
+```
+
+### Flags
+
+You can control various behaviors of the framework using command-line flags when running the application. These flags are especially useful during development and deployment.
+
+| Flag                  | Shortcut | Description                                      |
+| --------------------- | -------- | ------------------------------------------------ |
+| `--migrate-model`     | `-mm`    | Run model-level database migrations              |
+| `--migrate-component` | `-mc`    | Sync components with the database                |
+| `--start-server`      | `-ss`    | Start the HTTP server                            |
+| `--help`              | `-h`     | Display the list of available command-line flags |
+
+Example Usage
+To run model migrations and start the server:
+
+```go
+go run . --migrate-model --start-server
+```
+
+To sync only the components with the database:
+
+```go
+go run . -mc
+```
+
+To display help:
+
+```go
+go run . -h
+```
+
+> **Note:** 
+> If no flags are provided, the help message will be shown by default.
+> Invalid flags will cause the program to exit with an error.
 
 ## Project Structure
 
@@ -120,10 +152,57 @@ import "github.com/vrianta/agai"
     └───utils              # File I/O and helpers
 ```
 
+### How to Create a Model (Quick Example)
+
+To define a model, use the `models_handler.New` function, specifying the table name and a map of FieldTypes:
+
+```go
+import model "github.com/vrianta/agai/v1/model"
+
+var Users = model.New("users", struct {
+	UserId    model.Field
+	UserName  model.Field
+	Password  model.Field
+	FirstName model.Field
+}{
+	UserId: model.Field{
+		Type:     model.FieldTypes.VarChar,
+		Length:   20,
+		Nullable: false,
+		Index: model.Index{
+			PrimaryKey: true,
+			Unique:     false,
+			Index:      true,
+		},
+	},
+	UserName: model.Field{
+		Type:     model.FieldTypes.VarChar,
+		Length:   30,
+		Nullable: false,
+		Index: model.Index{
+			Unique: true,
+			Index:  true,
+		},
+	},
+	Password: model.Field{
+		Type:     model.FieldTypes.Text,
+		Nullable: false,
+	},
+	FirstName: model.Field{
+		Type:     model.FieldTypes.Text,
+		Nullable: false,
+	},
+})
+```
+- The first argument is the table name in your database.
+- The second argument Struct where you define the table
+
+**For full documentation, advanced usage, and API reference, see [`modelsHandler/readme.md`](/v1/model/readme.md).**
+
 ---
 
 
-## ModelsHandler (ORM-like queryBuilder Builder)
+## Model Query Builder System
 
 The framework includes a powerful, human-friendly queryBuilder builder called **ModelsHandler** for working with your database using Go structs. ModelsHandler provides a chainable API for building and executing SQL queries (SELECT, UPDATE, DELETE) in a style similar to popular ORMs.
 
@@ -131,86 +210,14 @@ The framework includes a powerful, human-friendly queryBuilder builder called **
 - Build queries using a fluent, readable API (e.g., `Users.Get().Where("age").GreaterThan(18).OrderBy("name").Fetch()`).
 - Supports WHERE, AND, OR, IN, NOT IN, BETWEEN, LIKE, IS NULL, LIMIT, OFFSET, ORDER BY, GROUP BY, and more.
 - Makes database access easy to read, write, and maintain.
-- **Automatic Database Migration:** If the `Build` flag is set to `false` in your `web.config.json`, ModelsHandler will automatically migrate your database schema to match your model definitions. This means tables and columns are created or updated as needed, so you don't have to write migration scripts manually.
 
-> **Note:** Migration only happens if the `Build` flag is `false`. In production, set it to `true` to prevent accidental schema changes.
-
-### How to Create a Model (Quick Example)
-
-To define a model, use the `models_handler.New` function, specifying the table name and a map of FieldTypes:
-
-```go
-import models_handler "github.com/vrianta/agai/v1/modelsHandler"
-
-var Users = models_handler.New(
-    "users", // Table name
-    map[string]models_handler.Field{
-        "userId": {
-            Name:     "userId",
-            Type:     models_handler.FieldTypesTypes.VarChar,
-            Length:   20,
-            Nullable: false,
-        },
-        "userName": {
-            Name:     "userName",
-            Type:     models_handler.FieldTypesTypes.VarChar,
-            Length:   30,
-            Nullable: false,
-        },
-    },
-)
-```
-- The first argument is the table name in your database.
-- The second argument is a map where each key is a column name and the value is a `Field` struct describing the column.
-- You can add more FieldTypes and options (like indexes, types, etc.) as needed.
-
-**For full documentation, advanced usage, and API reference, see [`modelsHandler/readme.md`](modelsHandler/readme.md).**
-
----
-
-## Installation
-
-1. Clone the repository or add it to your Go project:
-   ```sh
-   go get github.com/vrianta/agai
-   ```
-2. Import the package:
-   ```go
-   import "github.com/vrianta/agai"
-   ```
-
----
-
-## Project Structure
-
-```
-.
-├── Config/           # Configuration loader (Config.go, type.go, var.go)
-├── Controller/       # Route handler logic (Controller.go, type.go, var.go)
-├── Cookies/          # Cookie utilities (Cookies.go, type.go, var.go)
-├── Log/              # Logging utilities (Write.go, type.go, var.go)
-├── Redirect/         # HTTP redirects (Redirect.go, type.go)
-├── RenderEngine/     # Template engine (PHP-like syntax) (RenderEngine.go, type.go, var.go)
-├── Response/         # Response codes/types (type.go, var.go)
-├── Router/           # HTTP router (Router.go, type.go, var.go)
-├── Session/          # Session management (Session.go, type.go)
-├── smtp/             # SMTP client (client.go)
-├── Template/         # Template helpers (template.go)
-├── Utils/            # File and utility helpers (file.handler.go, util.go)
-├── console.go        # Interactive console
-├── server.go         # Server entry point
-├── types.go          # Core types
-├── vars.go           # Global variables
-└── readme.md         # This guide
-```
-
----
+> **Note:** Migration only happens if you pass the required flags while running the application
 
 ## Configuration (`web.config.json`)
 
-> **For complete configuration details, environment variable reference, and advanced usage, see [`Config/readme.md`](Config/readme.md). The summary below covers the basics; the linked documentation provides authoritative and up-to-date information.**
+> **For complete configuration details, environment variable reference, and advanced usage, see [`Config/readme.md`](/v1/internal/config/readme.md). The summary below covers the basics; the linked documentation provides authoritative and up-to-date information.**
 
-Create a `Config.json` file in your project root. Example:
+Create a `web.config.json` file in your project root. Example:
 ```json
 {
   "Port": "8080",
@@ -241,6 +248,8 @@ Create a `Config.json` file in your project root. Example:
 
 - **SessionStoreType**: Type of session store to use (e.g., "memory", "redis", "database").
 
+> **Note:** Raddis is not supported yet
+
 You can also override these values using environment variables:
 - `SERVER_PORT`
 - `SERVER_HOST`
@@ -249,11 +258,11 @@ You can also override these values using environment variables:
 - `MAX_SESSION_COUNT`
 - `SESSION_STORE_TYPE`
 
-Environment variables take precedence over values in `Config.json`.
+Environment variables take precedence over values in `web.config.json`.
 
 ### Database Configuration (`Database.Config.json`)
 
-To enable database support, create a `Database.Config.json` file with your database settings, or set the appropriate environment variables.
+To enable database support, create a `database.config.json` file with your database settings, or set the appropriate environment variables.
 
 Example:
 ```json
@@ -281,52 +290,13 @@ Example:
 
 Environment variables take precedence over values in `database.config.json`.
 
----
+> **Note:** SSL Mode is not supported yet
 
-## Configuration and the Config Package
+## How to Initialize the Database
 
-All configuration for the server is managed by the **Config package**. This package loads settings from config files (such as `Config.json` and `Database.Config.json`) and supports overriding them with environment variables. The Config package ensures that your server is flexible and easy to configure for different environments (development, production, etc.).
+To enable database support in your project, you need to Mention host name in the `database.config.json`.
 
-- **Config file names, supported environment variables, and override order are fully documented in [`Config/readme.md`](Config/readme.md).**
-- **Environment variables always take precedence over config file values.**
-- For best practices, advanced usage, and troubleshooting, see the [Config package documentation](Config/readme.md).
-
-**Quick Reference:**
-- Main server config: `Config.json` (see example above)
-- Database config: `Database.Config.json` (see example above)
-- Supported environment variables: see [`Config/readme.md`](Config/readme.md)
-- Override order: Environment variables > Config files > Defaults
-
-For a complete guide to all configuration options, environment variable names, and advanced usage, please refer to [`Config/readme.md`](Config/readme.md).
-
----
-
-## Database Initialization
-
-To enable database support in your project, you need to initialize the database connection before starting the server. This is done by calling the `InitDatabase` method on your server instance.
-
-### How to Initialize the Database
-
-1. **Create a `Database.Config.json` file** in your project root with your database settings, or set the appropriate environment variables (see above for details).
-2. **Call `InitDatabase()` before starting the server:**
-
-   ```go
-   package main
-
-   import (
-       "github.com/vrianta/agai"
-   )
-
-   func main() {
-       srv := Server.New()
-       srv.InitDatabase() // Initialize the database connection
-       srv.Start()        // Start the server
-   }
-   ```
-
-3. **If you do not want to use a database**, simply do not call `InitDatabase()`. The server will run without attempting to connect to any database.
-
-> **Note:** If `InitDatabase()` is not called, the database will not be initialized. This allows you to run the server without any database connection if desired.
+> **Note:** If `Host` is not Mentioned int he config, the database will not be initialized. This allows you to run the server without any database connection if desired.
 
 ---
 
@@ -338,22 +308,26 @@ Each handler is a Go package (usually in `Controller/`) that exports a variable 
 
 Example:
 ```go
-package Home
+package home
 
 import (
-	components "github.com/pritam-is-next/resume/Components"
-	Controller "github.com/vrianta/agai/v1/Controller"
-	"github.com/vrianta/agai/v1/internal/session"
-	"github.com/vrianta/agai/v1/Template"
+	components "github.com/pritam-is-next/resume/components"
+	models "github.com/pritam-is-next/resume/models"
+	Controller "github.com/vrianta/agai/v1/controller"
+	Template "github.com/vrianta/agai/v1/template"
 )
 
 var Home = Controller.Struct{
-	View: "home.php",
-	GET:  func(self *Controller.Struct) *Template.Response {
+	View: "Home",
+	GET:  GET,
+}
+
+var GET = func(self *Controller.Struct) *Template.Response {
+	nav_items := models.Nav_items.GetComponents()
 	response := &Template.Response{
 		"Title":          "Pritam Dutta",
 		"Heading":        "Pritam Dutta",
-		"NavItems":       components.NavItems,
+		"NavItems":       nav_items,
 		"Hero":           components.Hero,
 		"AboutMe":        components.AboutMe,
 		"Skills":         components.Skills,
@@ -361,18 +335,15 @@ var Home = Controller.Struct{
 		"Projects":       components.Projects,
 		"ContactDetails": components.ContactDetails,
 	}
-	return response
-},
-}
 
+	return response
+}
 ```
 
-- The `View` field specifies the template to render (e.g., `home.php`).
+- The `View` field specifies the template to render (e.g., `home`).
 - The `GET`, `POST`, and `DELETE` FieldTypes are function handlers for each HTTP method.
 - The `GET` handler returns a `*Template.Response` (a map of data for the template).
 - You can import and use components or data as needed.
-
----
 
 ## Creating Controllers and Views
 
@@ -389,17 +360,12 @@ A controller is defined as a variable of type `Controller.Struct`. The main publ
 - **GET, POST, DELETE, PATCH, PUT, HEAD, OPTIONS**: Handler functions for each HTTP method. Each receives the controller as `self` and returns a `Template.Response` (a map of data for the template).
 
 #### Public Methods
-- `InitWR(w http.ResponseWriter, r *http.Request)`
-- `InitSession(session *Session.Struct)`
-- `RunRequest(session *Session.Struct)`
-- `RegisterTemplate() error`
-- `ExecuteTemplate(template *Template.Struct, response *Template.Response) error`
 - `GetInput(key string) interface{}`
 - `GetInputs() *map[string]interface{}`
 - `StoreData(key string, value any)`
 - `GetStoredData(key string) any`
 - `Redirect(uri string)`
-- `WithCode(uri string, code Response.Code)`
+- `RedirectWithCode(uri string, code Response.Code)`
 - `IsLoggedIn() bool`
 - `Login() bool`
 - `Logout()`
@@ -409,8 +375,8 @@ A controller is defined as a variable of type `Controller.Struct`. The main publ
 package Home
 
 import (
-    "github.com/vrianta/agai/v1/Controller"
-    "github.com/vrianta/agai/v1/Template"
+    "github.com/vrianta/agai/v1/controller"
+    "github.com/vrianta/agai/v1/template"
 )
 
 var Home = Controller.Struct{
@@ -431,7 +397,7 @@ var Home = Controller.Struct{
 }
 ```
 
-> **For full details, advanced usage, and API reference for controllers, see [`Controller/readme.md`](Controller/readme.md).**
+> **For full details, advanced usage, and API reference for controllers, see [`controller/readme.md`](/v1/controller/readme.md).**
 
 ### Accessing Request Data
 - `GetInput(key string)`: Returns a value from GET or POST parameters.
@@ -444,11 +410,11 @@ var Home = Controller.Struct{
 
 ### Redirects
 - `Redirect(uri string)`: Redirects to another page.
-- `WithCode(uri, code)`: Redirects with a custom HTTP status code.
+- `RedirectWithCode(uri, code)`: Redirects with a custom HTTP status code.
 
 ### Creating Views
 #### View Directory Structure
-Each controller should have a corresponding directory under the `Views/` folder, named after the controller's `View` field.
+Each controller where view is mentioned should have a corresponding directory under the `views/` folder, named after the controller's `View` field.
 
 **Example:** If `View: "home"`, templates should be in `Views/home/`.
 
@@ -456,24 +422,10 @@ Each controller should have a corresponding directory under the `Views/` folder,
 - `default.html`, `default.php`, or `index.html`/`index.php`: Default template for the controller.
 - `get.html`, `post.html`, etc.: Templates for specific HTTP methods.
 
-#### Template Syntax
-- PHP-style syntax is supported:
-  - `<?= $var ?>` → `{{ .var }}`
-  - `<?php if ($user): ?> ... <?php endif; ?>`
-  - Loops: `<?php foreach ($items as $item): ?> ... <?php endforeach; ?>`
-
----
-
-## Views Folder Structure
-
-The `Views` folder contains all your HTML/PHP templates. Proper organization is important for the framework to locate and render the correct templates for each controller and HTTP method.
+> **Note:** All Php Featues are not supported. Only basic php syntaxes are supported to know more check [Write Templates in PHP-Style!](#write-templates-in-php-style)
 
 ### Location
-- The `Views` folder should be in your project root (or as configured in `Config.json` with the `Views_folder` key).
-
-### Organization
-- Each controller should have its own subfolder inside `Views`, named after the controller's `View` field (without file extension).
-- For example, if your controller has `View: "home"`, create a folder `Views/home/`.
+- The `Views` folder should be in your project root (or as configured in `web.config.json` with the `Views_folder` key).
 
 ### Template Files
 - Place your template files inside the corresponding controller subfolder.
@@ -498,41 +450,14 @@ Views/
 - In this example, the `Home` controller with `View: "home"` will use templates from `Views/home/`.
 - The framework will automatically select the correct template based on the HTTP method and file availability.
 
-### Including Shared Templates
-- You can create a `shared/` folder for partials like headers, footers, etc., and include them in your main templates using Go template syntax.
-
----
-
-## Session Management
-
-Session data and helpers are accessed via the `self.Session` variable inside your controller methods.
-
-- Access POST/GET data:
-  ```go
-  uid := self.GetInput("uid")
-  token := self.GetInput("token")
-  ```
-- Store/retrieve session variables:
-  ```go
-  self.Session.Store["uid"] = "user123"
-  user := self.Session.Store["uid"]
-  ```
-- Login/logout:
-  ```go
-  self.Login()
-  self.Logout()
-  if self.IsLoggedIn() { /* ... */ }
-  ```
-
----
+<!-- ### Including Shared Templates -->
+<!-- - You can create a `shared/` folder for partials like headers, footers, etc., and include them in your main templates using Go template syntax. -->
 
 ## Static, CSS, and JS File Serving
 
-- Place static files in folders listed in `Config.json`.
-- Access them via `/Static/filename.ext`, `/Css/style.css`, etc.
+- Place static files in folders listed in `web.config.json`.
+- Access them via `/static/filename.ext`, `/css/style.css`, etc.
 - Files are cached for performance.
-
----
 
 ## SMTP/Email Support
 
@@ -542,20 +467,6 @@ import "github.com/vrianta/agai/v1/smtp"
 smtp.Client.InitSMTPClient("smtp.example.com", 587, "user", "pass")
 err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
 ```
-
----
-
-## Console Commands
-
-When the server is running, use these commands in the console:
-- `start`    - Start the server
-- `stop`     - Stop the server
-- `restart`  - Restart the server
-- `r`        - Shortcut for restart
-- `exit`     - Stop and exit
-- `-h`       - Help
-
----
 
 ## Template Engine & PHP Parsing Syntax
 
@@ -617,39 +528,6 @@ When the server is running, use these commands in the console:
 - The server automatically parses PHP-style templates and converts them to Go's `html/template` syntax.
 - You can use all Go template features in addition to the PHP-like syntax.
 
----
-
-## API Reference
-
-- `server.New(host, port, routes, config)` - Create a new server instance. `host` and `port` specify the address, `routes` is a map of URL paths to controller structs, and `config` is a pointer to your configuration (or nil for default).
-- `server.Start()` - Start the server and launch the interactive console.
-- `Controller.Struct` - The base struct for all controllers. FieldTypes include:
-  - `View`: The template file to render (e.g., `home.php`).
-  - `GET`, `POST`, `DELETE`: Function handlers for each HTTP method.
-  - `Session`: The session object for the current request.
-- `self.Session` - Access session data and helpers inside controller methods.
-  - `.POST` / `.GET`: Maps for POST/GET parameters.
-  - `.Store`: Map for session variables (persisted across requests).
-  - `.Login(userID)`, `.Logout(redirectURL)`, `.IsLoggedIn()`: Session authentication helpers.
-- `Session.RenderEngine` - For rendering responses and templates.
-  - `.Render(str)`: Write a string to the response.
-  - `.RenderTemplate(view, data)`: Render a template with data.
-  - `.RenderError(msg, code)`: Render an error response.
-  - `.StartRender()`: Flush the response buffer.
-- `server.RemoveSession(sessionID)` - Remove a session by its ID.
-- `smtp.Client` - Built-in SMTP client for sending emails.
-  - `.InitSMTPClient(host, port, user, pass)`
-  - `.SendMail(to, subject, body)`
-
-For more details, see the source files in each package (Controller, Session, RenderEngine, etc.).
-
----
-
-## License
-See [LICENSE](LICENSE) for GPLv3 license details.
-
----
-
 ## Frequently Asked Questions (FAQ)
 
 **Q: How should I name and organize my controller's View field and view folder?**
@@ -695,8 +573,5 @@ See [LICENSE](LICENSE) for GPLv3 license details.
 **Q: How can I extend the framework?**
 - You can add new packages, extend controllers, or modify the template engine. For advanced features (like WebSockets), integrate with Go's standard libraries and register your handlers in `server.go`.
 
----
-
-For more details on configuration options, environment variables, and advanced usage, see [`Config/readme.md`](Config/readme.md).
-
----
+## License
+See [LICENSE](LICENSE) for GPLv3 license details.

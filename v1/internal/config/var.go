@@ -22,8 +22,8 @@ var (
 			"Js",
 		},
 		ViewFolder:       "Views",
-		MaxSessionCount:  50000,    // Default value.
-		SessionStoreType: "memory", // Default session store type
+		MaxSessionCount:  50000,     // Default value.
+		SessionStoreType: "storage", // Default session store type
 	}
 
 	databaseConfig = databaseConfigStruct{

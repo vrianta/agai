@@ -15,28 +15,56 @@ Version `v0.2.1` introduces major improvements including a new model migration e
 
 This documentation will walk you through every feature — from setup to advanced usage — while keeping the philosophy simple: **write less, control more, stay fast.**
 
----
-
 ## Table of Contents
 
-1. [Features](#features)
-2. [Installation](#installation)
-3. [Project Structure](#project-structure)
-4. [Configuration (`web.config.json` & `database.config.json`)](#configuration-webconfigjson--databaseconfigjson)
-5. [Database Initialization](#database-initialization)
-6. [Server Creation & Routing](#server-creation--routing)
-7. [Creating Controllers and Views](#creating-controllers-and-views)
-8. [Session Management](#session-management)
-9. [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
-10. [SMTP/Email Support](#smtpemail-support)
-11. [Console Commands](#console-commands)
-12. [Template Engine & PHP Parsing Syntax](#template-engine--php-parsing-syntax)
-13. [Component System](#component-system)
-14. [ModelsHandler (ORM-like QueryBuilder)](#modelshandler-orm-like-querybuilder)
-15. [License](#license)
-16. [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
-
----
+- [Go Server Framework – v0.2.1 User Guide](#go-server-framework--v021-user-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Project Structure](#project-structure)
+  - [ModelsHandler (ORM-like queryBuilder Builder)](#modelshandler-orm-like-querybuilder-builder)
+    - [How to Create a Model (Quick Example)](#how-to-create-a-model-quick-example)
+  - [Installation](#installation-1)
+  - [Project Structure](#project-structure-1)
+  - [Configuration (`web.config.json`)](#configuration-webconfigjson)
+    - [Database Configuration (`Database.Config.json`)](#database-configuration-databaseconfigjson)
+      - [Supported Environment Variables](#supported-environment-variables)
+  - [Configuration and the Config Package](#configuration-and-the-config-package)
+  - [Database Initialization](#database-initialization)
+    - [How to Initialize the Database](#how-to-initialize-the-database)
+  - [Server Creation \& Routing](#server-creation--routing)
+    - [1. Define Route Handlers](#1-define-route-handlers)
+  - [Creating Controllers and Views](#creating-controllers-and-views)
+    - [What is a Controller?](#what-is-a-controller)
+    - [Controller Structure](#controller-structure)
+      - [Public FieldTypes](#public-fieldtypes)
+      - [Public Methods](#public-methods)
+    - [Example: Creating a Controller](#example-creating-a-controller)
+    - [Accessing Request Data](#accessing-request-data)
+    - [Session Management](#session-management)
+    - [Redirects](#redirects)
+    - [Creating Views](#creating-views)
+      - [View Directory Structure](#view-directory-structure)
+      - [Supported Template Files](#supported-template-files)
+      - [Template Syntax](#template-syntax)
+  - [Views Folder Structure](#views-folder-structure)
+    - [Location](#location)
+    - [Organization](#organization)
+    - [Template Files](#template-files)
+    - [Example Structure](#example-structure)
+    - [Including Shared Templates](#including-shared-templates)
+  - [Session Management](#session-management-1)
+  - [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
+  - [SMTP/Email Support](#smtpemail-support)
+  - [Console Commands](#console-commands)
+  - [Template Engine \& PHP Parsing Syntax](#template-engine--php-parsing-syntax)
+    - [Write Templates in PHP-Style!](#write-templates-in-php-style)
+      - [Supported Syntax](#supported-syntax)
+      - [Example Template](#example-template)
+      - [How It Works](#how-it-works)
+  - [API Reference](#api-reference)
+  - [License](#license)
+  - [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
 
 ## Features
 
@@ -48,13 +76,11 @@ This documentation will walk you through every feature — from setup to advance
 * **Advanced Template Engine**: PHP-style syntax rendered as Go templates.
 * **Request Parsing**: Automatically parses GET and POST parameters.
 * **Response Rendering**: Return a `*Template.Response` with typed data.
-* **Component System**: Define reusable JSON or DB-synced structured data.
+* **Component System**: Define reusable JSON or DB-synced structured data. mostly usefull for web components like navigation items settings etc
 * **Model Migration Support**: Auto schema diffing and sync via `Build: false`.
 * **Logging**: Error-aware logging with helper functions.
 * **Console Commands**: Launch server, generate app structure, run migrations.
-* **Environment Overrides**: Override all config settings with environment variables.
-
----
+* **Environment Overrides**: Override all config settings with environment variables. Supports containers
 
 ## Installation
 
@@ -77,12 +103,12 @@ import "github.com/vrianta/agai"
 ├───changelog
 └───v1
     ├───component          # Component JSON <-> DB layer
-    ├───config             # Configuration and environment overrides
     ├───controller         # Application logic handlers
     ├───cookies            # Cookie utilities
     ├───database           # DB-specific connection and metadata
     ├───internal
     │   └───session        # Session heap, LRU management
+    |   └───config         # Configuration and environment overrides
     ├───log                # Logging utility
     ├───model              # Model definitions and schema logic
     ├───render_engine      # PHP-style parsing and template renderer

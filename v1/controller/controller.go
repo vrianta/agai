@@ -244,6 +244,7 @@ func (c *Struct) ExecuteTemplate(__template *Template.Struct, __response *Templa
 		if c.templates.View != nil {
 			__template = c.templates.View
 		} else {
+			c.w.Write(__response.AsJson())
 			fmt.Printf("Template is nil for controller %s, no template to execute\n", c.View)
 			return nil
 		}

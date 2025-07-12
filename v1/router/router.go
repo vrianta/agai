@@ -74,7 +74,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			sessionID, err := Utils.GenerateSessionID()
 			if err != nil {
-				Log.WriteLog("Error generating session ID: " + err.Error())
+				Log.Error("generating session ID: %T", err)
 				return
 			}
 			sess = Session.New()
@@ -89,7 +89,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		sessionID, err := Utils.GenerateSessionID()
 		if err != nil {
-			Log.WriteLog("Error generating session ID: " + err.Error())
+			Log.Error("generating session ID: %T", err)
 			return
 		}
 		sess = Session.New()
@@ -108,8 +108,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
 		return
 	}
-	// duration := time.Since(start)
-	// log.Printf("Handler took %s to complete\n", duration)
 }
 
 // A Function to Create and Return

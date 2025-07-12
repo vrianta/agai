@@ -24,18 +24,15 @@ This documentation will walk you through every feature — from setup to advance
   - [Run Application](#run-application)
     - [Flags](#flags)
   - [Project Structure](#project-structure)
-    - [How to Create a Model (Quick Example)](#how-to-create-a-model-quick-example)
-  - [Model Query Builder System](#model-query-builder-system)
   - [Configuration (`web.config.json`)](#configuration-webconfigjson)
-    - [Database Configuration (`Database.Config.json`)](#database-configuration-databaseconfigjson)
+    - [Database Configuration (`database.Config.json`)](#database-configuration-databaseconfigjson)
       - [Supported Environment Variables](#supported-environment-variables)
-  - [How to Initialize the Database](#how-to-initialize-the-database)
-  - [Server Creation \& Routing](#server-creation--routing)
-    - [1. Define Route Handlers](#1-define-route-handlers)
-  - [Creating Controllers and Views](#creating-controllers-and-views)
+  - [Routing](#routing)
+    - [Define Route Handlers](#define-route-handlers)
+  - [Controllers](#controllers)
     - [What is a Controller?](#what-is-a-controller)
     - [Controller Structure](#controller-structure)
-      - [Public FieldTypes](#public-fieldtypes)
+      - [Public Fields](#public-fields)
       - [Public Methods](#public-methods)
     - [Example: Creating a Controller](#example-creating-a-controller)
     - [Accessing Request Data](#accessing-request-data)
@@ -47,6 +44,15 @@ This documentation will walk you through every feature — from setup to advance
     - [Location](#location)
     - [Template Files](#template-files)
     - [Example Structure](#example-structure)
+  - [Models](#models)
+    - [How to Initialize the Database](#how-to-initialize-the-database)
+    - [How to Create a Model (Quick Example)](#how-to-create-a-model-quick-example)
+    - [Model Query Builder System](#model-query-builder-system)
+  - [Components](#components)
+    - [Structure](#structure)
+    - [Example](#example)
+      - [Component Model](#component-model)
+      - [Componnet](#componnet)
   - [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
   - [SMTP/Email Support](#smtpemail-support)
   - [Template Engine \& PHP Parsing Syntax](#template-engine--php-parsing-syntax)
@@ -152,67 +158,6 @@ go run . -h
     └───utils              # File I/O and helpers
 ```
 
-### How to Create a Model (Quick Example)
-
-To define a model, use the `models_handler.New` function, specifying the table name and a map of FieldTypes:
-
-```go
-import model "github.com/vrianta/agai/v1/model"
-
-var Users = model.New("users", struct {
-	UserId    model.Field
-	UserName  model.Field
-	Password  model.Field
-	FirstName model.Field
-}{
-	UserId: model.Field{
-		Type:     model.FieldTypes.VarChar,
-		Length:   20,
-		Nullable: false,
-		Index: model.Index{
-			PrimaryKey: true,
-			Unique:     false,
-			Index:      true,
-		},
-	},
-	UserName: model.Field{
-		Type:     model.FieldTypes.VarChar,
-		Length:   30,
-		Nullable: false,
-		Index: model.Index{
-			Unique: true,
-			Index:  true,
-		},
-	},
-	Password: model.Field{
-		Type:     model.FieldTypes.Text,
-		Nullable: false,
-	},
-	FirstName: model.Field{
-		Type:     model.FieldTypes.Text,
-		Nullable: false,
-	},
-})
-```
-- The first argument is the table name in your database.
-- The second argument Struct where you define the table
-
-**For full documentation, advanced usage, and API reference, see [`modelsHandler/readme.md`](/v1/model/readme.md).**
-
----
-
-
-## Model Query Builder System
-
-The framework includes a powerful, human-friendly queryBuilder builder called **ModelsHandler** for working with your database using Go structs. ModelsHandler provides a chainable API for building and executing SQL queries (SELECT, UPDATE, DELETE) in a style similar to popular ORMs.
-
-- Define your model as Go structs and map them to database tables.
-- Build queries using a fluent, readable API (e.g., `Users.Get().Where("age").GreaterThan(18).OrderBy("name").Fetch()`).
-- Supports WHERE, AND, OR, IN, NOT IN, BETWEEN, LIKE, IS NULL, LIMIT, OFFSET, ORDER BY, GROUP BY, and more.
-- Makes database access easy to read, write, and maintain.
-
-> **Note:** Migration only happens if you pass the required flags while running the application
-
 ## Configuration (`web.config.json`)
 
 > **For complete configuration details, environment variable reference, and advanced usage, see [`Config/readme.md`](/v1/internal/config/readme.md). The summary below covers the basics; the linked documentation provides authoritative and up-to-date information.**
@@ -260,7 +205,7 @@ You can also override these values using environment variables:
 
 Environment variables take precedence over values in `web.config.json`.
 
-### Database Configuration (`Database.Config.json`)
+### Database Configuration (`database.Config.json`)
 
 To enable database support, create a `database.config.json` file with your database settings, or set the appropriate environment variables.
 
@@ -292,60 +237,32 @@ Environment variables take precedence over values in `database.config.json`.
 
 > **Note:** SSL Mode is not supported yet
 
-## How to Initialize the Database
+## Routing
 
-To enable database support in your project, you need to Mention host name in the `database.config.json`.
+Routing in this framework is minimal, declarative, and type-safe. You define routes by associating URL paths with controller functions using the `router` module.
 
-> **Note:** If `Host` is not Mentioned int he config, the database will not be initialized. This allows you to run the server without any database connection if desired.
+### Define Route Handlers
 
----
+To define a route, use the `Router.New(basePath).RegisterRoutes(...)` chain:
 
-## Server Creation & Routing
-
-### 1. Define Route Handlers
-
-Each handler is a Go package (usually in `Controller/`) that exports a variable of type `Controller.Struct` with FieldTypes for the view and HTTP methods. Methods are functions that receive a pointer to the controller struct and return a `*Template.Response` (for GET) or handle logic for POST/DELETE.
-
-Example:
-```go
-package home
-
-import (
-	components "github.com/pritam-is-next/resume/components"
-	models "github.com/pritam-is-next/resume/models"
-	Controller "github.com/vrianta/agai/v1/controller"
-	Template "github.com/vrianta/agai/v1/template"
-)
-
-var Home = Controller.Struct{
-	View: "Home",
-	GET:  GET,
-}
-
-var GET = func(self *Controller.Struct) *Template.Response {
-	nav_items := models.Nav_items.GetComponents()
-	response := &Template.Response{
-		"Title":          "Pritam Dutta",
-		"Heading":        "Pritam Dutta",
-		"NavItems":       nav_items,
-		"Hero":           components.Hero,
-		"AboutMe":        components.AboutMe,
-		"Skills":         components.Skills,
-		"Experiences":    components.Experiences,
-		"Projects":       components.Projects,
-		"ContactDetails": components.ContactDetails,
-	}
-
-	return response
-}
+```go 
+Router.New("/").RegisterRoutes(  
+Router.Route("", Controllers.Home),  
+Router.Route("home", Controllers.Home),  
+Router.Route("admin", Controllers.Admin),  
+Router.Route("login", Controllers.Login),  
+Router.Route("logout", Controllers.Logout),  
+)  
 ```
 
-- The `View` field specifies the template to render (e.g., `home`).
-- The `GET`, `POST`, and `DELETE` FieldTypes are function handlers for each HTTP method.
-- The `GET` handler returns a `*Template.Response` (a map of data for the template).
-- You can import and use components or data as needed.
+Each `Router.Route(path, handler)` defines a relative path from the base path.
 
-## Creating Controllers and Views
+> **Example:** if you want to create api router
+```go
+Router.New("/api/").RegisterRoutes() // You can add API routes here later
+```
+
+## Controllers
 
 This section explains how to create controllers and views, including available public variables and methods.
 
@@ -355,7 +272,7 @@ A **Controller** is a Go struct that handles HTTP requests for a specific route.
 ### Controller Structure
 A controller is defined as a variable of type `Controller.Struct`. The main public FieldTypes and methods are:
 
-#### Public FieldTypes
+#### Public Fields
 - **View**: The name of the view (template) directory for this controller. Example: `"home"` (looks for templates in `Views/home/`).
 - **GET, POST, DELETE, PATCH, PUT, HEAD, OPTIONS**: Handler functions for each HTTP method. Each receives the controller as `self` and returns a `Template.Response` (a map of data for the template).
 
@@ -413,6 +330,7 @@ var Home = Controller.Struct{
 - `RedirectWithCode(uri, code)`: Redirects with a custom HTTP status code.
 
 ### Creating Views
+
 #### View Directory Structure
 Each controller where view is mentioned should have a corresponding directory under the `views/` folder, named after the controller's `View` field.
 
@@ -452,6 +370,191 @@ Views/
 
 <!-- ### Including Shared Templates -->
 <!-- - You can create a `shared/` folder for partials like headers, footers, etc., and include them in your main templates using Go template syntax. -->
+
+## Models
+
+### How to Initialize the Database
+
+To enable database support in your project, you need to Mention host name in the `database.config.json`.
+
+> **Note:** If `Host` is not Mentioned int he config, the database will not be initialized. This allows you to run the server without any database connection if desired.
+
+
+### How to Create a Model (Quick Example)
+
+To define a model, use the `models_handler.New` function, specifying the table name and a map of FieldTypes:
+
+```go
+import model "github.com/vrianta/agai/v1/model"
+
+var Users = model.New("users", struct {
+	UserId    model.Field
+	UserName  model.Field
+	Password  model.Field
+	FirstName model.Field
+}{
+	UserId: model.Field{
+		Type:     model.FieldTypes.VarChar,
+		Length:   20,
+		Nullable: false,
+		Index: model.Index{
+			PrimaryKey: true,
+			Unique:     false,
+			Index:      true,
+		},
+	},
+	UserName: model.Field{
+		Type:     model.FieldTypes.VarChar,
+		Length:   30,
+		Nullable: false,
+		Index: model.Index{
+			Unique: true,
+			Index:  true,
+		},
+	},
+	Password: model.Field{
+		Type:     model.FieldTypes.Text,
+		Nullable: false,
+	},
+	FirstName: model.Field{
+		Type:     model.FieldTypes.Text,
+		Nullable: false,
+	},
+})
+```
+- The first argument is the table name in your database.
+- The second argument Struct where you define the table
+
+**For full documentation, advanced usage, and API reference, see [`modelsHandler/readme.md`](/v1/model/readme.md).**
+
+
+
+### Model Query Builder System
+
+The framework includes a powerful, human-friendly queryBuilder builder called **ModelsHandler** for working with your database using Go structs. ModelsHandler provides a chainable API for building and executing SQL queries (SELECT, UPDATE, DELETE) in a style similar to popular ORMs.
+
+- Define your model as Go structs and map them to database tables.
+- Build queries using a fluent, readable API (e.g., `Users.Get().Where("age").GreaterThan(18).OrderBy("name").Fetch()`).
+- Supports WHERE, AND, OR, IN, NOT IN, BETWEEN, LIKE, IS NULL, LIMIT, OFFSET, ORDER BY, GROUP BY, and more.
+- Makes database access easy to read, write, and maintain.
+
+> **Note:** Migration only happens if you pass the required flags while running the application
+
+## Components
+
+`Components` are data holder for a specific table, where it can hold a set of the data which needs to be updated in the database
+`Use Cases` are nevigation items, settings template
+
+> **Note:** If the table is not created in the DB then the DB is populated with the template file, it will check content of the template has been changed then it will update the local
+> If the Config file has a new element which is not present in the data base then it will update the data base
+
+### Structure
+
+Component structures have to follow strick rule to comply
+
+* Every Component Model should have a `Primary Key`
+* It is recomented to have the `Primary Key` as `Integer` so that it can follow same orientation as you mentioned in the config file
+* Every `Json` element should have a key which should be the value of `Primary Key`
+
+### Example
+
+#### Component Model
+
+```go
+package models
+
+import (
+	"github.com/vrianta/agai/v1/model"
+)
+
+var Nav_items = model.New("navigation_items", struct {
+	Id       model.Field
+	Name     model.Field
+	Href     model.Field
+	Disabled model.Field
+	Dropdown model.Field
+}{
+	Id: model.Field{
+		Nullable: false,
+		Type:     model.FieldTypes.Int,
+		Length:   10,
+		Index: model.Index{
+			PrimaryKey: true,
+			Index:      true,
+		},
+	},
+	Name: model.Field{
+		Nullable: false,
+		Type:     model.FieldTypes.VarChar,
+		Length:   10,
+	},
+	Href: model.Field{
+		Nullable: false,
+		Type:     model.FieldTypes.Text,
+	},
+	Disabled: model.Field{
+		Nullable:     false,
+		DefaultValue: "0",
+		Type:         model.FieldTypes.Bool,
+	},
+	Dropdown: model.Field{
+		Nullable:     true,
+		DefaultValue: "",
+		Type:         model.FieldTypes.JSON,
+	},
+})
+
+```
+
+#### Componnet
+
+```json
+{
+  "0": {
+    "Disabled": 0,
+    "Dropdown": null,
+    "Href": "#home",
+    "Id": 0,
+    "Name": "Home"
+  },
+  "1": {
+    "Disabled": 0,
+    "Dropdown": null,
+    "Href": "#about-me",
+    "Id": 1,
+    "Name": "About Me"
+  },
+  "2": {
+    "Disabled": 0,
+    "Dropdown": null,
+    "Href": "#skills",
+    "Id": 2,
+    "Name": "Skills"
+  },
+  "3": {
+    "Disabled": 0,
+    "Dropdown": null,
+    "Href": "#experience",
+    "Id": 3,
+    "Name": "Experience"
+  },
+  "4": {
+    "Disabled": 0,
+    "Dropdown": null,
+    "Href": "#projects",
+    "Id": 4,
+    "Name": "Projects"
+  },
+  "5": {
+    "Disabled": 0,
+    "Dropdown": null,
+    "Href": "#contact-me",
+    "Id": 5,
+    "Name": "Contact"
+  }
+}
+```
+
 
 ## Static, CSS, and JS File Serving
 

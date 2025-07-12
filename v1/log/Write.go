@@ -66,16 +66,16 @@ func log(level LogLevel, label string, color string, msg string, args ...any) {
 
 // Colored log wrappers
 func Debug(msg string, args ...any) {
-	log(DEBUG, "DEBUG", "\033[36m", msg, args...)
+	log(DEBUG, "[DEBUG]", "\033[36m", msg, args...)
 }
 func Info(msg string, args ...any) {
-	log(INFO, "INFO", "\033[32m", msg, args...)
+	log(INFO, "[INFO]", "\033[32m", msg, args...)
 }
 func Warn(msg string, args ...any) {
-	log(WARN, "WARN", "\033[33m", msg, args...)
+	log(WARN, "[WARN]", "\033[33m", msg, args...)
 }
 func Error(msg string, args ...any) {
-	log(ERROR, "ERROR", "\033[31m", msg, args...)
+	log(ERROR, "[ERROR]", "\033[31m", msg, args...)
 }
 
 // Legacy support

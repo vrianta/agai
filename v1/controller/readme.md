@@ -12,9 +12,7 @@ A **Controller** is a Go struct that handles HTTP requests for a specific route.
 
 ## 2. Controller Structure
 
-A controller is defined as a variable of type `Controller.Struct`. The main public FieldTypes and methods are:
-
-### Public FieldTypes
+### Public Fields
 
 - **View**:  
   The name of the view (template) directory for this controller.  
@@ -119,6 +117,7 @@ If `View: "home"`, templates should be in `Views/home/`.
 
 ## 8. Registering Controllers
 
+<<<<<<< HEAD
 Register your controllers with the router using the `Router.Route` and `Router.RegisterRoutes` functions.
 
 ```go
@@ -136,18 +135,14 @@ func main() {
 ```
 
 ---
+=======
+Register your controller in the router to make it available for handling requests.
+>>>>>>> 1559b5cb4f55d903a1f6f41803258cd1614abb53
 
 ## 9. Summary of Public Variables and Methods
 
-- `View` (string): Name of the view directory.
-- `GET`, `POST`, etc.: Handler functions.
-- `GetInput`, `GetInputs`
-- `StoreData`, `GetStoredData`
-- `Redirect`, `WithCode`
-- `IsLoggedIn`, `Login`, `Logout`
-
----
+See above for a full list of fields and methods.
 
 ## References
 
-- See the code and comments in the `Controller` package for more details.
+- See the main project README for more details and advanced usage.

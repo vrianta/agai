@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/vrianta/agai/v1/internal/config"
 	DatabaseHandler "github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/internal/config"
 )
 
 // Function to get the table topology and compare with the latest FieldTypes and generate a new SQL queryBuilder to alter the table
@@ -23,6 +23,8 @@ func (m *meta) syncTableSchema() {
 		FieldTypeset[f.name] = f
 	}
 
+	var pendingAddFields []*Field
+
 	reader := bufio.NewReader(os.Stdin)
 
 	for _, field := range m.FieldTypes {
@@ -35,7 +37,8 @@ func (m *meta) syncTableSchema() {
 					continue
 				}
 			}
-			m.addField(field)
+			// m.addField(field)
+			pendingAddFields = append(pendingAddFields, field)
 			continue
 		}
 
@@ -146,16 +149,31 @@ func (m *meta) syncTableSchema() {
 			}
 		}
 	}
+
+	// Add all pending new fields now going to add in the table scema
+	for _, field := range pendingAddFields {
+		m.addField(field)
+	}
+
 }
 
-// Function to get the table scema of the mdoels and store them in the object
+// SyncModelSchema loads the current structure of the associated database table,
+// including column definitions and index metadata (primary, unique, and standard indexes),
+// and stores it in the model's internal schema list (m.schemas).
+//
+// This is used to detect schema differences for migration, validation, or syncing purposes.
+// If the table does not exist, the function will exit early without error.
+//
+// Note: This function panics on database errors and should be called only when
+// database availability is guaranteed.
 func (m *meta) SyncModelSchema() {
+	// Get the active database connection
 	databaseObj, err := DatabaseHandler.GetDatabase()
 	if err != nil {
 		panic("Error getting database: " + err.Error())
 	}
 
-	// 1. Load column info
+	// Check if the table for this model actually exists in the database
 	checkqueryBuilder := `SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?`
 	var count int
 	err = databaseObj.QueryRow(checkqueryBuilder, m.TableName).Scan(&count)
@@ -163,18 +181,22 @@ func (m *meta) SyncModelSchema() {
 		panic("Error checking table existence: " + err.Error())
 	}
 	if count == 0 {
+		// If table does not exist, log and exit
 		fmt.Printf("Table '%s' does not exist.\n", m.TableName)
 		return
 	}
 
+	// Query the structure of the existing table
 	rows, err := databaseObj.Query("SHOW COLUMNS FROM `" + m.TableName + "`")
 	if err != nil {
 		panic("Error getting old table structure: " + err.Error())
 	}
-	defer rows.Close()
+	defer rows.Close() // Ensure result rows are closed
 
-	m.schemas = nil // clear any previous values
+	// Clear any previously cached schema info
+	m.schemas = nil
 
+	// Query template to get index information for a column
 	indexqueryBuilder := `
 	SELECT 
 	column_name, 
@@ -185,16 +207,21 @@ func (m *meta) SyncModelSchema() {
 	AND table_name = ?
 	AND column_name = ?`
 
+	// Iterate through each column of the table
 	for rows.Next() {
 		_scema := schema{}
+		// Scan each column's structure into the _scema struct
 		if err := rows.Scan(&_scema.field, &_scema.fieldType, &_scema.nullable, &_scema.key, &_scema.defaultVal, &_scema.extra); err != nil {
 			panic("Error scanning row: " + err.Error())
 		}
 
+		// Query the index info for this column
 		if idxRows, err := databaseObj.Query(indexqueryBuilder, config.GetDatabaseConfig().Database, m.TableName, _scema.field); err != nil {
 			panic("Error getting index information: " + err.Error())
 		} else {
 			defer idxRows.Close()
+
+			// Process each index row
 			for idxRows.Next() {
 				var columnName, indexName string
 				var nonUnique int
@@ -202,9 +229,11 @@ func (m *meta) SyncModelSchema() {
 					panic("Error scanning index row: " + err.Error())
 				}
 
+				// Check if it's a primary key
 				if indexName == "PRIMARY" {
 					_scema.isprimary = true
 				} else {
+					// Determine if it's a standard index or unique constraint based on naming convention
 					suffix := strings.Split(indexName, "_")
 					switch suffix[0] {
 					case "idx":
@@ -216,7 +245,7 @@ func (m *meta) SyncModelSchema() {
 			}
 		}
 
+		// Add the parsed schema to the model's schema list
 		m.schemas = append(m.schemas, _scema)
 	}
-
 }

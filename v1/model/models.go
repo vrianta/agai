@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/vrianta/agai/v1/internal/config"
 	"github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/internal/config"
 )
 
 func Init() {
@@ -25,36 +25,55 @@ func Init() {
 		fmt.Println("[Warning] - Models are already initialsed Skipping it")
 	}
 
-	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("[Models] Initializing model and syncing database tables:\n")
-	fmt.Print("---------------------------------------------------------\n")
-	for _, model := range ModelsRegistry {
-		if config.SyncDatabaseEnabled {
-			fmt.Printf("[Model]   Table: %-20s | Syncing...\n", model.TableName)
-			model.SyncModelSchema()
-			model.CreateTableIfNotExists() // creating table if not existed
-		} else {
-			fmt.Println("[Model] Skipping Table: ", model.TableName)
-		}
+	// if config.SyncDatabaseEnabled {
+	// 	fmt.Print("---------------------------------------------------------\n")
+	// 	fmt.Print("[Models] Initializing model and syncing database tables:\n")
+	// 	fmt.Print("---------------------------------------------------------\n")
+	// 	for _, model := range ModelsRegistry {
+	// 		model.SyncModelSchema()
+	// 		model.CreateTableIfNotExists() // creating table if not existed
 
+	// 		model.initialised = true
+	// 	}
+	// 	fmt.Print("---------------------------------------------------------\n")
+	// 	fmt.Print("[Models] Model initialization complete.\n")
+	// 	fmt.Print("---------------------------------------------------------\n\n")
+	// }
+
+	// if config.SyncComponentsEnabled {
+	// 	for _, model := range ModelsRegistry {
+	// 		model.loadComponentFromDisk()
+	// 		model.syncComponentWithDB()
+	// 		model.loadComponentFromDisk()
+	// 	}
+	// } else {
+	// 	for _, model := range ModelsRegistry {
+	// 		model.loadComponentFromDisk()
+	// 		model.refreshComponentFromDB()
+	// 	}
+	// }
+
+	for _, model := range ModelsRegistry {
+
+		logSection("[Models] Initializing model and syncing database tables:")
+		if config.SyncDatabaseEnabled {
+			model.SyncModelSchema()
+			model.CreateTableIfNotExists()
+			model.initialised = true
+			fmt.Println()
+		}
+		logSection("[Models] Model initialization complete.")
+
+		logSection("[Components] Initializing Components and syncing database tables:")
+		model.loadComponentFromDisk()
 		if config.SyncComponentsEnabled {
-			model.loadComponentFromDisk()
 			model.syncComponentWithDB()
 			model.loadComponentFromDisk()
 		} else {
-			fmt.Print("[INFO] To do migration of Components please use flag --migrate-component/-mc \n")
-			model.loadComponentFromDisk()
 			model.refreshComponentFromDB()
 		}
-
-		// fmt.Println("Last Components ", model.components)
-
-		model.initialised = true
+		logSection("[Components] Component initialization complete.")
 	}
-
-	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("[Models] Model initialization complete.\n")
-	fmt.Print("---------------------------------------------------------\n\n")
 
 	initialsed = true
 }
@@ -66,7 +85,6 @@ func Init() {
  * So Dynaimic Table Updation will be handled during development only
  * It will provide the default functions to handle the model like Create, Read, Update, Delete
  */
-
 func newModel(tableName string, FieldTypes FieldTypeset) meta {
 	_model := meta{
 		components: make(components),
@@ -153,39 +171,6 @@ func (m *meta) CreateTableIfNotExists() {
 	fmt.Printf("[Success] Table created or already exists: %s\n", m.TableName)
 }
 
-// func (m *Table) loadIndexMetadata() {
-// 	db, err := database.GetDatabase()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	queryBuilder := `
-// 	SELECT column_name, index_name, non_unique
-// 	FROM information_schema.statistics
-// 	WHERE table_schema = DATABASE() AND table_name = ?`
-
-// 	rows, err := db.Query(queryBuilder, m.TableName)
-// 	if err != nil {
-// 		panic("Error fetching index info: " + err.Error())
-// 	}
-// 	defer rows.Close()
-
-// 	m.indexes = make(map[string]indexInfo)
-
-// 	for rows.Next() {
-// 		var col, idx string
-// 		var nonUnique int
-// 		if err := rows.Scan(&col, &idx, &nonUnique); err != nil {
-// 			panic("Error scanning index row: " + err.Error())
-// 		}
-// 		m.indexes[col] = indexInfo{
-// 			ColumnName: col,
-// 			IndexName:  idx,
-// 			NonUnique:  nonUnique == 1,
-// 		}
-// 	}
-// }
-
 // Handles adding/dropping PRIMARY KEY
 func (m *meta) syncPrimaryKey(field *Field, schema *schema) {
 	databaseObj, err := database.GetDatabase()
@@ -210,6 +195,12 @@ func (m *meta) syncPrimaryKey(field *Field, schema *schema) {
 			fmt.Println("[FAILED] Failed queryBuilder to Update Primary Key is: ", queryBuilder)
 		}
 	}
+}
+
+func logSection(header string) {
+	fmt.Println("---------------------------------------------------------")
+	fmt.Println(header)
+	fmt.Println("---------------------------------------------------------")
 }
 
 // Handles adding/dropping UNIQUE index

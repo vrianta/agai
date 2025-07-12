@@ -304,6 +304,13 @@ func (c *Struct) Init(w http.ResponseWriter, r *http.Request, sess *Session.Stru
 	c.initSession(sess)
 	c.runRequest(sess)
 }
+func (c *Struct) Run(w http.ResponseWriter, r *http.Request, sess *Session.Struct) {
+	c.w = w
+	c.r = r
+
+	c.initSession(sess)
+	c.runRequest(sess)
+}
 
 /*
 initSession assigns the given session to the controller.

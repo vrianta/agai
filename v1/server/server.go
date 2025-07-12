@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/vrianta/agai/v1/internal/config"
 	"github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/internal/config"
 	Session "github.com/vrianta/agai/v1/internal/session"
 	Log "github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/model"
@@ -42,7 +42,7 @@ func Start() *instance {
 	go Session.StartLRUHandler() // Start the LRU handler for session management
 
 	// setting up the Custom Routing Handler for the syste
-	http.HandleFunc("/", Router.Handler)
+	http.HandleFunc("/", routerHandler)
 
 	// Define the server configuration
 	s.server = &http.Server{
@@ -59,6 +59,11 @@ func Start() *instance {
 	}
 
 	return s
+}
+
+// if the user want to have a custom Routing Handler the they can use this function to register it
+func (s *instance) RegisterCustomRoutingHandler(_func func(w http.ResponseWriter, r *http.Request)) {
+	routerHandler = _func
 }
 
 func (s *instance) setup_static_folders() {

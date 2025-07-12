@@ -24,12 +24,12 @@ This documentation will walk you through every feature — from setup to advance
   - [Run Application](#run-application)
     - [Flags](#flags)
   - [Project Structure](#project-structure)
-  - [Configuration (`web.config.JSON`)](#configuration-webconfigjson)
-    - [Database Configuration (`database.Config.JSON`)](#database-configuration-databaseconfigjson)
+  - [Configuration (`web.config.json`)](#configuration-webconfigjson)
+    - [Database Configuration (`database.Config.json`)](#database-configuration-databaseconfigjson)
       - [Supported Environment Variables](#supported-environment-variables)
   - [Routing](#routing)
     - [Define Route Handlers](#define-route-handlers)
-    - [Use Custom Router](#use-custom-router)
+    - [User Custom Router](#user-custom-router)
   - [Controllers](#controllers)
     - [What is a Controller?](#what-is-a-controller)
     - [Controller Structure](#controller-structure)
@@ -49,14 +49,12 @@ This documentation will walk you through every feature — from setup to advance
     - [How to Initialize the Database](#how-to-initialize-the-database)
     - [How to Create a Model (Quick Example)](#how-to-create-a-model-quick-example)
     - [Model Query Builder System](#model-query-builder-system)
-    - [Model Query Result](#model-query-result)
   - [Components](#components)
     - [Structure](#structure)
     - [Example](#example)
       - [File Name](#file-name)
       - [Component Model](#component-model)
-      - [Component](#component)
-    - [Get Controller](#get-controller)
+      - [componet](#componet)
   - [Static, CSS, and JS File Serving](#static-css-and-js-file-serving)
   - [SMTP/Email Support](#smtpemail-support)
   - [Template Engine \& PHP Parsing Syntax](#template-engine--php-parsing-syntax)
@@ -77,9 +75,9 @@ This documentation will walk you through every feature — from setup to advance
 * **Advanced Template Engine**: PHP-style syntax rendered as Go templates.
 * **Request Parsing**: Automatically parses GET and POST parameters.
 * **Response Rendering**: Return a `*Template.Response` with typed data.
-* **JSON Response**: Response JSON Data on Empty Views of controller, useful for api building, where it converts  `*Template.Response` to JSON
+* **JSON Response**: Response Json Data on Empty Views of controller, useful for api building, where it converts  `*Template.Response` to json
 * **Component System**: Define reusable JSON or DB-synced structured data. mostly useful for web components like navigation items settings etc
-* **Model migration support**: Auto schema diffing and sync via `Build: false`.
+* **Model Migration Support**: Auto schema diffing and sync via `Build: false`.
 * **Logging**: Error-aware logging with helper functions.
 * **Console Commands**: Launch server, generate app structure, run migrations.
 * **Environment Overrides**: Override all config settings with environment variables. Supports containers
@@ -162,12 +160,12 @@ go run . -h
     └───utils              # File I/O and helpers
 ```
 
-## Configuration (`web.config.JSON`)
+## Configuration (`web.config.json`)
 
 > **For complete configuration details, environment variable reference, and advanced usage, see [`Config/readme.md`](/v1/internal/config/readme.md). The summary below covers the basics; the linked documentation provides authoritative and up-to-date information.**
 
-Create a `web.config.JSON` file in your project root. Example:
-```JSON
+Create a `web.config.json` file in your project root. Example:
+```json
 {
   "Port": "8080",
   "Host": "localhost",
@@ -197,7 +195,7 @@ Create a `web.config.JSON` file in your project root. Example:
 
 - **SessionStoreType**: Type of session store to use (e.g., "memory", "reddis", "database").
 
-> **Note:** redis is not supported yet
+> **Note:** Raddis is not supported yet
 
 You can also override these values using environment variables:
 - `SERVER_PORT`
@@ -207,14 +205,14 @@ You can also override these values using environment variables:
 - `MAX_SESSION_COUNT`
 - `SESSION_STORE_TYPE`
 
-Environment variables take precedence over values in `web.config.JSON`.
+Environment variables take precedence over values in `web.config.json`.
 
-### Database Configuration (`database.Config.JSON`)
+### Database Configuration (`database.Config.json`)
 
-To enable database support, create a `database.config.JSON` file with your database settings, or set the appropriate environment variables.
+To enable database support, create a `database.config.json` file with your database settings, or set the appropriate environment variables.
 
 Example:
-```JSON
+```json
 {
   "Host": "localhost",
   "Port": "3306",
@@ -237,7 +235,7 @@ Example:
 - `DB_DRIVER`
 - `DB_SSLMODE`
 
-Environment variables take precedence over values in `database.config.JSON`.
+Environment variables take precedence over values in `database.config.json`.
 
 > **Note:** SSL Mode is not supported yet
 
@@ -266,10 +264,10 @@ Each `Router.Route(path, handler)` defines a relative path from the base path.
 Router.New("/api/").RegisterRoutes() // You can add API routes here later
 ```
 
-### Use Custom Router
+### User Custom Router
 
-To use a custom Routing Handler you need to use function `RegisterCustomRoutingHandler(func(w http.ResponseWriter, r *http.Request))`
-> **Note:** To make your custom Handler function compatible with Our Controller Structure make sure it uses out controller.Struct to run the structs
+To user a custom Routing Handler you need to use function `RegisterCustomRoutingHandler(func(w http.ResponseWriter, r *http.Request))`
+> **Note:** To make your custom Handler function compitable with Our Controller Structure make sure it uses out controller.Struct to run the structs
 > and to run the controller it should do 
 ```go
 tempController = _controller.Copy() //  copy is important 
@@ -284,7 +282,7 @@ This section explains how to create controllers and views, including available p
 A **Controller** is a Go struct that handles HTTP requests for a specific route. It defines handler functions for HTTP methods (GET, POST, etc.), manages session data, and renders views (templates).
 
 ### Controller Structure
-A controller is defined as a variable of type `Controller.Struct`. The main public field types and methods are:
+A controller is defined as a variable of type `Controller.Struct`. The main public FieldTypes and methods are:
 
 #### Public Fields
 - **View**: The name of the view (template) directory for this controller. Example: `"home"` (looks for templates in `Views/home/`).
@@ -351,33 +349,33 @@ Each controller where view is mentioned should have a corresponding directory un
 **Example:** If `View: "home"`, templates should be in `Views/home/`.
 
 #### Supported Template Files
-- `default.html`, `default.PHP`, or `index.html`/`index.PHP`: Default template for the controller.
+- `default.html`, `default.php`, or `index.html`/`index.php`: Default template for the controller.
 - `get.html`, `post.html`, etc.: Templates for specific HTTP methods.
 
-> **Note:** All PHP Features are not supported. Only basic PHP syntaxes are supported to know more check [Write Templates in PHP-Style!](#write-templates-in-PHP-style)
+> **Note:** All Php Featues are not supported. Only basic php syntaxes are supported to know more check [Write Templates in PHP-Style!](#write-templates-in-php-style)
 
 ### Location
-- The `Views` folder should be in your project root (or as configured in `web.config.JSON` with the `Views_folder` key).
+- The `Views` folder should be in your project root (or as configured in `web.config.json` with the `Views_folder` key).
 
 ### Template Files
 - Place your template files inside the corresponding controller subfolder.
 - You can use the following naming conventions:
-  - `default.html` or `default.PHP`: The default template for the controller (used if no method-specific template is found).
-  - `index.html` or `index.PHP`: Also treated as the default template.
+  - `default.html` or `default.php`: The default template for the controller (used if no method-specific template is found).
+  - `index.html` or `index.php`: Also treated as the default template.
   - `get.html`, `post.html`, `delete.html`, etc.: Templates for specific HTTP methods (GET, POST, DELETE, etc.).
 
 ### Example Structure
 ```
 Views/
 ├── home/
-│   ├── default.PHP
-│   ├── get.PHP
-│   └── post.PHP
+│   ├── default.php
+│   ├── get.php
+│   └── post.php
 ├── user/
 │   ├── default.html
 │   └── get.html
 └── shared/
-    └── header.PHP
+    └── header.php
 ```
 - In this example, the `Home` controller with `View: "home"` will use templates from `Views/home/`.
 - The framework will automatically select the correct template based on the HTTP method and file availability.
@@ -389,14 +387,14 @@ Views/
 
 ### How to Initialize the Database
 
-To enable database support in your project, you need to Mention host name in the `database.config.JSON`.
+To enable database support in your project, you need to Mention host name in the `database.config.json`.
 
-> **Note:** If `Host` is not Mentioned in he config, the database will not be initialized. This allows you to run the server without any database connection if desired.
+> **Note:** If `Host` is not Mentioned int he config, the database will not be initialized. This allows you to run the server without any database connection if desired.
 
 
 ### How to Create a Model (Quick Example)
 
-To define a model, use the `models_handler.New` function, specifying the table name and a map of field types:
+To define a model, use the `models_handler.New` function, specifying the table name and a map of FieldTypes:
 
 ```go
 import model "github.com/vrianta/agai/v1/model"
@@ -408,7 +406,7 @@ var Users = model.New("users", struct {
 	FirstName model.Field
 }{
 	UserId: model.Field{
-		Type:     model.field types.VarChar,
+		Type:     model.FieldTypes.VarChar,
 		Length:   20,
 		Nullable: false,
 		Index: model.Index{
@@ -418,7 +416,7 @@ var Users = model.New("users", struct {
 		},
 	},
 	UserName: model.Field{
-		Type:     model.field types.VarChar,
+		Type:     model.FieldTypes.VarChar,
 		Length:   30,
 		Nullable: false,
 		Index: model.Index{
@@ -427,11 +425,11 @@ var Users = model.New("users", struct {
 		},
 	},
 	Password: model.Field{
-		Type:     model.field types.Text,
+		Type:     model.FieldTypes.Text,
 		Nullable: false,
 	},
 	FirstName: model.Field{
-		Type:     model.field types.Text,
+		Type:     model.FieldTypes.Text,
 		Nullable: false,
 	},
 })
@@ -454,21 +452,10 @@ The framework includes a powerful, human-friendly queryBuilder builder called **
 
 > **Note:** Migration only happens if you pass the required flags while running the application
 
-### Model Query Result
-
-Result is going to be a `map[string]any` 
-
-* **Get list of Data**: After Building the query if you use `Fetch()` -> it return a array of map[string]any which resembles the Fields
-* **Get Single Element:** In some cases use might need only first elemet of the result then he/she should use `First()` after the query build
-* **Delete Element:** `.Delete()` — Execute DELETE
-* **Only Execute the Query:** `.Exec()` — Execute UPDATE
-
-> **For More Information Check** [Model-Doc](/v1/model/readme.md)
-
 ## Components
 
 `Components` are data holder for a specific table, where it can hold a set of the data which needs to be updated in the database
-`Use Cases` are Navigation items, settings template
+`Use Cases` are nevigation items, settings template
 
 > **Note:** If the table is not created in the DB then the DB is populated with the template file, it will check content of the template has been changed then it will update the local
 > If the Config file has a new element which is not present in the data base then it will update the data base
@@ -478,16 +465,16 @@ Result is going to be a `map[string]any`
 Component structures have to follow strict rule to comply
 
 * Every Component Model should have a `Primary Key`
-* It is recommended to have the `Primary Key` as `Integer` so that it can follow same orientation as you mentioned in the config file
-* Every `JSON` element should have a key which should be the value of `Primary Key`
-* File Name should be like `table_name`.component.JSON
+* It is recomented to have the `Primary Key` as `Integer` so that it can follow same orientation as you mentioned in the config file
+* Every `Json` element should have a key which should be the value of `Primary Key`
+* File Name should be like `table_name`.component.json
 
 ### Example
 
 #### File Name 
 
 ```
-navigation_items.component.JSON
+navigation_items.component.json
 ```
 
 #### Component Model
@@ -508,7 +495,7 @@ var Nav_items = model.New("navigation_items", struct {
 }{
 	Id: model.Field{
 		Nullable: false,
-		Type:     model.field types.Int,
+		Type:     model.FieldTypes.Int,
 		Length:   10,
 		Index: model.Index{
 			PrimaryKey: true,
@@ -517,30 +504,30 @@ var Nav_items = model.New("navigation_items", struct {
 	},
 	Name: model.Field{
 		Nullable: false,
-		Type:     model.field types.VarChar,
+		Type:     model.FieldTypes.VarChar,
 		Length:   10,
 	},
 	Href: model.Field{
 		Nullable: false,
-		Type:     model.field types.Text,
+		Type:     model.FieldTypes.Text,
 	},
 	Disabled: model.Field{
 		Nullable:     false,
 		DefaultValue: "0",
-		Type:         model.field types.Bool,
+		Type:         model.FieldTypes.Bool,
 	},
 	Dropdown: model.Field{
 		Nullable:     true,
 		DefaultValue: "",
-		Type:         model.field types.JSON,
+		Type:         model.FieldTypes.JSON,
 	},
 })
 
 ```
 
-#### Component
+#### componet
 
-```JSON
+```json
 {
   "0": {
     "Disabled": 0,
@@ -588,18 +575,9 @@ var Nav_items = model.New("navigation_items", struct {
 ```
 
 
-### Get Controller 
-
-To Get the values of controller do `model.GetComponents()` - it will return map[component_index]componentvalue
-
-```go
-models.Nav_items.GetComponents()
-```
-
-
 ## Static, CSS, and JS File Serving
 
-- Place static files in folders listed in `web.config.JSON`.
+- Place static files in folders listed in `web.config.json`.
 - Access them via `/static/filename.ext`, `/css/style.css`, etc.
 - Files are cached for performance.
 
@@ -616,30 +594,30 @@ err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
 
 ### Write Templates in PHP-Style!
 - Place templates in the `Views` folder (or as configured).
-- Use `.PHP` or `.html` extensions.
+- Use `.php` or `.html` extensions.
 
 #### Supported Syntax
 - **Echo:** `<?= $var ?>` → `{{ .var }}`
-- **PHP Block:** `<?PHP ... ?>` for logic
+- **PHP Block:** `<?php ... ?>` for logic
 - **Variables:**
   - `$$var` refers to variables passed from your Go controller as part of the `Template.Response` (the data map returned from your handler).
   - `$var` refers to variables created and used locally within the PHP template file itself (e.g., inside a foreach or assigned in the template logic).
   - You can also use `$obj->prop`, `$arr['key']`, `$arr[0]` for object and array access.
 - **If/Else:**
-  ```PHP
-  <?PHP if ($$user): ?>
+  ```php
+  <?php if ($$user): ?>
     Hello, <?= $$user ?>
-  <?PHP elseif ($$guest): ?>
+  <?php elseif ($$guest): ?>
     Welcome, Guest!
-  <?PHP else: ?>
+  <?php else: ?>
     Please log in.
-  <?PHP endif; ?>
+  <?php endif; ?>
   ```
 - **Loops:**
-  ```PHP
-  <?PHP foreach ($$items as $item): ?>
+  ```php
+  <?php foreach ($$items as $item): ?>
     <?= $item ?>
-  <?PHP endforeach; ?>
+  <?php endforeach; ?>
   ```
 - **Function Calls:**
   - `strtoupper($var)` → `upper .var`
@@ -650,21 +628,21 @@ err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
 - **Operators:**
   - `==` → `eq`, `!=` → `ne`, `<` → `lt`, `>` → `gt`, `<=` → `le`, `>=` → `ge`
   - `&&` → `and`, `||` → `or`, `!` → `not`
-- **Comments:** `// comment` inside `<?PHP ... ?>` blocks
+- **Comments:** `// comment` inside `<?php ... ?>` blocks
 
 #### Example Template
-```PHP
-<!-- Views/home.PHP -->
+```php
+<!-- Views/home.php -->
 <h1>Welcome</h1>
-<?PHP if ($user): ?>
+<?php if ($user): ?>
   <p>Hello, <?= $user ?>!</p>
-<?PHP else: ?>
+<?php else: ?>
   <p>Please log in.</p>
-<?PHP endif; ?>
+<?php endif; ?>
 <ul>
-<?PHP foreach ($items as $item): ?>
+<?php foreach ($items as $item): ?>
   <li><?= $item ?></li>
-<?PHP endforeach; ?>
+<?php endforeach; ?>
 </ul>
 ```
 
@@ -680,14 +658,14 @@ err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
 
 **Q: How does template resolution work?**
 - For each HTTP method (GET, POST, etc.), the framework looks for a file named `get.html`, `post.html`, etc., in the controller's view folder.
-- If no method-specific template is found, it falls back to `default.html`, `default.PHP`, `index.html`, or `index.PHP`.
+- If no method-specific template is found, it falls back to `default.html`, `default.php`, `index.html`, or `index.php`.
 - If none of these exist, the server will panic with an error indicating a missing default view.
 
 **Q: Can I use multiple views per controller?**
 - Each controller is associated with a single view folder. If you need multiple views, create multiple controllers or use conditional logic in your handler to select data/templates.
 
 **Q: Are templates hot-reloaded in development?**
-- In development mode (`Build: false` in `Config.JSON`), templates are reloaded on each request. In build/production mode, templates are cached for performance.
+- In development mode (`Build: false` in `Config.json`), templates are reloaded on each request. In build/production mode, templates are cached for performance.
 
 **Q: How do I include shared templates (partials)?**
 - Place shared templates (e.g., header, footer) in a `Views/shared/` folder.
@@ -697,7 +675,7 @@ err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
 - If the default view is missing, the server will panic and log an error. Rendering errors will also panic and log details. Always check your logs for troubleshooting.
 
 **Q: Can I pass complex data (arrays, maps, structs) to templates?**
-- Yes, you can pass any Go data structure in the `Template.Response` map. Use dot notation in templates to access nested field types.
+- Yes, you can pass any Go data structure in the `Template.Response` map. Use dot notation in templates to access nested FieldTypes.
 
 **Q: How is session data secured?**
 - Sessions use secure, random IDs stored in HTTP-only cookies. For best security, run your server over HTTPS and set the `Secure` flag in your cookie configuration.
@@ -710,7 +688,7 @@ err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
 - The framework does not have a formal middleware system, but you can add logic in your controller handlers or wrap the main handler in `server.go` for global middleware.
 
 **Q: How do I deploy to production?**
-- Set `Build: true` in `Config.JSON` for template caching and performance.
+- Set `Build: true` in `Config.json` for template caching and performance.
 - Use a reverse proxy (like Nginx) for HTTPS and static file serving if needed.
 - Monitor logs and handle panics gracefully in production.
 
@@ -719,4 +697,3 @@ err := smtp.Client.SendMail([]string{"to@example.com"}, "Subject", "Body")
 
 ## License
 See [LICENSE](LICENSE) for GPLv3 license details.
-

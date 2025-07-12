@@ -47,14 +47,6 @@ func Route(path string, obj Controller.Struct) route {
 	}
 }
 
-// // Constructor for Router
-// func InitRoutes(_routes *routes) error {
-
-// 	routeTable = *_routes
-
-// 	return nil
-// }
-
 // Handler processes incoming HTTP requests and manages user sessions.
 // It checks if the user has an existing session and handles session creation or validation.
 // Based on the session and route, it invokes the appropriate controller method.
@@ -66,8 +58,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := Session.GetSessionID(r)
 	var sess *Session.Struct
 	var ok bool
-
-	// fmt.Println("Session ID: ", *sessionID)
 
 	if sessionID != nil {
 		sess, ok = Session.Get(sessionID)

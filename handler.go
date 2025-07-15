@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"os"
+)
+
 /*
 This is a handler of my overall package
 This will do following things
@@ -24,3 +29,122 @@ This file will be usefull for future expansion of extension and UI based Modific
 TODO:
 IDK :P
 */
+
+func main() {
+
+	handle_args()
+}
+
+/*
+handle_args parses command-line arguments manually without using the 'flag' package.
+It sets internal flags based on the arguments provided and extracts values for named parameters like app, controller, model, and component.
+It also handles help-related flags to print specific configuration help (web, database, session, SMTP).
+This function exits the program after printing help or encountering invalid/missing arguments.
+*/
+func handle_args() {
+	args := os.Args[1:]
+
+	if len(args) == 0 {
+		print_help()
+		os.Exit(0)
+		return
+	}
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+
+		switch arg {
+
+		// --- Create App
+		case "--create-app", "-ca":
+			create_app = true
+			if i+1 < len(args) {
+				app_name = args[i+1]
+				i++
+			} else {
+				fmt.Println("Missing app name for --create-app")
+				os.Exit(1)
+			}
+
+		// --- Create Controller
+		case "--create-controller", "-cc":
+			create_controller = true
+			if i+1 < len(args) {
+				controller_name = args[i+1]
+				i++
+			} else {
+				fmt.Println("Missing controller name for --create-controller")
+				os.Exit(1)
+			}
+
+		// --- Create Model
+		case "--create-model", "-cm":
+			create_model = true
+			if i+1 < len(args) {
+				model_name = args[i+1]
+				i++
+			} else {
+				fmt.Println("Missing model name for --create-model")
+				os.Exit(1)
+			}
+
+		// --- Create Component
+		case "--create-component":
+			create_component = true
+			if i+1 < len(args) {
+				component_name = args[i+1]
+				i++
+			} else {
+				fmt.Println("Missing component name for --create-component")
+				os.Exit(1)
+			}
+
+		// --- Start App
+		case "--start-app", "-sa":
+			start_app = true
+
+		// --- Start Handler
+		case "--start-handler", "-sh":
+			start_handler = true
+
+		// --- Migrate Model
+		case "--migrate-model", "-mm":
+			migrate_model = true
+
+		// --- Migrate Component
+		case "--migrate-component", "-mc":
+			migrate_component = true
+
+		// --- Help
+		case "--help", "-h":
+			print_help()
+			os.Exit(0)
+
+		// --- Help: Web Config
+		case "--help-web-config", "-hwc":
+			print_web_config_help()
+			os.Exit(0)
+
+		// --- Help: Database Config
+		case "--help-database-config", "-hdc":
+			print_database_config_help()
+			os.Exit(0)
+
+		// --- Help: Session Config
+		case "--help-session-config", "-hsc":
+			// print_session_config_help()
+			os.Exit(0)
+
+		// --- Help: SMTP Config
+		case "--help-smtp-config", "-hsm":
+			print_smtp_config_help()
+			os.Exit(0)
+
+		// --- Unknown Argument
+		default:
+			fmt.Printf("Unknown flag: %s\n", arg)
+			fmt.Println("Use --help to see available options")
+			os.Exit(1)
+		}
+	}
+}

@@ -245,7 +245,7 @@ func (c *Context) ExecuteTemplate(__template *Template.Struct, __response *Templ
 			__template = c.templates.View
 		} else {
 			c.w.Write(__response.AsJson())
-			fmt.Printf("Template is nil for controller %s, no template to execute\n", c.View)
+			Log.Debug("Template is nil for controller %s, no template to execute\n", c.View)
 			return nil
 		}
 	}
@@ -253,14 +253,14 @@ func (c *Context) ExecuteTemplate(__template *Template.Struct, __response *Templ
 	if !Config.GetWebConfig().Build {
 		__template.Update()
 		if err := __template.Execute(c.w, __response); err != nil {
-			Log.WriteLog("Error rendering template: " + err.Error())
+			Log.Error("Error rendering template: %T", err)
 			panic(err)
 		}
 		return nil
 	}
 
 	if err := __template.Execute(c.w, __response); err != nil {
-		Log.WriteLog("Error rendering template: " + err.Error())
+		Log.Error("rendering template: %T", err)
 		return err
 	}
 	return nil

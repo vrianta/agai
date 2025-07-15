@@ -36,4 +36,12 @@ type (
 		Driver   string `json:"Driver"`   // e.g., "mysql", "postgres", etc.
 		SSLMode  string `json:"SSLMode"`  // e.g., "disable", "require", etc.
 	}
+
+	smtpConfigStruct struct {
+		Host     string `json:"Host"`     // SMTP server host (e.g., smtp.gmail.com)
+		Port     int    `json:"Port"`     // SMTP server port (usually 587 or 465)
+		Username string `json:"Username"` // SMTP username (email address)
+		Password string `json:"Password"` // SMTP password or app password
+		UseTLS   bool   `json:"UseTLS"`   // Whether to use TLS encryption (default: true)
+	}
 )

@@ -3,13 +3,15 @@ package config
 // Config package provides configuration settings for the server
 
 var (
-	webConfigFile = "config.web.json"
-	dBConfigFile  = "config.database.json"
-	webConfig     = webConfigStruct{
+	webConfigFile  = "config.web.json"
+	dBConfigFile   = "config.database.json"
+	smtpConfigFile = "config.smtp.json"
+
+	webConfig = webConfigStruct{
 		Port: "1080", // Default port for the server
 		Host: "",     // Default host for the server
 
-		// Flaggs for Server Config where it will care of the config of the server
+		// Flags for Server Config
 		Https: false,
 		Build: false,
 		StaticFolders: []string{
@@ -22,7 +24,7 @@ var (
 			"Js",
 		},
 		ViewFolder:       "Views",
-		MaxSessionCount:  50000,     // Default value.
+		MaxSessionCount:  50000,     // Default value
 		SessionStoreType: "storage", // Default session store type
 	}
 
@@ -33,5 +35,13 @@ var (
 		Password: "",
 		Database: "mydatabase",
 		Protocol: "tcp", // Default protocol for MySQL
+	}
+
+	smtpConfig = smtpConfigStruct{
+		Host:     "",
+		Port:     587,
+		Username: "",
+		Password: "",
+		UseTLS:   true,
 	}
 )

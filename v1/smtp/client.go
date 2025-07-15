@@ -6,37 +6,34 @@ import (
 	"net"
 	"net/smtp"
 	"strings"
+
+	"github.com/vrianta/agai/v1/internal/config"
+	"github.com/vrianta/agai/v1/log"
 )
 
-type sMTPConfig struct {
-	client *smtp.Client
-}
+func init() {
+	client_config := config.GetSmtpConfig() // smtp config
 
-type sMTPClient struct {
-	sMTPConfig *sMTPConfig
-	auth       smtp.Auth
-	address    string
+	if client_config.Host == "" || client_config.Username == "" || client_config.Password == "" {
+		log.Debug("SMTP config is not settedup so we are moving forward without it")
+		return
+	}
 
-	host               string
-	port               int
-	username, password string
-}
-
-var Client = &sMTPClient{}
-
-func (s *sMTPClient) InitSMTPClient(host string, port int, username, password string) error {
-
-	s.address = fmt.Sprintf("%s:%d", host, port)
-	s.host = host
-	s.port = port
-	s.username = username
-	s.password = password
-	s.auth = smtp.PlainAuth("", username, password, host)
-
-	return nil
+	client.address = fmt.Sprintf("%s:%d", client_config.Host, client_config.Port)
+	client.host = client_config.Host
+	client.port = client_config.Port
+	client.username = client_config.Username
+	client.password = client_config.Password
+	client.auth = smtp.PlainAuth("", client_config.Username, client_config.Password, client_config.Host)
+	client.initialised = true
 }
 
 func (s *sMTPClient) SendMail(to []string, subject, body string) error {
+
+	if !client.initialised {
+		log.Error("SMTP Client is not initialised to send mail please initialise the error")
+		return fmt.Errorf("SMTP Client is not initialised to send mail please initialise the error")
+	}
 
 	conn, err := net.Dial("tcp", s.address)
 	if err != nil {
@@ -51,12 +48,12 @@ func (s *sMTPClient) SendMail(to []string, subject, body string) error {
 
 	// Skip TLS setup to use an unencrypted connection
 	if err := client.StartTLS(&tls.Config{InsecureSkipVerify: true}); err != nil {
-		fmt.Printf("failed to start TLS: %s", err.Error())
+		log.Error("failed to start TLS: %s", err.Error())
 		return err
 	}
 
 	if err := client.Auth(s.auth); err != nil {
-		fmt.Printf("failed to Authenticate client : %s", err.Error())
+		log.Error("failed to Authenticate client : %s", err.Error())
 		return err
 	}
 
@@ -83,5 +80,8 @@ func (s *sMTPClient) SendMail(to []string, subject, body string) error {
 }
 
 func (s *sMTPClient) Close() error {
+	if s.sMTPConfig == nil {
+		return fmt.Errorf("smtp client not initialised")
+	}
 	return s.sMTPConfig.client.Quit()
 }

@@ -6,6 +6,7 @@ go.sum
 components/*
 models/*
 controllers/*
+views/*
 
 # Prerequisites
 *.d

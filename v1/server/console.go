@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"time"
 
-	Config "github.com/vrianta/agai/v1/internal/config"
+	Config "github.com/vrianta/agai/v1/config"
 	Log "github.com/vrianta/agai/v1/log"
 )
 

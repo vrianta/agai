@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	Config "github.com/vrianta/agai/v1/config"
 	Cookies "github.com/vrianta/agai/v1/cookies"
-	Config "github.com/vrianta/agai/v1/internal/config"
 	Log "github.com/vrianta/agai/v1/log"
 )
 

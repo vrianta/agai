@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/database"
-	"github.com/vrianta/agai/v1/internal/config"
 	Session "github.com/vrianta/agai/v1/internal/session"
 	Log "github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/model"

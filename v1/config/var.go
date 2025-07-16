@@ -23,7 +23,7 @@ var (
 		JsFolders: []string{
 			"Js",
 		},
-		ViewFolder:       "Views",
+		ViewFolder:       "views",
 		MaxSessionCount:  50000,     // Default value
 		SessionStoreType: "storage", // Default session store type
 	}

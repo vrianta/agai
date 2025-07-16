@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	Config "github.com/vrianta/agai/v1/internal/config"
+	Config "github.com/vrianta/agai/v1/config"
 )
 
 // LogLevel enum

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vrianta/agai/v1/internal/config"
+	"github.com/vrianta/agai/v1/config"
 )
 
 /*

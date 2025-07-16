@@ -22,6 +22,11 @@ Program to manage `Agai` Projects and it's files and functionality to make it sm
 
 ## How to initialise the application
 
+```bash
+go mod tidy
+go mod vendor
+```
+
 ## Argument/ Flags for the application
 
 ### ⚙️ Runtime & Utility Flags

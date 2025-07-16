@@ -3,6 +3,8 @@
 Program to manage `Agai` Projects and it's files and functionality to make it smooth for the users
 
 - [Agai Handler](#agai-handler)
+  - [How to initialise the application](#how-to-initialise-the-application)
+  - [Argument/ Flags for the application](#argument-flags-for-the-application)
     - [⚙️ Runtime \& Utility Flags](#️-runtime--utility-flags)
     - [🔧 Creation Flags](#-creation-flags)
     - [🆘 Help \& Configuration Flags](#-help--configuration-flags)
@@ -16,6 +18,11 @@ Program to manage `Agai` Projects and it's files and functionality to make it sm
       - [📄 Show Config Help](#-show-config-help)
       - [🆘 Show General Help](#-show-general-help)
       - [🔁 Combine Any Flags](#-combine-any-flags)
+
+
+## How to initialise the application
+
+## Argument/ Flags for the application
 
 ### ⚙️ Runtime & Utility Flags
 

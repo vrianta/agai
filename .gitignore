@@ -1,7 +1,3 @@
-# go files
-go.mod
-go.sum
-
 #test folders
 components/*
 models/*

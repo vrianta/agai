@@ -1,0 +1,19 @@
+package models
+
+import (
+	"github.com/vrianta/agai/v1/model"
+)
+
+var {{ .model_name }} = model.New("{{ .model_name }}", struct {
+	Id       model.Field
+}{
+	Id: model.Field{
+		Nullable: false,
+		Type:     model.FieldTypes.Int,
+		Length:   10,
+		Index: model.Index{
+			PrimaryKey: true,
+			Index:      true,
+		},
+	},
+})

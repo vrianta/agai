@@ -3,9 +3,9 @@ go.mod
 go.sum
 
 #test folders
-components
-models
-controllers
+components/*
+models/*
+controllers/*
 
 # Prerequisites
 *.d

@@ -66,16 +66,37 @@ func log(level LogLevel, label string, color string, msg string, args ...any) {
 
 // Colored log wrappers
 func Debug(msg string, args ...any) {
+	if Config.GetBuild() {
+		return
+	}
 	log(DEBUG, "[DEBUG]", "\033[36m", msg, args...)
 }
 func Info(msg string, args ...any) {
+	if Config.GetBuild() {
+		return
+	}
 	log(INFO, "[INFO]", "\033[32m", msg, args...)
 }
 func Warn(msg string, args ...any) {
+	if Config.GetBuild() {
+		return
+	}
 	log(WARN, "[WARN]", "\033[33m", msg, args...)
 }
 func Error(msg string, args ...any) {
+	if Config.GetBuild() {
+		return
+	}
 	log(ERROR, "[ERROR]", "\033[31m", msg, args...)
+}
+func Write(msg string, args ...any) {
+	if Config.GetBuild() {
+		return
+	}
+	green := "\033[32m"
+	reset := "\033[0m"
+	formatted := fmt.Sprintf(msg, args...)
+	fmt.Printf("%s%s%s\n", green, formatted, reset)
 }
 
 // Legacy support

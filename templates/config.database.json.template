@@ -1,0 +1,10 @@
+{
+"Host": "",
+"Port": "3306",
+"User": "your_db_user",
+"Password": "your_db_password",
+"Database": "your_db_name",
+"Protocol": "tcp",
+"Driver": "postgres",
+"SSLMode": "disable"
+}

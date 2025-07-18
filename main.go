@@ -41,6 +41,8 @@ func main() {
 	create_view()       // creating views
 	create_models()     // create models
 	create_components() // creating components
+
+	create_configs() // create different configs
 }
 
 /*
@@ -104,7 +106,7 @@ func handle_args() {
 			}
 
 		// --- Create Component
-		case "--create-component":
+		case "--create-model-component", "-cmc":
 			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 				f.component_names_to_create = append(f.component_names_to_create, args[i+1])
 				i++

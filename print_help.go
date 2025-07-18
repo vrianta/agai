@@ -22,7 +22,7 @@ func print_help() {
 	fmt.Printf("  %-32s %s\n", "--create-app, -ca", "Create an application (e.g. --create-app blog)")
 	fmt.Printf("  %-32s %s\n", "--create-controller, -cc", "Create a controller (e.g. --create-controller post)")
 	fmt.Printf("  %-32s %s\n", "--create-model, -cm", "Create a model (e.g. --create-model user)")
-	fmt.Printf("  %-32s %s\n", "--create-component", "Create a component (e.g. --create-component nav)")
+	fmt.Printf("  %-32s %s\n", "--create-model-component, -cmc", "Create a component (e.g. --create-component nav)")
 	fmt.Printf("  %-32s %s\n", "--create-view, -cv", "Create a view (optionally pass controller/view name)")
 	fmt.Printf("  %-32s %s\n", "--start-app, -sa", "Start the application server")
 	fmt.Printf("  %-32s %s\n", "--start-handler, -sh", "Start the dev handler (auto-reloader / multi-handler)")

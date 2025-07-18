@@ -3,6 +3,7 @@ components/*
 models/*
 controllers/*
 views/*
+test/*
 
 # Prerequisites
 *.d

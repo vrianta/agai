@@ -47,7 +47,7 @@ func (s *sMTPClient) SendMail(to []string, subject, body string) error {
 	}
 
 	// Skip TLS setup to use an unencrypted connection
-	if err := client.StartTLS(&tls.Config{InsecureSkipVerify: true}); err != nil {
+	if err := client.StartTLS(&tls.Config{InsecureSkipVerify: !config.GetSmtpConfig().UseTLS}); err != nil {
 		log.Error("failed to start TLS: %s", err.Error())
 		return err
 	}

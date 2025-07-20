@@ -22,7 +22,7 @@ This setup keeps things simple — define what you need, skip what you don't.
 */
 
 
-var {{ .controller_name }} = controller.Context{
+var Controller = controller.Context{
 	View: "{{ .view_name }}",
 	GET:  GET,
 }

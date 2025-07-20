@@ -61,7 +61,7 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 
 	switch file_type {
 	case "php", "gophp":
-		if _html_template, err := htmltemplate.New(file_name).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_path))); err == nil {
+		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_path))); err == nil {
 			return &Struct{
 				uri:          full_path,
 				name:         file_name,
@@ -73,7 +73,7 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 			return nil, err
 		}
 	case "html", "gohtml":
-		if _html_template, err := htmltemplate.New(file_name).Parse(Utils.ReadFromFile(full_path)); err == nil {
+		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(Utils.ReadFromFile(full_path)); err == nil {
 			return &Struct{
 				uri:          full_path,
 				name:         file_name,
@@ -85,7 +85,7 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 			return nil, err
 		}
 	default:
-		if _html_template, err := htmltemplate.New(file_name).Parse(Utils.ReadFromFile(full_path)); err == nil {
+		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(Utils.ReadFromFile(full_path)); err == nil {
 			return &Struct{
 				uri:          full_path,
 				name:         file_name,
@@ -111,7 +111,7 @@ func (t *Struct) Update() error {
 		return err
 	} else {
 		if t.lastModified.Compare(info.ModTime()) != 0 {
-			if _html_template, template_err := htmltemplate.New(t.name).Parse(PHPToGoTemplate(Utils.ReadFromFile(t.uri))); template_err == nil {
+			if _html_template, template_err := htmltemplate.New(t.name).Funcs(ReponseFuncMaps).Parse(PHPToGoTemplate(Utils.ReadFromFile(t.uri))); template_err == nil {
 				t.lastModified = info.ModTime()
 				switch t.viewType {
 				case viewTypes.phpTemplate:

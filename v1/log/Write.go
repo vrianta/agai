@@ -64,6 +64,13 @@ func log(level LogLevel, label string, color string, msg string, args ...any) {
 	}
 }
 
+func Success(msg string, args ...any) {
+	if Config.GetBuild() {
+		return
+	}
+	log(INFO, "[SUCCESS]", "\033[32m", msg, args...)
+}
+
 // Colored log wrappers
 func Debug(msg string, args ...any) {
 	if Config.GetBuild() {

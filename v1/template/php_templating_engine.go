@@ -26,72 +26,6 @@ func PHPToGoTemplate(phpTemplate string) string {
 	return phpTemplate
 }
 
-// convertPHPExprToGo converts a PHP-style expression into a Go `html/template`-compatible expression.
-//
-// It performs the following transformations:
-//
-// 1. **Function Calls:**
-//    - Detects and parses PHP-like function calls such as `strtoupper($var)`.
-//    - Converts known PHP functions to their Go template equivalents:
-//        - `strtoupper($var)` → `upper .var`
-//        - `strtolower($var)` → `lower .var`
-//        - `strlen($var)` or `count($var)` → `len .var`
-//        - `htmlspecialchars($var)` → `html .var`
-//        - `isset($var)` → `ne .var nil`
-//        - `empty($var)` → `eq .var ""`
-//    - For unknown functions, it generates a generic Go template `call`:
-//        - `myfunc($var)` → `call .myfunc .var`
-//
-// 2. **Variable Handling:**
-//    - Uses `convertPHPVarsToGo` to transform PHP-style variables (`$var`) into Go-style (`.var`).
-//    - Also correctly handles `$$var` by temporarily replacing it to avoid misinterpretation and then restoring it.
-//
-// Parameters:
-//   - expr: The PHP-style expression as a string.
-//
-// Returns:
-//   - A string representing the equivalent Go template expression.
-
-func convertPHPExprToGoOld(expr string) string {
-	// Handle function calls
-	functionCallPattern := regexp.MustCompile(`(\w+)\((.*?)\)`)
-	expr = functionCallPattern.ReplaceAllStringFunc(expr, func(match string) string {
-		parts := functionCallPattern.FindStringSubmatch(match)
-		funcName := parts[1]
-		args := parts[2]
-
-		// Convert PHP variables in arguments to Go template syntax
-		// fmt.Println(args)
-		args = convertPHPVarsToGo(args)
-
-		// Map common PHP functions to Go equivalents
-		switch funcName {
-		case "strtoupper":
-			return fmt.Sprintf("upper %s", args)
-		case "strtolower":
-			return fmt.Sprintf("lower %s", args)
-		case "strlen":
-			return fmt.Sprintf("(len $%s)", args)
-		case "count":
-			// fmt.Println(convertPHPVarsToGo(args))
-			return fmt.Sprintf("(len $%s)", args)
-		case "htmlspecialchars":
-			return fmt.Sprintf("html %s", args)
-		case "isset":
-			return fmt.Sprintf("ne %s nil", args)
-		case "empty":
-			return fmt.Sprintf("eq %s \"\"", args)
-		default:
-			// For unknown functions, use call
-			return fmt.Sprintf("call .%s %s", funcName, args)
-		}
-	})
-
-	// Handle variables
-	// fmt.Printf("-- 166 - %s\n", expr)
-	return convertPHPVarsToGo(expr)
-}
-
 func convertPHPExprToGo(expr string) string {
 	// Step 1: Replace -> with . for property access
 	expr = strings.ReplaceAll(expr, "->", ".")
@@ -105,17 +39,21 @@ func convertPHPExprToGo(expr string) string {
 
 		switch funcName {
 		case "strtoupper":
-			return fmt.Sprintf("upper %s", args)
+			return fmt.Sprintf("Upper %s", args)
 		case "strtolower":
 			return fmt.Sprintf("lower %s", args)
-		case "strlen", "count":
-			return fmt.Sprintf("(len %s)", args)
+		case "strlen":
+			return fmt.Sprintf("(Strlen %s)", args)
+		case "count":
+			return fmt.Sprintf("(Len %s)", args)
 		case "htmlspecialchars":
-			return fmt.Sprintf("html %s", args)
+			return fmt.Sprintf("Html %s", args)
 		case "isset":
 			return fmt.Sprintf("ne %s nil", args)
 		case "empty":
 			return fmt.Sprintf("eq %s \"\"", args)
+		case "print":
+			return fmt.Sprintf("print %s", args)
 		default:
 			return fmt.Sprintf("call .%s %s", funcName, args)
 		}

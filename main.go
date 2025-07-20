@@ -5,8 +5,12 @@ import (
 	"os"
 	"strings"
 
+	_ "embed"
+
 	"github.com/vrianta/agai/v1/log"
 )
+
+var agai_version string = "v0.2.1"
 
 /*
 This is a handler of my overall package
@@ -37,12 +41,13 @@ func main() {
 
 	handle_args()
 
+	create_application()
+
 	create_controller() // creating all the controllers
 	create_view()       // creating views
 	create_models()     // create models
 	create_components() // creating components
 
-	create_configs() // create different configs
 }
 
 /*
@@ -64,16 +69,6 @@ func handle_args() {
 		arg := args[i]
 
 		switch arg {
-
-		// --- Create View
-		case "--create-view", "-cv":
-			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
-				f.view_names_to_create = append(f.view_names_to_create, args[i+1])
-				i++
-			} else {
-				f.create_view = true
-			}
-
 		// --- Create App
 		case "--create-app", "-ca":
 			f.create_app = true
@@ -83,6 +78,15 @@ func handle_args() {
 			} else {
 				fmt.Println("Missing app name for --create-app")
 				os.Exit(1)
+			}
+
+		// --- Create View
+		case "--create-view", "-cv":
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				f.view_names_to_create = append(f.view_names_to_create, args[i+1])
+				i++
+			} else {
+				f.create_view = true
 			}
 
 		// --- Create Controller

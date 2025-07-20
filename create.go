@@ -2,12 +2,15 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -405,4 +408,214 @@ func capitalize(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+/*
+function to create application
+first it will createa folder of the app name if that folder does not exists -> if exists then it will say application already exists and return
+change the location to the app_name directory then create controllers models create default configs
+create folder css, js, static
+copy bootstrap css and js to the desired location
+copy a readme.template with basic details
+return change directoy to the previous location
+*/
+func create_application() {
+	if !f.create_app {
+		return
+	}
+
+	app_name := f.app_name
+
+	// Check if directory already exists and is not empty
+	if entries, err := os.ReadDir(app_name); err == nil && len(entries) > 0 {
+		log.Error("❌ Application '%s' already exists.", app_name)
+		return
+	}
+
+	// Create application directory
+	if err := os.Mkdir(app_name, os.ModePerm); err != nil {
+		log.Error("❌ Failed to create application '%s': %v", app_name, err)
+		return
+	}
+
+	// // Store current directory and switch to app directory
+	// root, _ := os.Getwd()
+	if err := os.Chdir(app_name); err != nil {
+		log.Error("❌ Failed to enter application folder: %v", err)
+		return
+	}
+
+	// Create necessary folders
+	create_desired_folders()
+
+	// Create default user model
+	if user_model, err := templates.ReadFile("templates/users.model.go.template"); err != nil {
+		log.Error("❌ Failed to read users.model.go.template: %v", err)
+	} else {
+		err = os.WriteFile("models/user.model.go", user_model, 0644)
+		if err != nil {
+			log.Error("❌ Failed to write user model file: %v", err)
+		}
+	}
+
+	// Create default user_details model
+	if user_details_model, err := templates.ReadFile("templates/users_details.model.go.template"); err != nil {
+		log.Error("❌ Failed to read users.model.go.template: %v", err)
+	} else {
+		err = os.WriteFile("models/user_details.model.go", user_details_model, 0644)
+		if err != nil {
+			log.Error("❌ Failed to write user model file: %v", err)
+		}
+	}
+
+	// Create default Settings model
+	if settings_model, err := templates.ReadFile("templates/settings.model.go.template"); err != nil {
+		log.Error("❌ Failed to read settings.model.go.template: %v", err)
+	} else {
+		err = os.WriteFile("models/settings.model.go", settings_model, 0644)
+		if err != nil {
+			log.Error("❌ Failed to write user model file: %v", err)
+		}
+	}
+
+	// Create default Settings Component
+	if settings_component, err := templates.ReadFile("templates/settings.component.json.template"); err != nil {
+		log.Error("❌ Failed to read settings.component.json.template: %v", err)
+	} else {
+		if tpl, tpl_err := template.New("settings.component.json").Parse(string(settings_component)); tpl_err != nil {
+			log.Error("Failed to create template of %s due to - %T", "templates/settings.component.json.template", tpl_err)
+		} else {
+			buf := bytes.Buffer{}
+			tpl.Execute(&buf, map[string]string{
+				"app_name": app_name,
+			})
+			if err := os.WriteFile("components/settings.component.json", buf.Bytes(), 0644); err != nil {
+				log.Error("❌ Failed to write user model file: %v", err)
+			}
+		}
+
+	}
+
+	// // Copy README template
+	// readme, err := templates.ReadFile("templates/readme.template")
+	// if err == nil {
+	// 	os.WriteFile("README.md", readme, 0644)
+	// }
+
+	// Copy embedded folders to actual css/ and js/
+	copyDirFromEmbed(templates, "templates/css/bootstrap", "css/bootstrap")
+	copyDirFromEmbed(templates, "templates/css/bootstrap-Icons", "css/bootstrap-icons")
+	copyDirFromEmbed(templates, "templates/js/bootstrap", "js/bootstrap")
+
+	// Default home component to create
+	f.controller_names_to_create = append(f.controller_names_to_create, "home")
+	f.create_view = true
+	f.view_names_to_create = append(f.view_names_to_create, "home")
+
+	// create main.go
+	if main_go, err := templates.ReadFile("templates/main.go.template"); err != nil {
+		log.Error("❌ Failed to read main.go.template: %v", err)
+	} else {
+		if err := os.WriteFile("main.go", main_go, 0644); err != nil {
+			log.Error("❌ Failed to write user model file: %v", err)
+		}
+	}
+
+	// create routes.go
+	if routes, err := templates.ReadFile("templates/routes.go.template"); err != nil {
+		log.Error("❌ Failed to read routes.go.template: %v", err)
+	} else {
+		if tpl, tpl_err := template.New("routes.go.template").Parse(string(routes)); tpl_err != nil {
+			log.Error("Failed to create template of %s due to - %v", "templates/routes.go.template", tpl_err)
+		} else {
+			buf := bytes.Buffer{}
+			tpl.Execute(&buf, map[string]string{
+				"app_name": app_name,
+			})
+			if err := os.WriteFile("routes.go", buf.Bytes(), 0644); err != nil {
+				log.Error("❌ Failed to write user model file: %v", err)
+			}
+		}
+
+	}
+
+	create_configs() // create different configs
+
+	if err := exec.Command("go", "mod", "init", app_name).Run(); err != nil {
+		log.Error("Failed to initialize go module: %v", err)
+	}
+
+	if err := exec.Command("go", "get", "github.com/go-sql-driver/mysql").Run(); err != nil {
+		log.Error("Failed to install package github.com/go-sql-driver/mysql: %v", err)
+	}
+
+	if err := exec.Command("go", "get", "github.com/vrianta/agai@"+agai_version).Run(); err != nil {
+		log.Error("Failed to install package github.com/vrianta/agai: %v", err)
+	}
+
+	if err := exec.Command("go", "mod", "tidy").Run(); err != nil {
+		log.Error("Failed to tidy go module: %v", err)
+	}
+
+	if err := exec.Command("go", "run", ".", "-mm", "-mc").Run(); err != nil {
+		log.Error("Failed to run agai CLI setup: %v", err)
+	}
+
+}
+
+/*
+Create required folders needed for create app folder
+folders are models, controllers, components, css, js, static
+*/
+func create_desired_folders() {
+	dirs := []string{
+		"models",
+		"controllers",
+		"components",
+		"css",
+		"js",
+		"static",
+		"views",
+	}
+
+	for _, dir := range dirs {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			log.Error("❌ Failed to create folder '%s': %v", dir, err)
+		}
+	}
+}
+
+// copyDirFromEmbed copies all files under the given embedded subfolder to a destination folder
+func copyDirFromEmbed(efs embed.FS, embedPath string, destPath string) error {
+	return fs.WalkDir(efs, embedPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if d.IsDir() {
+			return nil
+		}
+
+		// Read file content
+		data, err := efs.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		// Remove the prefix (e.g. templates/css/bootstrap/) to get relative path
+		relPath := strings.TrimPrefix(path, embedPath)
+		relPath = strings.TrimPrefix(relPath, "/") // remove leading slash if present
+
+		// Build destination file path
+		destFilePath := filepath.Join(destPath, relPath)
+
+		// Ensure parent directory exists
+		if err := os.MkdirAll(filepath.Dir(destFilePath), os.ModePerm); err != nil {
+			return err
+		}
+
+		// Write file to destination
+		return os.WriteFile(destFilePath, data, 0644)
+	})
 }

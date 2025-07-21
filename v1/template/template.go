@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/vrianta/agai/v1/config"
 	Utils "github.com/vrianta/agai/v1/utils"
 )
 
@@ -59,9 +60,28 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 		return nil, err
 	}
 
+	content := Utils.ReadFromFile(full_path)
+
+	if !config.GetBuild() {
+		content += `<script>
+    const source = new EventSource("http://localhost:8888/hot-reload");
+
+    source.onmessage = function(event) {
+        console.log(event)
+        if (event.data === "reload") {
+            console.log("[LiveReload] Reloading page...");
+            window.location.reload();
+        }
+    };
+
+    source.onerror = function(err) {
+        console.warn("[LiveReload] Disconnected from server", err);
+    };
+</script>`
+	}
 	switch file_type {
 	case "php", "gophp":
-		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(PHPToGoTemplate(Utils.ReadFromFile(full_path))); err == nil {
+		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(PHPToGoTemplate(content)); err == nil {
 			return &Struct{
 				uri:          full_path,
 				name:         file_name,
@@ -73,7 +93,7 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 			return nil, err
 		}
 	case "html", "gohtml":
-		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(Utils.ReadFromFile(full_path)); err == nil {
+		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(content); err == nil {
 			return &Struct{
 				uri:          full_path,
 				name:         file_name,
@@ -85,7 +105,7 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 			return nil, err
 		}
 	default:
-		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(Utils.ReadFromFile(full_path)); err == nil {
+		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(content); err == nil {
 			return &Struct{
 				uri:          full_path,
 				name:         file_name,
@@ -106,12 +126,32 @@ func (t *Struct) Update() error {
 	templateRecordsMutex.Lock()
 	defer templateRecordsMutex.Unlock()
 
+	content := Utils.ReadFromFile(t.uri)
+
+	if !config.GetBuild() {
+		content += `<script>
+    const source = new EventSource("http://localhost:8888/hot-reload");
+
+    source.onmessage = function(event) {
+        console.log(event)
+        if (event.data === "reload") {
+            console.log("[LiveReload] Reloading page...");
+            window.location.reload();
+        }
+    };
+
+    source.onerror = function(err) {
+        console.warn("[LiveReload] Disconnected from server", err);
+    };
+</script>`
+	}
+
 	// Update the Template if needed
 	if info, err := os.Stat(t.uri); err != nil {
 		return err
 	} else {
 		if t.lastModified.Compare(info.ModTime()) != 0 {
-			if _html_template, template_err := htmltemplate.New(t.name).Funcs(ReponseFuncMaps).Parse(PHPToGoTemplate(Utils.ReadFromFile(t.uri))); template_err == nil {
+			if _html_template, template_err := htmltemplate.New(t.name).Funcs(ReponseFuncMaps).Parse(PHPToGoTemplate(content)); template_err == nil {
 				t.lastModified = info.ModTime()
 				switch t.viewType {
 				case viewTypes.phpTemplate:

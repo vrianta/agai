@@ -24,6 +24,7 @@ var migrate_models *exec.Cmd
 var migrate_components *exec.Cmd
 var browser_proc *exec.Cmd
 var output_app_name string
+var wait_for_hot_reloader sync.WaitGroup
 
 func init() {
 	if runtime.GOOS == "windows" {
@@ -67,15 +68,19 @@ func start_app() {
 
 	defer func() {
 		log.Info("Killing server process...")
+
 		run_app.Process.Kill()
-		close_browser()
 	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	fmt.Println("Running. Press Ctrl+C to exit.")
+	log.Info("Running. Press Ctrl+C to exit.")
+
 	<-sigChan
+
+	broadcast("close") // clossing all the tabs which are running the app
+	wait_for_hot_reloader.Wait()
 
 	fmt.Println("Interrupt received. Exiting...")
 }
@@ -99,11 +104,6 @@ func openBrowser(url string) error {
 
 	browser_proc = exec.Command(cmd, args...)
 	return browser_proc.Start()
-}
-
-func close_browser() {
-	browser_proc.Wait()
-	browser_proc.Process.Release()
 }
 
 func start_hot_reload() {
@@ -152,6 +152,10 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
+			if msg == "close" {
+				fmt.Println("clossing tabs")
+				wait_for_hot_reloader.Done()
+			}
 			fmt.Fprintf(w, "data: %s\n\n", msg)
 			flusher.Flush()
 		case <-r.Context().Done():
@@ -167,6 +171,10 @@ func broadcast(msg string) {
 	for ch := range clients {
 		select {
 		case ch <- msg:
+			if msg == "close" {
+				wait_for_hot_reloader.Add(1)
+			}
+
 		default:
 			// Drop slow or dead clients
 			close(ch)

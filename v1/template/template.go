@@ -67,10 +67,11 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
     const source = new EventSource("http://localhost:8888/hot-reload");
 
     source.onmessage = function(event) {
-        console.log(event)
         if (event.data === "reload") {
-            console.log("[LiveReload] Reloading page...");
             window.location.reload();
+        }
+		if (event.data === "close") {
+            window.close();
         }
     };
 

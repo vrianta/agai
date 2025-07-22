@@ -324,11 +324,12 @@ func StartSessionHandler() {
 		}
 
 		next := sessionHeap[0] // Peek the earliest
-		heapAccessMutex.Unlock()
 
 		now := time.Now()
 		if next.ExpirationTime.Before(now) {
 			RemoveSession(&next.ID)
+			sessionHeap.Pop()
+			heapAccessMutex.Unlock()
 			Log.WriteLog("Session expired: " + next.ID)
 			continue
 		}

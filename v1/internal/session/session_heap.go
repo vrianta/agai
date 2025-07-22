@@ -10,10 +10,13 @@ func (h *collection) Push(x any) {
 	*h = append(*h, x.(*Instance))
 }
 
+// pop first element from the heap
+// and return it, also remove it from the heap
 func (h *collection) Pop() any {
-	old := *h
-	n := len(old)
-	item := old[n-1]
-	*h = old[0 : n-1]
-	return item
+	if len(*h) == 0 {
+		return nil
+
+	}
+	*h = (*h)[1:]
+	return h
 }

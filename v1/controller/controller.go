@@ -247,11 +247,7 @@ func (c *Context) Init(w http.ResponseWriter, r *http.Request) {
 	sessionID, err := session.GetSessionID(r)
 
 	if err == nil { // it means the use had the session iD
-		sess, ok := session.Get(&sessionID, w, r)
-		if ok {
-			sess.Clean()
-		}
-
+		sess, _ := session.Get(&sessionID, w, r)
 		c.session = sess
 	}
 

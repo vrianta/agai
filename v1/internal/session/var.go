@@ -6,22 +6,27 @@ import (
 )
 
 var (
-	all     = make(map[string]*Instance)     // Session map
-	lruList = list.New()                     // Doubly-linked list for LRU
-	lruMap  = make(map[string]*list.Element) // Map session ID to list element
+	// Core session storage
+	instances = make(map[string]*Instance) // Maps session ID to session instance
 
-	sessionWakeupChan = make(chan struct{}, 1)
-	lruUpdateChan     = make(chan lruUpdate, 1000) // Buffered channel for LRU ops
+	lruOrderList  = list.New()                     // Doubly-linked list maintaining LRU order
+	lruElementMap = make(map[string]*list.Element) // Maps session ID to its position in LRU list
 
-	updateMutex = sync.Mutex{}
-	cleanMutex  = sync.Mutex{}
+	// Channel-based communication
+	cleanupTriggerChan = make(chan struct{}, 1) // Triggers cleanup goroutine
 
-	sessionMutex = sync.RWMutex{}
-	lruMutex     = sync.RWMutex{}
+	lruOperationChan = make(chan LRUCacheOperation, 1000) // Buffered channel for LRU operations
+
+	// Synchronization primitives
+	sessionUpdateMutex = sync.Mutex{} // Protects session creation/updates
+	sessionCleanMutex  = sync.Mutex{} // Protects cleanup operations
+
+	sessionStoreMutex = sync.RWMutex{} // Protects session storage map
+	lruCacheMutex     = sync.RWMutex{} // Protects LRU cache operations
 )
 
 // sessionHeap
 var (
-	sessionHeap SessionHeap
-	heapMutex   sync.Mutex
+	sessionHeap     collection
+	heapAccessMutex sync.Mutex
 )

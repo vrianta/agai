@@ -5,26 +5,34 @@ import (
 )
 
 type (
-	SessionHeap []*Instance
-	SessionVars map[string]any
-	PostParams  map[string]string
-	GetParams   map[string]string
+	// Collection represents a collection of sessions managed as a heap
+	collection []*Instance
+
+	// SessionData stores arbitrary key-value data for a session
+	SessionData map[string]any
+
+	// HTTPPostParameters represents POST request parameters
+	HTTPPostParameters map[string]string
+
+	// HTTPGetParameters represents GET request parameters
+	HTTPGetParameters map[string]string
 
 	Instance struct {
 		ID string
 
-		POST  PostParams
-		GET   GetParams
-		Store SessionVars
+		PostParameters HTTPPostParameters
+		GetParameters  HTTPGetParameters
+		Data           SessionData
 
-		LoggedIn bool
+		IsAuthenticated bool
 
-		Expiry time.Time // Expiry time for the session
+		ExpirationTime time.Time
 		// lastUsed atomic.Int64
 	}
 
-	lruUpdate struct {
-		SessionID string
-		Op        string // "move" or "InsertRow"
+	// LRUCacheOperation represents an operation to update the LRU cache
+	LRUCacheOperation struct {
+		ID            string
+		OperationType string // "move_to_front" or "insert" or "remove"
 	}
 )

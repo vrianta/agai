@@ -89,11 +89,11 @@ func init() {
 
 func New() *Instance {
 	return &Instance{
-		POST:     make(PostParams, 20),
-		GET:      make(GetParams, 20),
-		LoggedIn: false,
-		Expiry:   time.Now().Add(time.Second * 30),
-		Store: SessionVars{
+		PostParameters:  make(HTTPPostParameters, 20),
+		GetParameters:   make(HTTPGetParameters, 20),
+		IsAuthenticated: false,
+		ExpirationTime:  time.Now().Add(time.Second * 30),
+		Data: SessionData{
 			"uid": "Guest",
 		},
 	}
@@ -115,11 +115,11 @@ func RemoveSession(sessionID *string) {
 	}
 
 	// Lock the mutex for writing
-	sessionMutex.Lock()
-	defer sessionMutex.Unlock()
+	sessionStoreMutex.Lock()
+	defer sessionStoreMutex.Unlock()
 
 	// Delete the session from the map
-	delete(all, (*sessionID))
+	delete(instances, (*sessionID))
 
 	switch Config.GetWebConfig().SessionStoreType {
 	case "disk", "storage":
@@ -134,7 +134,7 @@ func Get(sessionID *string) (*Instance, bool) {
 		return nil, false
 	}
 
-	// for id, session := range all {
+	// for id, session := range instances {
 	// 	fmt.Printf("Session ID: %s\n", id)
 	// 	fmt.Printf("  POST: %+v\n", session.POST)
 	// 	fmt.Printf("  GET: %+v\n", session.GET)
@@ -144,23 +144,23 @@ func Get(sessionID *string) (*Instance, bool) {
 	// 	fmt.Println("------------------------")
 	// }
 
-	sessionMutex.Lock()
-	session, exists := all[*sessionID]
+	sessionStoreMutex.Lock()
+	session, exists := instances[*sessionID]
 	if !exists {
-		sessionMutex.Unlock()
+		sessionStoreMutex.Unlock()
 		return nil, false
 	}
-	sessionMutex.Unlock()
+	sessionStoreMutex.Unlock()
 
 	// session.lastUsed.Store(time.Now().UnixMicro())
 
 	go func(sessionID string) {
 		// Move to front in LRU
-		lruMutex.Lock()
-		if elem, ok := lruMap[sessionID]; ok {
-			lruList.MoveToFront(elem)
+		lruCacheMutex.Lock()
+		if elem, ok := lruElementMap[sessionID]; ok {
+			lruOrderList.MoveToFront(elem)
 		}
-		lruMutex.Unlock()
+		lruCacheMutex.Unlock()
 	}(*sessionID)
 
 	return session, true
@@ -171,17 +171,17 @@ func Store(sessionID *string, session *Instance) {
 		return
 	}
 
-	sessionMutex.Lock()
-	if len(all) >= Config.GetWebConfig().MaxSessionCount {
+	sessionStoreMutex.Lock()
+	if len(instances) >= Config.GetWebConfig().MaxSessionCount {
 		evictLRUSession()
 	}
 	// session.lastUsed.Store(time.Now().UnixMicro())
-	all[*sessionID] = session
-	sessionMutex.Unlock()
+	instances[*sessionID] = session
+	sessionStoreMutex.Unlock()
 
-	heapMutex.Lock()
+	heapAccessMutex.Lock()
 	heap.Push(&sessionHeap, session)
-	heapMutex.Unlock()
+	heapAccessMutex.Unlock()
 
 	switch Config.GetWebConfig().SessionStoreType {
 	case "disk", "storage":
@@ -189,11 +189,11 @@ func Store(sessionID *string, session *Instance) {
 	}
 
 	select {
-	case lruUpdateChan <- lruUpdate{SessionID: *sessionID, Op: "move"}:
+	case lruOperationChan <- LRUCacheOperation{ID: *sessionID, OperationType: "move"}:
 	default:
 	}
 	select {
-	case sessionWakeupChan <- struct{}{}:
+	case cleanupTriggerChan <- struct{}{}:
 	default:
 	}
 }
@@ -216,10 +216,10 @@ func saveAllSessionsToDisk() error {
 	// Encode the sessions
 	enc := gob.NewEncoder(f)
 
-	sessionMutex.RLock()
-	defer sessionMutex.RUnlock()
+	sessionStoreMutex.RLock()
+	defer sessionStoreMutex.RUnlock()
 
-	if err := enc.Encode(all); err != nil {
+	if err := enc.Encode(instances); err != nil {
 		panic(err.Error())
 		// fmt.Printf("failed to encode session map: %w", err)
 		// return err
@@ -257,12 +257,12 @@ func loadAllSessionsFromDisk() error {
 		return fmt.Errorf("failed to decode session map: %w", err)
 	}
 
-	sessionMutex.Lock()
-	all = loaded
-	sessionMutex.Unlock()
+	sessionStoreMutex.Lock()
+	instances = loaded
+	sessionStoreMutex.Unlock()
 
-	fmt.Printf("[Sessions] Loaded %d sessions from sessions.data\n", len(all))
-	// for id, session := range all {
+	fmt.Printf("[Sessions] Loaded %d sessions from sessions.data\n", len(instances))
+	// for id, session := range instances {
 	// 	fmt.Printf("Session ID: %s\n", id)
 	// 	fmt.Printf("  POST: %+v\n", session.POST)
 	// 	fmt.Printf("  GET: %+v\n", session.GET)
@@ -276,76 +276,76 @@ func loadAllSessionsFromDisk() error {
 
 func evictLRUSession() {
 	// Remove from the back of the list (least recently used)
-	elem := lruList.Back()
+	elem := lruOrderList.Back()
 	if elem == nil {
 		return
 	}
 	sessionID := elem.Value.(string)
-	delete(all, sessionID)
-	delete(lruMap, sessionID)
-	lruList.Remove(elem)
+	delete(instances, sessionID)
+	delete(lruElementMap, sessionID)
+	lruOrderList.Remove(elem)
 }
 
 // Function to keep checking the session expiry to remve them.
-// How the function will work is it will loop through all the current sessions and check when the expiry is time.Time
+// How the function will work is it will loop through instances the current sessions and check when the expiry is time.Time
 // Later it find the session which is expired and the one which has the least time to expire.
 // It will Expire the expired session and the go on sleep until the least time to expire is reached.
 // then it will again go on loop to to repeast the process.
 func StartSessionHandler() {
 	for {
-		heapMutex.Lock()
+		heapAccessMutex.Lock()
 		if sessionHeap.Len() == 0 {
-			heapMutex.Unlock()
+			heapAccessMutex.Unlock()
 			time.Sleep(30 * time.Minute)
 			continue
 		}
 
 		next := sessionHeap[0] // Peek the earliest
-		heapMutex.Unlock()
+		heapAccessMutex.Unlock()
 
 		now := time.Now()
-		if next.Expiry.Before(now) {
+		if next.ExpirationTime.Before(now) {
 			RemoveSession(&next.ID)
 			Log.WriteLog("Session expired: " + next.ID)
 			continue
 		}
 
-		sleepDuration := time.Until(next.Expiry)
+		sleepDuration := time.Until(next.ExpirationTime)
 		if sleepDuration < 0 {
 			sleepDuration = 0
 		}
 
 		select {
 		case <-time.After(sleepDuration):
-		case <-sessionWakeupChan:
+		case <-cleanupTriggerChan:
 		}
 	}
 }
 
 // Function to handle LRU updates in a separate goroutine
-// This function listens for updates on the lruUpdateChan channel and processes them
+// This function listens for updates on the lruOperationChan channel and processes them
 // It handles two operations: "move" to move an existing session to the front of the LRU list
 // and "InsertRow" to add a new session to the LRU list if it doesn't already exist.
 func StartLRUHandler() {
-	for update := range lruUpdateChan {
-		sessionMutex.Lock()
-		switch update.Op {
+	for update := range lruOperationChan {
+		sessionStoreMutex.Lock()
+		switch update.OperationType {
 		case "move":
-			if elem, ok := lruMap[update.SessionID]; ok {
-				lruList.MoveToFront(elem)
+			if elem, ok := lruElementMap[update.ID]; ok {
+				lruOrderList.MoveToFront(elem)
 			}
 		case "InsertRow":
-			if _, ok := lruMap[update.SessionID]; !ok {
-				elem := lruList.PushFront(update.SessionID)
-				lruMap[update.SessionID] = elem
+			if _, ok := lruElementMap[update.ID]; !ok {
+				elem := lruOrderList.PushFront(update.ID)
+				lruElementMap[update.ID] = elem
 			}
 		}
-		sessionMutex.Unlock()
+		sessionStoreMutex.Unlock()
 	}
 }
 
 func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
-	sh.LoggedIn = true
+	sh.IsAuthenticated = true
 	sh.SetSessionCookie(&sh.ID, w, r)
 }
 
@@ -354,7 +354,7 @@ func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
  * @return false -> if the user is not logged in
  */
 func (s *Instance) IsLoggedIn() bool {
-	return s.LoggedIn
+	return s.IsAuthenticated
 }
 
 // StartSession attempts to retrieve or create a new session and returnt he created session ID
@@ -370,8 +370,8 @@ func (s *Instance) StartSession(sessionID *string, w http.ResponseWriter, r *htt
 }
 
 func (sh *Instance) Update(_w http.ResponseWriter, _r *http.Request) {
-	updateMutex.Lock()
-	defer updateMutex.Unlock()
+	sessionUpdateMutex.Lock()
+	defer sessionUpdateMutex.Unlock()
 
 	// sh.lastUsed.Store(time.Now().UnixMicro())
 }
@@ -380,11 +380,11 @@ func (sh *Instance) Update(_w http.ResponseWriter, _r *http.Request) {
 // Make sure what ever in the store will stay for as long as the server is not stopped
 // or you remove the data intentionally
 func (sh *Instance) Clean() {
-	cleanMutex.Lock()
-	defer cleanMutex.Unlock()
+	sessionCleanMutex.Lock()
+	defer sessionCleanMutex.Unlock()
 
-	sh.POST = make(PostParams, 20)
-	sh.GET = make(GetParams, 20)
+	sh.PostParameters = make(HTTPPostParameters, 20)
+	sh.GetParameters = make(HTTPGetParameters, 20)
 }
 
 // Creates a new session and sets cookies
@@ -398,7 +398,7 @@ func (sh *Instance) CreateNewSession(sessionID *string, w http.ResponseWriter, r
 	sh.SetSessionCookie(sessionID, w, r)
 	// Wake up the session handler if needed
 	select {
-	case sessionWakeupChan <- struct{}{}:
+	case cleanupTriggerChan <- struct{}{}:
 	default:
 	}
 	return sessionID
@@ -407,13 +407,13 @@ func (sh *Instance) CreateNewSession(sessionID *string, w http.ResponseWriter, r
 // Sets the session cookie in the client's browser
 func (sh *Instance) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
-	sh.Expiry = now.Add(30 * time.Minute).UTC()
+	sh.ExpirationTime = now.Add(30 * time.Minute).UTC()
 	// sh.lastUsed.Store(now.UnixMicro())
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    *sessionID,
 		HttpOnly: Config.GetWebConfig().Https,
-		Expires:  sh.Expiry,
+		Expires:  sh.ExpirationTime,
 	}
 
 	Cookies.AddCookie(c, w, r)

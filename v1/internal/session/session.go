@@ -75,8 +75,8 @@ import (
  */
 
 func init() {
-	gob.Register(map[string]*Struct{})
-	gob.Register(&Struct{})
+	gob.Register(map[string]*Instance{})
+	gob.Register(&Instance{})
 	gob.Register(atomic.Int64{})
 	heap.Init(&sessionHeap)
 	// LoadAllSessionsFromDisk()
@@ -87,8 +87,8 @@ func init() {
 	}
 }
 
-func New() *Struct {
-	return &Struct{
+func New() *Instance {
+	return &Instance{
 		POST:     make(PostParams, 20),
 		GET:      make(GetParams, 20),
 		LoggedIn: false,
@@ -129,7 +129,7 @@ func RemoveSession(sessionID *string) {
 
 // Function to Get Session using Session ID in
 // the request, if it exists
-func Get(sessionID *string) (*Struct, bool) {
+func Get(sessionID *string) (*Instance, bool) {
 	if sessionID == nil {
 		return nil, false
 	}
@@ -166,7 +166,7 @@ func Get(sessionID *string) (*Struct, bool) {
 	return session, true
 }
 
-func Store(sessionID *string, session *Struct) {
+func Store(sessionID *string, session *Instance) {
 	if sessionID == nil || session == nil {
 		return
 	}
@@ -251,7 +251,7 @@ func loadAllSessionsFromDisk() error {
 	}
 	defer f.Close()
 
-	var loaded map[string]*Struct
+	var loaded map[string]*Instance
 	dec := gob.NewDecoder(f)
 	if err := dec.Decode(&loaded); err != nil {
 		return fmt.Errorf("failed to decode session map: %w", err)
@@ -344,7 +344,7 @@ func StartLRUHandler() {
 	}
 }
 
-func (sh *Struct) Login(w http.ResponseWriter, r *http.Request) {
+func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
 	sh.LoggedIn = true
 	sh.SetSessionCookie(&sh.ID, w, r)
 }
@@ -353,12 +353,12 @@ func (sh *Struct) Login(w http.ResponseWriter, r *http.Request) {
  * Checking if the user is logged in
  * @return false -> if the user is not logged in
  */
-func (s *Struct) IsLoggedIn() bool {
+func (s *Instance) IsLoggedIn() bool {
 	return s.LoggedIn
 }
 
 // StartSession attempts to retrieve or create a new session and returnt he created session ID
-func (s *Struct) StartSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
+func (s *Instance) StartSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
 
 	// if sessionID := GetSessionID(s.R); sessionID != nil && (*sessionID) != s.ID {
 	// 	// If the session ID doesn't match the current handler's ID, create a new session
@@ -369,7 +369,7 @@ func (s *Struct) StartSession(sessionID *string, w http.ResponseWriter, r *http.
 	return s.CreateNewSession(sessionID, w, r)
 }
 
-func (sh *Struct) Update(_w http.ResponseWriter, _r *http.Request) {
+func (sh *Instance) Update(_w http.ResponseWriter, _r *http.Request) {
 	updateMutex.Lock()
 	defer updateMutex.Unlock()
 
@@ -379,7 +379,7 @@ func (sh *Struct) Update(_w http.ResponseWriter, _r *http.Request) {
 // function to clear value of POST and GET from the Session
 // Make sure what ever in the store will stay for as long as the server is not stopped
 // or you remove the data intentionally
-func (sh *Struct) Clean() {
+func (sh *Instance) Clean() {
 	cleanMutex.Lock()
 	defer cleanMutex.Unlock()
 
@@ -388,7 +388,7 @@ func (sh *Struct) Clean() {
 }
 
 // Creates a new session and sets cookies
-func (sh *Struct) CreateNewSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
+func (sh *Instance) CreateNewSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
 	// Generate a session ID
 	if sessionID == nil {
 		return nil
@@ -405,7 +405,7 @@ func (sh *Struct) CreateNewSession(sessionID *string, w http.ResponseWriter, r *
 }
 
 // Sets the session cookie in the client's browser
-func (sh *Struct) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *http.Request) {
+func (sh *Instance) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	sh.Expiry = now.Add(30 * time.Minute).UTC()
 	// sh.lastUsed.Store(now.UnixMicro())
@@ -422,6 +422,6 @@ func (sh *Struct) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *
 /*
  * Disable the Caching on Local Machine For certain pages to make
  */
-func (s *Struct) EnableCaching() {
+func (s *Instance) EnableCaching() {
 
 }

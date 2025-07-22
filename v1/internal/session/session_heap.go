@@ -5,7 +5,7 @@ func (h *SessionHeap) Less(i, j int) bool { return (*h)[i].Expiry.Before((*h)[j]
 func (h *SessionHeap) Swap(i, j int)      { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
 
 func (h *SessionHeap) Push(x any) {
-	*h = append(*h, x.(*Struct))
+	*h = append(*h, x.(*Instance))
 }
 
 func (h *SessionHeap) Pop() any {

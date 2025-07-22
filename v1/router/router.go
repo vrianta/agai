@@ -56,7 +56,7 @@ func Route(path string, obj Controller.Context) route {
 func Handler(w http.ResponseWriter, r *http.Request) {
 	// start := time.Now() // Start time measurement
 	sessionID := Session.GetSessionID(r)
-	var sess *Session.Struct
+	var sess *Session.Instance
 	var ok bool
 
 	if sessionID != nil {

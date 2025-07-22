@@ -35,7 +35,7 @@ type (
 		HEAD    _Func
 		OPTIONS _Func
 
-		session *Session.Struct // Session object to handle user session
+		session *Session.Instance // Session object to handle user session
 
 		// privte objects
 		w http.ResponseWriter

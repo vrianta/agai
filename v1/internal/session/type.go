@@ -5,12 +5,12 @@ import (
 )
 
 type (
-	SessionHeap []*Struct
+	SessionHeap []*Instance
 	SessionVars map[string]any
 	PostParams  map[string]string
 	GetParams   map[string]string
 
-	Struct struct {
+	Instance struct {
 		ID string
 
 		POST  PostParams

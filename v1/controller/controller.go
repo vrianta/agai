@@ -21,7 +21,7 @@ Key Concepts:
 
 Usage:
 ------
-- Define a controller struct embedding Controller.Struct.
+- Define a controller struct embedding Controller.Instance.
 - Set the View field and handler functions for each HTTP method.
 - Register the controller in your router.
 - Use the provided methods to manage templates and session state.
@@ -44,7 +44,7 @@ import (
 	"strings"
 
 	Config "github.com/vrianta/agai/v1/config"
-	Session "github.com/vrianta/agai/v1/internal/session"
+	"github.com/vrianta/agai/v1/internal/session"
 	Template "github.com/vrianta/agai/v1/template"
 )
 
@@ -57,9 +57,9 @@ runRequest dispatches the HTTP request to the appropriate handler method (GET, P
 and renders the corresponding template. It also assigns and updates the session for the request.
 
 Parameters:
-- session: pointer to the current Session.Struct for the request.
+- session: pointer to the current Session.Instance for the request.
 */
-func (c *Context) runRequest(session *Session.Struct) {
+func (c *Context) runRequest(session *session.Instance) {
 	c.assignSession(session) // Assign the session to the controller
 	if session != nil {
 		session.Update(c.w, c.r) // Update session with current writer and request
@@ -110,12 +110,12 @@ func (c *Context) isMethodNull(method _Func) *Template.Response {
 }
 
 /*
-assignSession assigns the given session to the controller instance.
+assignSession assigns the given session to the controller Instance.
 
 Parameters:
-- session: pointer to Session.Struct to assign.
+- session: pointer to Session.Instance to assign.
 */
-func (c *Context) assignSession(session *Session.Struct) {
+func (c *Context) assignSession(session *session.Instance) {
 	c.session = session
 }
 
@@ -133,7 +133,7 @@ func (c *Context) Validate() {
 GetSession safely returns the controller's session pointer.
 Use this instead of accessing the session field directly.
 */
-func (c *Context) GetSession() *Session.Struct {
+func (c *Context) GetSession() *session.Instance {
 	return c.session
 }
 
@@ -227,11 +227,11 @@ func (c *Context) RegisterTemplate() error {
 }
 
 /*
-Copy creates a new instance of the controller with the same configuration and handlers.
+Copy creates a new Instance of the controller with the same configuration and handlers.
 Useful for creating per-request controller instances.
 
 Returns:
-- *Struct: pointer to the copied controller struct.
+- *Instance: pointer to the copied controller struct.
 */
 func (c *Context) Copy() *Context {
 	return &Context{
@@ -257,14 +257,14 @@ Parameters:
 - w: http.ResponseWriter for the response.
 - r: *http.Request for the incoming request.
 */
-func (c *Context) Init(w http.ResponseWriter, r *http.Request, sess *Session.Struct) {
+func (c *Context) Init(w http.ResponseWriter, r *http.Request, sess *session.Instance) {
 	c.w = w
 	c.r = r
 
 	c.initSession(sess)
 	c.runRequest(sess)
 }
-func (c *Context) Run(w http.ResponseWriter, r *http.Request, sess *Session.Struct) {
+func (c *Context) Run(w http.ResponseWriter, r *http.Request, sess *session.Instance) {
 	c.w = w
 	c.r = r
 
@@ -277,8 +277,8 @@ initSession assigns the given session to the controller.
 Call this to set up session state for the request.
 
 Parameters:
-- __s: pointer to Session.Struct to assign.
+- __s: pointer to Session.Instance to assign.
 */
-func (c *Context) initSession(__s *Session.Struct) {
+func (c *Context) initSession(__s *session.Instance) {
 	c.session = __s
 }

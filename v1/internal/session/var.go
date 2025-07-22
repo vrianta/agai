@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	all     = make(map[string]*Struct)       // Session map
+	all     = make(map[string]*Instance)     // Session map
 	lruList = list.New()                     // Doubly-linked list for LRU
 	lruMap  = make(map[string]*list.Element) // Map session ID to list element
 

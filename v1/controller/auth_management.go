@@ -36,7 +36,7 @@ func (controller *Context) Login() bool {
 	}
 
 	controller.session.Login(controller.w, controller.r)
-	log.Info("User logged in successfully")
+	// log.Info("User logged in successfully")
 
 	return true
 }
@@ -55,4 +55,6 @@ func (_c *Context) Logout() {
 	if _c.session != nil {
 		session.RemoveSession(&_c.session.ID)
 	}
+
+	_c.session = nil // Clear the session after logout
 }

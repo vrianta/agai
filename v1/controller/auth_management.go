@@ -1,11 +1,8 @@
 package controller
 
 import (
-	"net/http"
-
-	Session "github.com/vrianta/agai/v1/internal/session"
-	Log "github.com/vrianta/agai/v1/log"
-	Utils "github.com/vrianta/agai/v1/utils"
+	"github.com/vrianta/agai/v1/internal/session"
+	"github.com/vrianta/agai/v1/log"
 )
 
 /*
@@ -16,33 +13,36 @@ import (
 /*
  * Check if the User is Logged in to the system or not
  */
-func (__c *Context) IsLoggedIn() bool {
-	return __c.session != nil && __c.session.IsLoggedIn()
+func (controller *Context) IsLoggedIn() bool {
+	if controller.session == nil {
+		return false
+	}
+	return controller.session.IsAuthenticated
 }
 
 /*
  * Login the user to the system
  */
-func (__c *Context) Login() bool {
+func (controller *Context) Login() bool {
 
+	// if the controller session nil that means the user is not logged in
+	if controller.session == nil {
+		log.Error("Not Able to login user, session is nil")
+		return false // not logged in
+	}
+	var err error
 	// No session, create a new one
-	Session.RemoveSession(&__c.session.ID)
-	__c.session = Session.New()
-	sessionID, err := Utils.GenerateSessionID()
+	// session.RemoveSession(&controller.session.ID)
+	controller.session, err = session.New(controller.w, controller.r)
 	if err != nil {
-		Log.WriteLog("Error generating session ID: " + err.Error())
+		log.Error("Failed to create the login session: %s", err.Error())
 		return false
 	}
 
-	if __c.session.StartSession(&sessionID, __c.w, __c.r) == nil {
-		http.Error(__c.w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
-		return false
-	}
-	__c.session.Login(__c.w, __c.r)
-	Session.Store(&sessionID, __c.session)
+	controller.session.Login(controller.w, controller.r)
+	log.Info("User logged in successfully")
 
 	return true
-
 }
 
 func (_c *Context) Logout() {
@@ -50,7 +50,9 @@ func (_c *Context) Logout() {
 	_c.w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	_c.w.Header().Set("Pragma", "no-cache")
 	_c.w.Header().Set("Expires", "0")
+	_c.session.IsAuthenticated = false
+
 	if _c.session != nil {
-		Session.RemoveSession(&_c.session.ID)
+		session.RemoveSession(&_c.session.ID)
 	}
 }

@@ -30,3 +30,6 @@ var (
 	sessionHeap     collection
 	heapAccessMutex sync.Mutex
 )
+
+// count of total sessions are there in the system right now
+var createdSessionCount int

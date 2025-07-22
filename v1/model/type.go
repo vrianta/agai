@@ -28,6 +28,7 @@ type (
 	}
 
 	Field struct {
+		// user do not have to pass the name of the field it will automatically populate the name
 		name          string
 		Type          fieldType
 		Length        int

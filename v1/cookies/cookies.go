@@ -6,13 +6,13 @@ import (
 	"time"
 )
 
-func GetCookie(cookie_name string, r *http.Request) *http.Cookie {
+func GetCookie(cookie_name string, r *http.Request) (*http.Cookie, error) {
 	if cookie, err := r.Cookie(cookie_name); err == nil {
 		// Log("Cookie: ", cookie)
-		return cookie
+		return cookie, nil
+	} else {
+		return nil, nil
 	}
-
-	return nil
 }
 
 // Return true if it created te cookie else false means cookie is already present in the session

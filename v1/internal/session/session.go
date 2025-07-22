@@ -12,6 +12,7 @@ import (
 	Config "github.com/vrianta/agai/v1/config"
 	Cookies "github.com/vrianta/agai/v1/cookies"
 	Log "github.com/vrianta/agai/v1/log"
+	"github.com/vrianta/agai/v1/utils"
 )
 
 /*
@@ -87,24 +88,38 @@ func init() {
 	}
 }
 
-func New() *Instance {
-	return &Instance{
-		PostParameters:  make(HTTPPostParameters, 20),
-		GetParameters:   make(HTTPGetParameters, 20),
-		IsAuthenticated: false,
-		ExpirationTime:  time.Now().Add(time.Second * 30),
-		Data: SessionData{
-			"uid": "Guest",
-		},
+func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
+	if sessionID, err := utils.GenerateSessionID(); err != nil {
+		return nil, err
+	} else {
+		ins := &Instance{
+			ID:              sessionID,
+			PostParameters:  make(HTTPPostParameters, 20),
+			GetParameters:   make(HTTPGetParameters, 20),
+			IsAuthenticated: false,
+			ExpirationTime:  time.Now().Add(time.Second * 30),
+			Data: SessionData{
+				"uid": "Guest",
+			},
+		}
+		go Store(ins)
+
+		ins.setCookie(w, r)
+		// Wake up the session handler if needed
+		select {
+		case cleanupTriggerChan <- struct{}{}:
+		default:
+		}
+		return ins, nil
 	}
 }
 
-func GetSessionID(r *http.Request) *string {
-	cookie := Cookies.GetCookie("sessionid", r)
+func GetSessionID(r *http.Request) (string, error) {
+	cookie, err := Cookies.GetCookie("sessionid", r)
 	if cookie != nil {
-		return &cookie.Value
+		return cookie.Value, nil
 	}
-	return nil
+	return "", err
 }
 
 // Function to Remove Session using Session ID in
@@ -166,8 +181,8 @@ func Get(sessionID *string) (*Instance, bool) {
 	return session, true
 }
 
-func Store(sessionID *string, session *Instance) {
-	if sessionID == nil || session == nil {
+func Store(session *Instance) {
+	if session == nil {
 		return
 	}
 
@@ -175,8 +190,8 @@ func Store(sessionID *string, session *Instance) {
 	if len(instances) >= Config.GetWebConfig().MaxSessionCount {
 		evictLRUSession()
 	}
-	// session.lastUsed.Store(time.Now().UnixMicro())
-	instances[*sessionID] = session
+
+	instances[session.ID] = session
 	sessionStoreMutex.Unlock()
 
 	heapAccessMutex.Lock()
@@ -189,7 +204,7 @@ func Store(sessionID *string, session *Instance) {
 	}
 
 	select {
-	case lruOperationChan <- LRUCacheOperation{ID: *sessionID, OperationType: "move"}:
+	case lruOperationChan <- LRUCacheOperation{ID: session.ID, OperationType: "move"}:
 	default:
 	}
 	select {
@@ -221,16 +236,7 @@ func saveAllSessionsToDisk() error {
 
 	if err := enc.Encode(instances); err != nil {
 		panic(err.Error())
-		// fmt.Printf("failed to encode session map: %w", err)
-		// return err
 	}
-
-	// if fileExists {
-	// 	fmt.Println("[Sessions] sessions.data updated with latest sessions")
-	// } else {
-	// 	fmt.Println("[Sessions] sessions.data created and sessions saved")
-	// }
-
 	return nil
 }
 
@@ -346,27 +352,7 @@ func StartLRUHandler() {
 
 func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
 	sh.IsAuthenticated = true
-	sh.SetSessionCookie(&sh.ID, w, r)
-}
-
-/*
- * Checking if the user is logged in
- * @return false -> if the user is not logged in
- */
-func (s *Instance) IsLoggedIn() bool {
-	return s.IsAuthenticated
-}
-
-// StartSession attempts to retrieve or create a new session and returnt he created session ID
-func (s *Instance) StartSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
-
-	// if sessionID := GetSessionID(s.R); sessionID != nil && (*sessionID) != s.ID {
-	// 	// If the session ID doesn't match the current handler's ID, create a new session
-	// 	defer RemoveSession(sessionID) // Remove the old session
-	// }
-
-	// If no valid session ID is found, create a new session
-	return s.CreateNewSession(sessionID, w, r)
+	sh.setCookie(w, r)
 }
 
 func (sh *Instance) Update(_w http.ResponseWriter, _r *http.Request) {
@@ -383,35 +369,18 @@ func (sh *Instance) Clean() {
 	sessionCleanMutex.Lock()
 	defer sessionCleanMutex.Unlock()
 
-	sh.PostParameters = make(HTTPPostParameters, 20)
-	sh.GetParameters = make(HTTPGetParameters, 20)
-}
-
-// Creates a new session and sets cookies
-func (sh *Instance) CreateNewSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
-	// Generate a session ID
-	if sessionID == nil {
-		return nil
-	}
-
-	sh.ID = *sessionID
-	sh.SetSessionCookie(sessionID, w, r)
-	// Wake up the session handler if needed
-	select {
-	case cleanupTriggerChan <- struct{}{}:
-	default:
-	}
-	return sessionID
+	sh.PostParameters = make(HTTPPostParameters)
+	sh.GetParameters = make(HTTPGetParameters)
 }
 
 // Sets the session cookie in the client's browser
-func (sh *Instance) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *http.Request) {
+func (sh *Instance) setCookie(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	sh.ExpirationTime = now.Add(30 * time.Minute).UTC()
 	// sh.lastUsed.Store(now.UnixMicro())
 	c := &http.Cookie{
 		Name:     "sessionid",
-		Value:    *sessionID,
+		Value:    sh.ID,
 		HttpOnly: Config.GetWebConfig().Https,
 		Expires:  sh.ExpirationTime,
 	}

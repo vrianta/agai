@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AGAI Session Management Guide</title>
+    <style>
+        body {
+            font-family: Georgia, serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: auto;
+            padding: 2rem;
+            background: #f9f9f9;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        h1 {
+            text-align: center;
+        }
+        code {
+            background: #eee;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+        }
+        pre {
+            background: #eee;
+            padding: 1em;
+            overflow: auto;
+        }
+        .chapter {
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>AGAI Session Management System</h1>
+    <p><em>An Internal Guide for Developers</em></p>
+<div class="chapter"><h2>Introduction to Sessions in AGAI</h2><p>In the stateless world of HTTP, maintaining a user's identity, preferences, and interactions between requests is essential for building meaningful web applications. This is achieved through sessions — structures that bridge multiple HTTP requests into a single logical conversation with the user. AGAI’s session management system implements a custom, memory-resident, disk-persistent, LRU-aware session store tailored for small to medium-sized Go web applications.</p></div><div class="chapter"><h2>The Philosophy of Session Design</h2><p>AGAI aims for minimalism and control. Instead of depending on external libraries, the session manager is embedded, persistent, concurrent-safe, and tightly coupled with AGAI’s HTTP lifecycle.</p></div><div class="chapter"><h2>Anatomy of a Session</h2><p>Each session is an `Instance` struct holding an ID, GET/POST parameters, authentication status, expiration time, and a key-value store.</p></div><div class="chapter"><h2>Creating and Starting Sessions</h2><p>Use `New()` to create an instance, `GetSessionID()` to extract the ID, and `StartSession()` to bind and activate it.</p></div><div class="chapter"><h2>The Lifecycle of a Session</h2><p>From creation (`CreateNewSession`) to storage (`Store`) and eventual removal (`RemoveSession`), sessions live in memory and are cleaned via LRU and expiry rules.</p></div><div class="chapter"><h2>Under the Hood — Memory Management</h2><p>Sessions are stored in a global map `instances`. Memory is managed via a min-heap (for expiration) and a doubly-linked list (for LRU eviction).</p></div><div class="chapter"><h2>Concurrency and Safety</h2><p>Multiple mutexes protect shared resources: `sessionStoreMutex`, `heapAccessMutex`, `sessionCleanMutex`, and `lruCacheMutex`.</p></div><div class="chapter"><h2>Persistence with Gob</h2><p>Sessions are saved to and loaded from `sessions.data` using Go's `encoding/gob`. This enables durable sessions across restarts.</p></div><div class="chapter"><h2>Goroutines and Channels</h2><p>`StartSessionHandler()` watches for expirations, while `StartLRUHandler()` updates the LRU order based on channel inputs.</p></div><div class="chapter"><h2>How to Use the System</h2><p>Typical handler flow:
+<pre>sid := session.GetSessionID(r)
+s := session.New()
+sid = s.StartSession(sid, w, r)
+session.Store(sid, s)</pre></p></div><div class="chapter"><h2>Extensions and Customization Ideas</h2><p>Consider adding Redis backends, flash messages, or user-agent binding for tighter security.</p></div><div class="chapter"><h2>Closing Thoughts</h2><p>AGAI's session system is light, efficient, and extensible — built to grow with your application.</p></div>
+</body>
+</html>

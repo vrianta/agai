@@ -59,11 +59,12 @@ and renders the corresponding template. It also assigns and updates the session 
 Parameters:
 - session: pointer to the current Session.Instance for the request.
 */
-func (c *Context) runRequest(session *session.Instance) {
-	c.assignSession(session) // Assign the session to the controller
-	if session != nil {
-		session.Update(c.w, c.r) // Update session with current writer and request
+func (c *Context) runRequest() {
+
+	if c.session != nil {
+		c.session.Update(c.w, c.r) // Update session with current writer and request
 	}
+
 	switch c.r.Method {
 	case "GET":
 		reponse := c.isMethodNull(c.GET)
@@ -110,16 +111,6 @@ func (c *Context) isMethodNull(method _Func) *Template.Response {
 }
 
 /*
-assignSession assigns the given session to the controller Instance.
-
-Parameters:
-- session: pointer to Session.Instance to assign.
-*/
-func (c *Context) assignSession(session *session.Instance) {
-	c.session = session
-}
-
-/*
 Validate checks if the controller's View field is set.
 Panics if the View is not defined, ensuring every controller has an associated view.
 */
@@ -127,14 +118,6 @@ func (c *Context) Validate() {
 	if c.View == "" {
 		panic(fmt.Errorf("view is not defined for the controller %T", c))
 	}
-}
-
-/*
-GetSession safely returns the controller's session pointer.
-Use this instead of accessing the session field directly.
-*/
-func (c *Context) GetSession() *session.Instance {
-	return c.session
 }
 
 /*
@@ -244,8 +227,6 @@ func (c *Context) Copy() *Context {
 		PUT:       c.PUT,
 		HEAD:      c.HEAD,
 		OPTIONS:   c.OPTIONS,
-		session:   c.session,
-		// userInputs: make(map[string]interface{}, 20),
 	}
 }
 
@@ -257,28 +238,23 @@ Parameters:
 - w: http.ResponseWriter for the response.
 - r: *http.Request for the incoming request.
 */
-func (c *Context) Init(w http.ResponseWriter, r *http.Request, sess *session.Instance) {
+func (c *Context) Init(w http.ResponseWriter, r *http.Request) {
 	c.w = w
 	c.r = r
 
-	c.initSession(sess)
-	c.runRequest(sess)
-}
-func (c *Context) Run(w http.ResponseWriter, r *http.Request, sess *session.Instance) {
-	c.w = w
-	c.r = r
+	// getting the session ID from the cookies
+	// the session not present then the sessionID will be nil
+	sessionID, err := session.GetSessionID(r)
 
-	c.initSession(sess)
-	c.runRequest(sess)
-}
+	if err == nil {
+		sess, ok := session.Get(&sessionID)
+		if ok {
+			sess.Clean()
+		}
 
-/*
-initSession assigns the given session to the controller.
-Call this to set up session state for the request.
+		c.session = sess
+	}
 
-Parameters:
-- __s: pointer to Session.Instance to assign.
-*/
-func (c *Context) initSession(__s *session.Instance) {
-	c.session = __s
+	c.runRequest()
+
 }

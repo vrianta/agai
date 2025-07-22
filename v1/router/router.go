@@ -5,7 +5,6 @@ import (
 	"os"
 
 	Controller "github.com/vrianta/agai/v1/controller"
-	Session "github.com/vrianta/agai/v1/internal/session"
 	Log "github.com/vrianta/agai/v1/log"
 	Utils "github.com/vrianta/agai/v1/utils"
 )
@@ -54,46 +53,11 @@ func Route(path string, obj Controller.Context) route {
 // - w: The HTTP response writer.
 // - r: The HTTP request.
 func Handler(w http.ResponseWriter, r *http.Request) {
-	// start := time.Now() // Start time measurement
-	sessionID := Session.GetSessionID(r)
-	var sess *Session.Instance
-	var ok bool
-
-	if sessionID != nil {
-		sess, ok = Session.Get(sessionID)
-		if !ok {
-			sessionID, err := Utils.GenerateSessionID()
-			if err != nil {
-				Log.Error("generating session ID: %T", err)
-				return
-			}
-			sess = Session.New()
-			if create_session_error := sess.StartSession(&sessionID, w, r); create_session_error == nil {
-				http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
-				return
-			}
-			go Session.Store(&sessionID, sess)
-		} else {
-			sess.Clean()
-		}
-	} else {
-		sessionID, err := Utils.GenerateSessionID()
-		if err != nil {
-			Log.Error("generating session ID: %T", err)
-			return
-		}
-		sess = Session.New()
-		if create_session_error := sess.StartSession(&sessionID, w, r); create_session_error == nil {
-			http.Error(w, "Server Error * Failed to Create the Session for the user", http.StatusInternalServerError)
-			return
-		}
-		go Session.Store(&sessionID, sess)
-	}
 
 	var tempController *Controller.Context
 	if _controller, found := routeTable[r.URL.Path]; found {
 		tempController = _controller.Copy()
-		tempController.Init(w, r, sess)
+		tempController.Init(w, r)
 	} else {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
 		return

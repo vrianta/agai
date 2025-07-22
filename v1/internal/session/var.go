@@ -33,3 +33,16 @@ var (
 
 // count of total sessions are there in the system right now
 var createdSessionCount int
+
+// type SessionStoreType string
+
+const (
+	session_store_type_memory   string = "memory"
+	session_store_type_disk     string = "disk"
+	session_store_type_storage  string = "storage"
+	session_store_type_db       string = "db"
+	session_store_type_database string = "database"
+	// Add more types as needed, for example:
+	// Disk
+	// Redis
+)

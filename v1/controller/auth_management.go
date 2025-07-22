@@ -14,10 +14,7 @@ import (
  * Check if the User is Logged in to the system or not
  */
 func (controller *Context) IsLoggedIn() bool {
-	if controller.session == nil {
-		return false
-	}
-	return controller.session.IsAuthenticated
+	return controller.session != nil
 }
 
 /*
@@ -25,10 +22,9 @@ func (controller *Context) IsLoggedIn() bool {
  */
 func (controller *Context) Login() bool {
 
-	// if the controller session nil that means the user is not logged in
-	if controller.session == nil {
-		log.Error("Not Able to login user, session is nil")
-		return false // not logged in
+	if controller.session != nil {
+		controller.session.IsAuthenticated = true
+		return true // already logged in
 	}
 	var err error
 	// No session, create a new one
@@ -46,6 +42,10 @@ func (controller *Context) Login() bool {
 }
 
 func (_c *Context) Logout() {
+
+	if _c.session == nil {
+		return // no session present no need to logout
+	}
 
 	_c.w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	_c.w.Header().Set("Pragma", "no-cache")

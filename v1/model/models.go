@@ -55,10 +55,12 @@ func Init() {
 
 	for _, model := range ModelsRegistry {
 
+		model.CreateTableIfNotExists()
+
 		logSection("[Models] Initializing model and syncing database tables:")
 		if config.SyncDatabaseEnabled {
 			model.SyncModelSchema()
-			model.CreateTableIfNotExists()
+
 			model.initialised = true
 			fmt.Println()
 		}
@@ -74,6 +76,8 @@ func Init() {
 		}
 		logSection("[Components] Component initialization complete.")
 	}
+
+	// session.SessionModel.CreateTableIfNotExists()
 
 	initialsed = true
 }

@@ -246,8 +246,8 @@ func (c *Context) Init(w http.ResponseWriter, r *http.Request) {
 	// the session not present then the sessionID will be nil
 	sessionID, err := session.GetSessionID(r)
 
-	if err == nil {
-		sess, ok := session.Get(&sessionID)
+	if err == nil { // it means the use had the session iD
+		sess, ok := session.Get(&sessionID, w, r)
 		if ok {
 			sess.Clean()
 		}

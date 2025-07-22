@@ -31,5 +31,9 @@ func GetDatabase() (*sql.DB, error) {
 	if database == nil {
 		panic("[ERROR] - You are calling for the Database but Connection with Database is not established properly")
 	}
+	if err := database.Ping(); err != nil {
+		log.Error("Failed to ping the DB Server: %s", err.Error())
+		return nil, err
+	}
 	return database, nil
 }

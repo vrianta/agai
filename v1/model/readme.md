@@ -10,7 +10,7 @@ ModelsHandler is a human-friendly, chainable queryBuilder builder for working wi
   - [Features](#features)
   - [1. Defining a Model](#1-defining-a-model)
   - [2. Building and Executing Queries](#2-building-and-executing-queries)
-    - [Creating Records (InsertRow)](#creating-records-inserrow)
+    - [Creating Records (InsertRow)](#creating-records-insertrow)
     - [Fetching Data (SELECT)](#fetching-data-select)
     - [Fetching a Single Row](#fetching-a-single-row)
     - [Updating Data (UPDATE)](#updating-data-update)

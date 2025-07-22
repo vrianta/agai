@@ -3,6 +3,7 @@ package session
 import (
 	"container/heap"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	Config "github.com/vrianta/agai/v1/config"
 	Cookies "github.com/vrianta/agai/v1/cookies"
+	"github.com/vrianta/agai/v1/log"
 	Log "github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/utils"
 )
@@ -85,7 +87,12 @@ func init() {
 	switch Config.GetWebConfig().SessionStoreType {
 	case "disk", "storage":
 		loadAllSessionsFromDisk()
+		// case "db", "database":
+		// 	if Config.GetDatabaseConfig().Host == "" || !database.Initialized {
+		// 		panic("You want to use DB as the Session Storage but the Database Is not Initialised please chcek you database connection or the database config")
+		// 	}
 	}
+
 }
 
 func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
@@ -94,8 +101,6 @@ func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
 	} else {
 		ins := &Instance{
 			ID:              sessionID,
-			PostParameters:  make(HTTPPostParameters, 20),
-			GetParameters:   make(HTTPGetParameters, 20),
 			IsAuthenticated: false,
 			ExpirationTime:  time.Now().Add(time.Second * 30),
 			Data: SessionData{
@@ -105,6 +110,18 @@ func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
 		go Store(ins)
 
 		ins.setCookie(w, r)
+
+		switch Config.GetWebConfig().SessionStoreType {
+		case session_store_type_database, session_store_type_db:
+			data_json, _ := json.Marshal(ins.Data)
+			if err := SessionModel.InsertRow(map[string]any{
+				"Id":   ins.ID,
+				"Data": string(data_json),
+			}); err != nil {
+				log.Error("Failed to Insert row in the session: %s", err)
+			}
+		}
+
 		// Wake up the session handler if needed
 		select {
 		case cleanupTriggerChan <- struct{}{}:
@@ -131,43 +148,69 @@ func RemoveSession(sessionID *string) {
 
 	// Lock the mutex for writing
 	sessionStoreMutex.Lock()
-	defer sessionStoreMutex.Unlock()
+	delete(instances, (*sessionID))
+	sessionStoreMutex.Unlock()
+
+	// delete session f
 
 	// Delete the session from the map
-	delete(instances, (*sessionID))
 
 	switch Config.GetWebConfig().SessionStoreType {
-	case "disk", "storage":
+	case session_store_type_disk, session_store_type_storage:
 		go saveAllSessionsToDisk()
+	case session_store_type_database, session_store_type_db:
+		// delete the sesssion from the database
+		go func(_sessionId string) {
+			if err := SessionModel.Delete().Where("id").Is(_sessionId).Exec(); err != nil {
+				log.Error("Failed to Remove session ID from DB : %s", err.Error())
+			}
+		}(*sessionID)
 	}
 }
 
 // Function to Get Session using Session ID in
 // the request, if it exists
-func Get(sessionID *string) (*Instance, bool) {
+func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, bool) {
 	if sessionID == nil {
 		return nil, false
 	}
 
-	// for id, session := range instances {
-	// 	fmt.Printf("Session ID: %s\n", id)
-	// 	fmt.Printf("  POST: %+v\n", session.POST)
-	// 	fmt.Printf("  GET: %+v\n", session.GET)
-	// 	fmt.Printf("  Store: %+v\n", session.Store)
-	// 	fmt.Printf("  isLoggedIn: %v\n", session.isLoggedIn)
-	// 	fmt.Printf("  Expiry: %s\n", session.Expiry)
-	// 	fmt.Println("------------------------")
-	// }
-
 	sessionStoreMutex.Lock()
 	session, exists := instances[*sessionID]
-	if !exists {
-		sessionStoreMutex.Unlock()
-		return nil, false
-	}
 	sessionStoreMutex.Unlock()
 
-	// session.lastUsed.Store(time.Now().UnixMicro())
+	if !exists {
+		// check if the user chooses to use database for session storage
+		// if the session does not existst with the system then will check in the DB
+		// by this we can reduce the load on DB
+		// TODO : create a session instance and create the session cookies which is importanct becuase working on session storage in Database
+		switch Config.GetWebConfig().SessionStoreType {
+		case session_store_type_db, session_store_type_database:
+			db_session, err := SessionModel.Get().Where("Id").Is(*sessionID).First()
+			if err != nil {
+				log.Error("Failed to get the Session | %s ", err.Error())
+				return nil, false
+			}
+			if db_session != nil {
+				id, _ := db_session["Id"]
+				data, _ := db_session["Data"]
+				data_object := SessionData{}
+				json.Unmarshal([]byte(data.(string)), &data_object)
+				ins := Instance{
+					ID:             id.(string),
+					Data:           SessionData(data_object),
+					ExpirationTime: time.Now().Add(time.Second * 30),
+				}
+
+				// ins.print()
+
+				go Store(&ins)
+
+				log.Write("Successfully Stored")
+			}
+		}
+		return nil, false
+	}
 
 	go func(sessionID string) {
 		// Move to front in LRU
@@ -186,15 +229,16 @@ func Store(session *Instance) {
 		return
 	}
 
-	sessionStoreMutex.Lock()
 	if len(instances) >= Config.GetWebConfig().MaxSessionCount {
-		evictLRUSession()
+		go evictLRUSession()
 	}
 
+	sessionStoreMutex.Lock()
 	instances[session.ID] = session
 	sessionStoreMutex.Unlock()
 
 	heapAccessMutex.Lock()
+	// Push to heap on every store
 	heap.Push(&sessionHeap, session)
 	heapAccessMutex.Unlock()
 
@@ -235,60 +279,33 @@ func saveAllSessionsToDisk() error {
 	defer sessionStoreMutex.RUnlock()
 
 	if err := enc.Encode(instances); err != nil {
-		panic(err.Error())
+		return fmt.Errorf("failed to encode sessions: %w", err)
 	}
-	return nil
-}
-
-func loadAllSessionsFromDisk() error {
-	// Check if sessions.data exists
-	if _, err := os.Stat("sessions.data"); os.IsNotExist(err) {
-		fmt.Println("[Sessions] sessions.data not found — skipping load")
-		return nil
-	} else if err != nil {
-		// Some other filesystem error
-		return fmt.Errorf("error checking session file: %w", err)
-	}
-
-	// Open file and decode
-	f, err := os.Open("sessions.data")
-	if err != nil {
-		return fmt.Errorf("failed to open session store file: %w", err)
-	}
-	defer f.Close()
-
-	var loaded map[string]*Instance
-	dec := gob.NewDecoder(f)
-	if err := dec.Decode(&loaded); err != nil {
-		return fmt.Errorf("failed to decode session map: %w", err)
-	}
-
-	sessionStoreMutex.Lock()
-	instances = loaded
-	sessionStoreMutex.Unlock()
-
-	fmt.Printf("[Sessions] Loaded %d sessions from sessions.data\n", len(instances))
-	// for id, session := range instances {
-	// 	fmt.Printf("Session ID: %s\n", id)
-	// 	fmt.Printf("  POST: %+v\n", session.POST)
-	// 	fmt.Printf("  GET: %+v\n", session.GET)
-	// 	fmt.Printf("  Store: %+v\n", session.Store)
-	// 	fmt.Printf("  isLoggedIn: %v\n", session.LoggedIn)
-	// 	fmt.Printf("  Expiry: %s\n", session.Expiry)
-	// 	fmt.Println("------------------------")
-	// }
 	return nil
 }
 
 func evictLRUSession() {
 	// Remove from the back of the list (least recently used)
+
 	elem := lruOrderList.Back()
 	if elem == nil {
 		return
 	}
 	sessionID := elem.Value.(string)
-	delete(instances, sessionID)
+
+	sessionStoreMutex.Lock()
+	defer delete(instances, sessionID)
+	sessionStoreMutex.Unlock()
+
 	delete(lruElementMap, sessionID)
+
+	switch Config.GetWebConfig().SessionStoreType {
+	case session_store_type_database, session_store_type_db:
+		if err := SessionModel.Delete().Where("id").Is(sessionID).Exec(); err != nil {
+			log.Error("Failed to delte LRU Session: %s", err.Error())
+		}
+	}
+
 	lruOrderList.Remove(elem)
 }
 
@@ -353,6 +370,7 @@ func StartLRUHandler() {
 func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
 	sh.IsAuthenticated = true
 	sh.setCookie(w, r)
+	Store(sh)
 }
 
 func (sh *Instance) Update(_w http.ResponseWriter, _r *http.Request) {
@@ -360,17 +378,6 @@ func (sh *Instance) Update(_w http.ResponseWriter, _r *http.Request) {
 	defer sessionUpdateMutex.Unlock()
 
 	// sh.lastUsed.Store(time.Now().UnixMicro())
-}
-
-// function to clear value of POST and GET from the Session
-// Make sure what ever in the store will stay for as long as the server is not stopped
-// or you remove the data intentionally
-func (sh *Instance) Clean() {
-	sessionCleanMutex.Lock()
-	defer sessionCleanMutex.Unlock()
-
-	sh.PostParameters = make(HTTPPostParameters)
-	sh.GetParameters = make(HTTPGetParameters)
 }
 
 // Sets the session cookie in the client's browser
@@ -393,4 +400,15 @@ func (sh *Instance) setCookie(w http.ResponseWriter, r *http.Request) {
  */
 func (s *Instance) EnableCaching() {
 
+}
+
+// useful for debug
+func (s *Instance) print() {
+	fmt.Printf("Session ID: %s\n", s.ID)
+	// fmt.Printf("  POST: %+v\n", s.PostParameters)
+	// fmt.Printf("  GET: %+v\n", s.GetParameters)
+	fmt.Printf("  Store: %+v\n", s.Data)
+	fmt.Printf("  isLoggedIn: %v\n", s.IsAuthenticated)
+	fmt.Printf("  Expiry: %s\n", s.ExpirationTime.String())
+	fmt.Println("------------------------")
 }

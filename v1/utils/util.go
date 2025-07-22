@@ -88,3 +88,8 @@ func GetEnvString(key string) *string {
 	}
 	return &val
 }
+
+// Function to convert the int to bool {}
+func Int_to_bool(i int) bool {
+	return i > 0
+}

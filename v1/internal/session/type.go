@@ -20,14 +20,16 @@ type (
 	Instance struct {
 		ID string
 
-		PostParameters HTTPPostParameters
-		GetParameters  HTTPGetParameters
-		Data           SessionData
+		// PostParameters HTTPPostParameters
+		// GetParameters  HTTPGetParameters
+		Data SessionData
 
 		IsAuthenticated bool
 
 		ExpirationTime time.Time
 		// lastUsed atomic.Int64
+		
+		heapIndex int // Index in the session heap for efficient updates
 	}
 
 	// LRUCacheOperation represents an operation to update the LRU cache
@@ -36,3 +38,11 @@ type (
 		OperationType string // "move_to_front" or "insert" or "remove"
 	}
 )
+
+// Current: Push to heap on every store
+// heap.Push(&sessionHeap, session)
+
+// Improvement: Only update heap when expiration changes
+// if session.ExpirationTime != oldExpiration {
+//     heap.Fix(&sessionHeap, session.heapIndex)
+// }

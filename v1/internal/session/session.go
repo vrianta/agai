@@ -374,13 +374,6 @@ func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
 	Store(sh)
 }
 
-func (sh *Instance) Update(_w http.ResponseWriter, _r *http.Request) {
-	sessionUpdateMutex.Lock()
-	defer sessionUpdateMutex.Unlock()
-
-	// sh.lastUsed.Store(time.Now().UnixMicro())
-}
-
 // Sets the session cookie in the client's browser
 func (sh *Instance) setCookie(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()

@@ -44,7 +44,6 @@ import (
 	"strings"
 
 	Config "github.com/vrianta/agai/v1/config"
-	"github.com/vrianta/agai/v1/internal/session"
 	Template "github.com/vrianta/agai/v1/template"
 )
 
@@ -60,10 +59,6 @@ Parameters:
 - session: pointer to the current Session.Instance for the request.
 */
 func (c *Context) runRequest() {
-
-	if c.session != nil {
-		c.session.Update(c.w, c.r) // Update session with current writer and request
-	}
 
 	switch c.r.Method {
 	case "GET":
@@ -140,10 +135,6 @@ func (c *Context) RenderView(view string, data *Template.Response) error {
 	switch extension {
 	// case "html", "htm", "gohtml":
 	}
-	// Example for future use:
-	// if err := c.Session.RenderEngine.RenderTemplate(view, data); err != nil {
-	// 	return fmt.Errorf("error rendering view %s: %w", view, err)
-	// }
 	return nil
 }
 
@@ -241,15 +232,6 @@ Parameters:
 func (c *Context) Init(w http.ResponseWriter, r *http.Request) {
 	c.w = w
 	c.r = r
-
-	// getting the session ID from the cookies
-	// the session not present then the sessionID will be nil
-	sessionID, err := session.GetSessionID(r)
-
-	if err == nil { // it means the use had the session iD
-		sess, _ := session.Get(&sessionID, w, r)
-		c.session = sess
-	}
 
 	c.runRequest()
 

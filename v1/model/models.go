@@ -2,12 +2,15 @@ package model
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/log"
 )
 
 func Init() {
@@ -54,31 +57,33 @@ func Init() {
 	// }
 
 	for _, model := range ModelsRegistry {
-
 		model.CreateTableIfNotExists()
 
-		logSection("[Models] Initializing model and syncing database tables:")
 		if config.SyncDatabaseEnabled {
+			log.Info("[Models] Initializing model and syncing database tables for: %s", model.TableName)
 			model.SyncModelSchema()
+			model.syncTableSchema()
 
 			model.initialised = true
-			fmt.Println()
 		}
-		logSection("[Models] Model initialization complete.")
-
-		logSection("[Components] Initializing Components and syncing database tables:")
-		model.loadComponentFromDisk()
-		if config.SyncComponentsEnabled {
-			model.syncComponentWithDB()
-			model.loadComponentFromDisk()
-		} else {
-			model.refreshComponentFromDB()
-		}
-		logSection("[Components] Component initialization complete.")
 	}
 
-	// session.SessionModel.CreateTableIfNotExists()
+	fmt.Println("---------------------------------------------------------")
 
+	for _, model := range ModelsRegistry {
+
+		_, err := os.Stat(filepath.Join(componentsDir, model.TableName+".component.json"))
+		if !os.IsNotExist(err) {
+			model.loadComponentFromDisk()
+			if config.SyncComponentsEnabled {
+				model.syncComponentWithDB()
+				model.loadComponentFromDisk()
+			} else {
+				// means the file exists in the disk
+				model.refreshComponentFromDB()
+			}
+		}
+	}
 	initialsed = true
 }
 
@@ -144,12 +149,6 @@ func New[T any](tableName string, structure T) *Table[T] {
 }
 
 func (m *meta) CreateTableIfNotExists() {
-	if len(m.schemas) > 0 { // if the lenth is more that 0 that means talbe is already created and no need to create it again instead we should focus on updating it
-		// if !Config.GetBuild() { // table syncing will only work only if it is a build version
-		m.syncTableSchema()
-		// }
-		return
-	}
 	sql := "CREATE TABLE IF NOT EXISTS " + m.TableName + " (\n"
 	fieldDefs := []string{}
 
@@ -160,7 +159,7 @@ func (m *meta) CreateTableIfNotExists() {
 	sql += strings.Join(fieldDefs, ",\n")
 	sql += "\n);"
 
-	fmt.Println("\n[SQL] Table Creation Statement:\n" + sql + "\n")
+	// fmt.Println("\n[SQL] Table Creation Statement:\n" + sql + "\n")
 
 	databaseObj, err := database.GetDatabase()
 	if err != nil {
@@ -172,7 +171,7 @@ func (m *meta) CreateTableIfNotExists() {
 		panic("Error creating table: " + err.Error() + "\nqueryBuilder:" + sql)
 	}
 
-	fmt.Printf("[Success] Table created or already exists: %s\n", m.TableName)
+	// fmt.Printf("[Success] Table created or already exists: %s\n", m.TableName)
 }
 
 // Handles adding/dropping PRIMARY KEY

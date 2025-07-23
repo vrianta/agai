@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	Config "github.com/vrianta/agai/v1/config"
 	log "github.com/vrianta/agai/v1/log"
@@ -19,6 +20,10 @@ func Init() {
 	if database, err = sql.Open(Config.GetDatabaseDriver(), Config.GetDSN()); err != nil {
 		panic("[ERROR] - DB Connection Failed Due to: " + err.Error())
 	}
+
+	// TODO : Create a Config Element to get the Desired Detail
+	database.SetConnMaxIdleTime(time.Second * 10)
+	database.SetMaxOpenConns(10000)
 
 	Initialized = true
 	fmt.Println("[Info] DataBase Connection Established Successfully")

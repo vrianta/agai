@@ -14,6 +14,16 @@ import (
  * Check if the User is Logged in to the system or not
  */
 func (controller *Context) IsLoggedIn() bool {
+	if controller.session == nil {
+		// getting the session ID from the cookies
+		// the session not present then the sessionID will be nil
+		sessionID, err := session.GetSessionID(controller.r)
+
+		if err == nil && sessionID != "" { // it means the user had the session ID
+			sess, _ := session.Get(&sessionID, controller.w, controller.r)
+			controller.session = sess
+		}
+	}
 	return controller.session != nil
 }
 
@@ -22,13 +32,19 @@ func (controller *Context) IsLoggedIn() bool {
  */
 func (controller *Context) Login() bool {
 
+	if controller.session == nil {
+		sessionID, err := session.GetSessionID(controller.r)
+
+		if err == nil && sessionID != "" { // it means the user had the session ID
+			sess, _ := session.Get(&sessionID, controller.w, controller.r)
+			controller.session = sess
+		}
+	}
 	if controller.session != nil {
-		controller.session.IsAuthenticated = true
 		return true // already logged in
 	}
 	var err error
-	// No session, create a new one
-	// session.RemoveSession(&controller.session.ID)
+
 	controller.session, err = session.New(controller.w, controller.r)
 	if err != nil {
 		log.Error("Failed to create the login session: %s", err.Error())
@@ -36,25 +52,28 @@ func (controller *Context) Login() bool {
 	}
 
 	controller.session.Login(controller.w, controller.r)
-	// log.Info("User logged in successfully")
 
 	return true
 }
 
-func (_c *Context) Logout() {
+func (controller *Context) Logout() {
 
-	if _c.session == nil {
-		return // no session present no need to logout
+	if controller.session == nil {
+		sessionID, err := session.GetSessionID(controller.r)
+
+		if err == nil && sessionID != "" { // it means the user had the session ID
+			sess, _ := session.Get(&sessionID, controller.w, controller.r)
+			controller.session = sess
+		}
 	}
 
-	_c.w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-	_c.w.Header().Set("Pragma", "no-cache")
-	_c.w.Header().Set("Expires", "0")
-	_c.session.IsAuthenticated = false
-
-	if _c.session != nil {
-		session.RemoveSession(&_c.session.ID)
+	if controller.session != nil {
+		session.RemoveSession(&controller.session.ID)
+		controller.session = nil // Clear the session after logout
 	}
 
-	_c.session = nil // Clear the session after logout
+	controller.w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	controller.w.Header().Set("Pragma", "no-cache")
+	controller.w.Header().Set("Expires", "0")
+
 }

@@ -95,6 +95,13 @@ func Init() {
  * It will provide the default functions to handle the model like Create, Read, Update, Delete
  */
 func newModel(tableName string, FieldTypes FieldTypeset) meta {
+
+	for _, field := range FieldTypes {
+		if field.fk == nil {
+			field.table_name = tableName // Set the table name for each field
+		}
+	}
+
 	_model := meta{
 		components: make(components),
 		TableName:  tableName,
@@ -125,18 +132,22 @@ func New[T any](tableName string, structure T) *Table[T] {
 	FieldTypeset := make(FieldTypeset, t.NumField())
 
 	for i := 0; i < t.NumField(); i++ {
-		structField := t.Field(i) // get metadata (e.g. "Element", "Value")
-		value := v.Field(i).Interface()
+		structField := t.Field(i)
+		valueField := v.Field(i)
 
-		field, ok := value.(Field)
+		// Handle pointer to Field
+		fieldPtr, ok := valueField.Interface().(*Field)
 		if !ok {
-			panic(fmt.Sprintf("[Model Error] Field '%s' is not of type model.Field", structField.Name))
+			panic(fmt.Sprintf("[Model Error] Field '%s' is not of type *model.Field of Model %s", structField.Name, tableName))
 		}
 
-		// Always override the Name field based on struct variable name
-		field.name = structField.Name
+		// Update metadata
+		fieldPtr.name = structField.Name
+		if fieldPtr.fk == nil {
+			fieldPtr.table_name = tableName
+		}
 
-		FieldTypeset[structField.Name] = &field
+		FieldTypeset[structField.Name] = fieldPtr
 	}
 
 	response := &Table[T]{
@@ -153,13 +164,18 @@ func (m *meta) CreateTableIfNotExists() {
 	fieldDefs := []string{}
 
 	for _, field := range m.FieldTypes {
-		fieldDefs = append(fieldDefs, field.String())
+		fieldDefs = append(fieldDefs, field.columnDefinition())
+	}
+
+	for _, field := range m.FieldTypes {
+		indexStatements := field.addIndexStatement()
+		if indexStatements != "" {
+			fieldDefs = append(fieldDefs, indexStatements)
+		}
 	}
 
 	sql += strings.Join(fieldDefs, ",\n")
 	sql += "\n);"
-
-	// fmt.Println("\n[SQL] Table Creation Statement:\n" + sql + "\n")
 
 	databaseObj, err := database.GetDatabase()
 	if err != nil {
@@ -171,7 +187,6 @@ func (m *meta) CreateTableIfNotExists() {
 		panic("Error creating table: " + err.Error() + "\nqueryBuilder:" + sql)
 	}
 
-	// fmt.Printf("[Success] Table created or already exists: %s\n", m.TableName)
 }
 
 // Handles adding/dropping PRIMARY KEY

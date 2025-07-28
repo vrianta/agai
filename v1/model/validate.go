@@ -38,6 +38,12 @@ func (m *meta) validate() {
 			fieldNames[f.name] = struct{}{}
 			mu.Unlock()
 
+			if f.Type == FieldTypes.Enum && f.Definition == nil {
+				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is of type ENUM but has no definition.", f.name, m.TableName))
+			} else if f.Definition != nil && len(f.Definition) == 0 {
+				panic(fmt.Sprintf("Field '%s' of type ENUM must have Definition values", f.name))
+
+			}
 			// PRIMARY KEY and UNIQUE cannot both be true
 			if f.Index.PrimaryKey && f.Index.Unique {
 				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' cannot be both PRIMARY KEY and UNIQUE.", f.name, m.TableName))

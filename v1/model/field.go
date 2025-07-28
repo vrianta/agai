@@ -13,24 +13,47 @@ CREATE TABLE IF NOT EXISTS employees (
 */
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 	"unicode"
+
+	"github.com/vrianta/agai/v1/log"
 )
 
 // return the string of the total field expression mostly will be used for table creation
 func (f *Field) String() string {
-	response := f.name + " " + f.Type.string()
-	if f.Length > 0 {
-		response += "(" + fmt.Sprint(f.Length) + ") "
+	var response string
+
+	// ENUM support
+	if f.Type == FieldTypes.Enum {
+		enumValues := make([]string, len(f.Definition))
+		for i, val := range f.Definition {
+			enumValues[i] = "'" + fmt.Sprintf("%v", val) + "'"
+		}
+		response = fmt.Sprintf("%s ENUM(%s)", f.name, strings.Join(enumValues, ","))
+	} else {
+		// Basic type and length
+		response = f.name + " " + f.Type.string()
+		// if the length is greater than 0 then we are setting the length of the field
+		// this is mostly used for VARCHAR, CHAR, TEXT, etc.
+		if f.Length > 0 {
+			response += "(" + fmt.Sprint(f.Length) + ")"
+		}
 	}
+
+	// if the field is nullable then we are setting it to NULL otherwise NOT NULL
+	// this is mostly used for VARCHAR, CHAR, TEXT, etc.
 	if f.Nullable {
 		response += " NULL "
-	} else if !f.Nullable {
+	} else if !f.Nullable { // if the field is not nullable then we are setting it to NOT NULL
+		// if the field is not nullable then we are setting it to NOT NULL
 		response += " NOT NULL "
 	}
 
+	// if the defaut value is not empty setting the Default values for perticular field
 	if f.DefaultValue != "" {
 		switch f.Type {
 		case FieldTypes.String, FieldTypes.Text:
@@ -61,15 +84,38 @@ func (f *Field) String() string {
 	if f.Index.Unique {
 		response += ", UNIQUE unq_" + string(f.name) + " (" + string(f.name) + ")"
 	}
+	if f.fk != nil {
+		response += f.foreignKeyConstraint()
+	}
 
 	return response
 }
 
 func (f *Field) columnDefinition() string {
-	response := f.name + " " + f.Type.string()
-	if f.Length > 0 {
-		response += "(" + fmt.Sprint(f.Length) + ") "
+	var response string
+
+	// ENUM support
+	if f.Type == FieldTypes.Enum {
+
+		enumValues := make([]string, len(f.Definition))
+		for i, val := range f.Definition {
+			enumValues[i] = "'" + fmt.Sprintf("%v", val) + "'"
+		}
+		response = fmt.Sprintf("%s ENUM(%s)", f.name, strings.Join(enumValues, ","))
+	} else {
+		response = f.name + " " + f.Type.string()
+
+		// if the length is greater than 0 then we are setting the length of the field
+		// this is mostly used for VARCHAR, CHAR, TEXT, etc.
+		if f.Length > 0 {
+			response += "(" + fmt.Sprint(f.Length) + ")"
+		}
 	}
+
+	// if f.Length > 0 {
+	// 	response += "(" + fmt.Sprint(f.Length) + ") "
+	// }
+
 	if f.Nullable {
 		response += " NULL "
 	} else if !f.Nullable {
@@ -86,6 +132,8 @@ func (f *Field) columnDefinition() string {
 			} else {
 				response += "DEFAULT FALSE "
 			}
+		case FieldTypes.Enum:
+			response += "DEFAULT '" + f.DefaultValue + "' "
 		default:
 			response += "DEFAULT " + f.DefaultValue + " "
 		}
@@ -95,30 +143,36 @@ func (f *Field) columnDefinition() string {
 }
 
 func (f *Field) addIndexStatement() string {
-	var response string
+	responseArray := []string{}
 	if f.Index.PrimaryKey {
-		response += ", ADD Primary Key pk_" + string(f.name) + " (" + string(f.name) + ")"
+		responseArray = append(responseArray, "Primary Key pk_"+string(f.name)+" ("+string(f.name)+")")
 	}
 	if f.Index.Index {
-		response += ", ADD INDEX idx_" + string(f.name) + " (" + string(f.name) + ")"
+		responseArray = append(responseArray, "INDEX idx_"+string(f.name)+" ("+string(f.name)+")")
 	}
 	if f.Index.FullText {
-		response += ", ADD FULLTEXT ftxt_" + string(f.name) + " (" + string(f.name) + ")"
+		responseArray = append(responseArray, "FULLTEXT ftxt_"+string(f.name)+" ("+string(f.name)+")")
+
 	}
 	if f.Index.Spatial {
-		response += ", ADD SPATIAL sp_" + string(f.name) + " (" + string(f.name) + ")"
+		responseArray = append(responseArray, "SPATIAL sp_"+string(f.name)+" ("+string(f.name)+")")
 	}
 	if f.Index.Unique {
-		response += ", ADD UNIQUE unq_" + string(f.name) + " (" + string(f.name) + ")"
+		responseArray = append(responseArray, "UNIQUE unq_"+string(f.name)+" ("+string(f.name)+")")
 	}
 
-	return response
+	if f.fk != nil {
+		responseArray = append(responseArray, f.foreignKeyConstraint())
+	}
+
+	return strings.Join(responseArray, ",\n")
 }
 
 func (f *Field) Name() string {
 	return f.name
 }
 
+// check if the value is compatible with the field type
 func (ft fieldType) IsValueCompatible(val string) bool {
 	switch ft {
 	case FieldTypes.Int, FieldTypes.TinyInt, FieldTypes.SmallInt, FieldTypes.MediumInt, FieldTypes.BigInt:
@@ -127,10 +181,16 @@ func (ft fieldType) IsValueCompatible(val string) bool {
 	case FieldTypes.Float, FieldTypes.Decimal, FieldTypes.Double, FieldTypes.Real:
 		_, err := strconv.ParseFloat(val, 64)
 		return err == nil
-	case FieldTypes.Date, FieldTypes.Time, FieldTypes.Timestamp:
+	case FieldTypes.Date, FieldTypes.Time:
 		_, err1 := time.Parse("2006-01-02", val)
 		_, err2 := time.Parse("2006-01-02 15:04:05", val)
 		return err1 == nil || err2 == nil
+	case FieldTypes.Timestamp:
+		_, err := time.Parse("2006-01-02 15:04:05", val)
+		return err == nil || val == "CURRENT_TIMESTAMP" || val == "NOW()"
+	case FieldTypes.JSON:
+		var js json.RawMessage
+		return json.Unmarshal([]byte(val), &js) == nil
 	case FieldTypes.VarChar, FieldTypes.Text, FieldTypes.String, FieldTypes.Char:
 		return true
 	case FieldTypes.Bool:
@@ -256,4 +316,70 @@ func (f *Field) Compare(fieldTypeStr string) bool {
 	}
 
 	return false
+}
+
+func (f *Field) foreignKeyConstraint() string {
+	if f.fk == nil {
+		return ""
+	}
+
+	stmt := fmt.Sprintf("CONSTRAINT fk_%s FOREIGN KEY (%s) REFERENCES %s(%s)",
+		f.name, f.name, f.table_name, f.name)
+
+	if f.fk.onDelete != "" {
+		stmt += " ON DELETE " + f.fk.onDelete
+	}
+	if f.fk.onUpdate != "" {
+		stmt += " ON UPDATE " + f.fk.onUpdate
+	}
+
+	return stmt
+}
+
+func (f *Field) ToForeignKey(onDelete, onUpdate string, is_primary_key, is_index, is_unique bool) *Field {
+
+	if !f.Index.PrimaryKey {
+		panic("Field " + f.name + " must be a primary key to set as foreign key")
+	}
+
+	// TODO: Find a way to get the table name before the field is created
+	log.Info("Table Name of the foreingkey: %s", f.table_name)
+	return &Field{
+		name:          f.name,
+		Type:          f.Type,
+		Length:        f.Length,
+		Nullable:      f.Nullable,
+		DefaultValue:  f.DefaultValue,
+		AutoIncrement: f.AutoIncrement,
+		Index: Index{
+			PrimaryKey: is_primary_key,
+			Index:      is_index,
+			Unique:     is_unique,
+		},
+		table_name: f.table_name,
+		fk: &foreignKey{
+			referenceTable:  f.table_name,
+			referenceColumn: f.name,
+			onDelete:        onDelete,
+			onUpdate:        onUpdate,
+		},
+	}
+}
+
+// ForeignKey sets the foreign key constraint for a field
+// leave onDelete and onUpdate empty if you do not want to set them
+// example onDelete: "CASCADE", "SET NULL", "RESTRICT", etc.
+// example onUpdate: "CASCADE", "SET NULL", "RESTRICT", etc.
+func ForeignKey(field Field, onDelete, onUpdate string, is_primary_key bool, is_index bool, is_unique bool) Field {
+	field.Index.PrimaryKey = is_primary_key
+	field.Index.Index = is_index
+	field.Index.Unique = is_unique
+
+	field.fk = &foreignKey{
+		referenceTable:  field.table_name,
+		referenceColumn: field.name,
+		onDelete:        onDelete,
+		onUpdate:        onUpdate,
+	}
+	return field
 }

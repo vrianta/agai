@@ -8,6 +8,7 @@ import (
 
 	"github.com/vrianta/agai/v1/config"
 	DatabaseHandler "github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/log"
 )
 
 // Function to get the table topology and compare with the latest FieldTypes and generate a new SQL queryBuilder to alter the table
@@ -122,6 +123,7 @@ func (m *meta) syncTableSchema() {
 					goto indexCheck // skip to index comparison
 				}
 			}
+			log.Debug("[Modify] Updating field: %s (%s)", field.name, strings.Join(reasons, ", "))
 			m.modifyDBField(field) // apply column alterations
 		}
 

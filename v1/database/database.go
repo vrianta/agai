@@ -5,25 +5,34 @@ import (
 	"fmt"
 	"time"
 
-	Config "github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/config"
 	log "github.com/vrianta/agai/v1/log"
 )
 
 // Function to init the Database with the Database/sql object and store it in the program
 func Init() {
 
-	if Config.GetDatabaseConfig().Host == "" {
+	if config.GetDatabaseConfig().Host == "" {
 		log.WriteLog("DataBase Config do not have any host in it so We are skipping all database connections")
 		return
 	}
 	var err error
-	if database, err = sql.Open(Config.GetDatabaseDriver(), Config.GetDSN()); err != nil {
+	if database, err = sql.Open(config.GetDatabaseDriver(), config.GetDSN()); err != nil {
+		if config.ShowDsn {
+			fmt.Println(config.GetDSN())
+		}
 		panic("[ERROR] - DB Connection Failed Due to: " + err.Error())
 	}
 
 	// TODO : Create a Config Element to get the Desired Detail
 	database.SetConnMaxIdleTime(time.Second * 10)
 	database.SetMaxOpenConns(10000)
+	if err := database.Ping(); err != nil {
+		if config.ShowDsn {
+			log.Info("DNS of the Database Server : %s", config.GetDSN())
+		}
+		panic("[ERROR] - DB Connection Failed Due to: " + err.Error())
+	}
 
 	Initialized = true
 	fmt.Println("[Info] DataBase Connection Established Successfully")

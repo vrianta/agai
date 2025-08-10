@@ -113,6 +113,7 @@ You can control various behaviors of the framework using command-line flags when
 | `--migrate-model`     | `-mm`    | Run model-level database migrations              |
 | `--migrate-component` | `-mc`    | Sync components with the database                |
 | `--start-server`      | `-ss`    | Start the HTTP server                            |
+| `--show-dsn`          | `-sdn`   | Show the Dsn if the database connection failed   |
 | `--help`              | `-h`     | Display the list of available command-line flags |
 
 Example Usage

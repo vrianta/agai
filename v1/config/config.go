@@ -1,6 +1,9 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 func GetPort() string {
 	return webConfig.Port
@@ -60,12 +63,19 @@ func GetWebConfig() *webConfigStruct {
 	return &webConfig
 }
 
-// function to get dsn of the database
+/*
+ * @return : dsn of the database
+ * dns is the string which is being used to connect to the database
+ * Usually for mysql it looks as username:password@protocol(host:port)/DatabaseName
+ */
 func GetDSN() string {
+
+	// url encoded password where the spcial charenters are converted url friendly notations
+	escapedPassword := url.QueryEscape(databaseConfig.Password)
 	if databaseConfig.Driver == "mysql" {
 		return fmt.Sprintf("%s:%s@%s(%s:%s)/%s",
 			databaseConfig.User,
-			databaseConfig.Password,
+			escapedPassword,
 			databaseConfig.Protocol,
 			databaseConfig.Host,
 			databaseConfig.Port,
@@ -74,6 +84,10 @@ func GetDSN() string {
 	}
 	return ""
 }
+
+/*
+Returns the Driver name which user provided
+*/
 func GetDatabaseDriver() string {
 	return databaseConfig.Driver
 }

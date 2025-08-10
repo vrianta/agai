@@ -97,8 +97,11 @@ func (m *meta) syncTableSchema() {
 			shouldChange = true
 		}
 		if schema.defaultVal.String != field.DefaultValue { // default value mismatch?
-			reasons = append(reasons, "default mismatch")
-			shouldChange = true
+			// some edge cases
+			if field.Type != FieldTypes.Timestamp {
+				reasons = append(reasons, "default mismatch")
+				shouldChange = true
+			}
 		}
 		// Nullable flag mismatches (DB says YES/NO vs model bool).
 		if schema.nullable == "YES" && !field.Nullable ||

@@ -183,6 +183,7 @@ func (m *meta) CreateTableIfNotExists() {
 	}
 
 	_, err = databaseObj.Exec(sql)
+	// log.Info("Creating Table Sql Executed : %s", sql)
 	if err != nil {
 		panic("Error creating table: " + err.Error() + "\nqueryBuilder:" + sql)
 	}

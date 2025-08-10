@@ -210,7 +210,11 @@ func isAlphaNumeric(s string) bool {
 }
 
 func (f *Field) Compare(fieldTypeStr string) bool {
-	switch fieldTypeStr {
+
+	// edge case for enum if is returning then it will return all the default values also have to make a condition to split functions
+	_type := strings.Split(fieldTypeStr, "(")[0] // so if any type return TYPE() then it will return TYPE
+
+	switch _type {
 	case "TINYINT":
 		switch f.Type {
 		case FieldTypes.TinyInt, FieldTypes.Bool:
@@ -302,8 +306,14 @@ func (f *Field) Compare(fieldTypeStr string) bool {
 			return true
 		}
 	case "ENUM":
-		switch f.Type {
-		case FieldTypes.Enum:
+		// Enum is coming as a functions with values - ENUM('MALE','FEMALE','EXTRA','OTHER')
+		enumValues := make([]string, len(f.Definition))
+		for i, val := range f.Definition {
+			enumValues[i] = "'" + strings.ToUpper(fmt.Sprintf("%v", val)+"'")
+		}
+		enum := fmt.Sprintf("ENUM(%s)", strings.Join(enumValues, ","))
+		// println(enum)
+		if fieldTypeStr == enum {
 			return true
 		}
 	case "UUID":

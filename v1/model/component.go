@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/vrianta/agai/v1/log"
 )
@@ -19,7 +20,8 @@ import (
 */
 // Loads a component JSON file and stores it in the model's components map
 func (m *meta) loadComponentFromDisk() {
-	fmt.Printf("[component] Loading component for table: %s\n", m.TableName)
+	log.Info("[component] Loading component for table: %s\n", m.TableName)
+
 	path := filepath.Join(componentsDir, m.TableName+".component.json")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		fmt.Printf("[component] No JSON file found for: %s\n", m.TableName)
@@ -89,10 +91,25 @@ func (m *meta) syncComponentWithDB() error {
 
 	// Add missing
 	for k, v := range m.components {
-		if _, ok := dbResults[k]; !ok {
-			log.Error("[component] DB missing component '%s' in table %s\n", k, m.TableName)
-			_ = m.InsertRow(v)
+		if m.primary.Type == FieldTypes.Int {
+			if int_k, err := strconv.Atoi(k); err != nil {
+				return err
+			} else {
+				// int64 because whe I added "0" in the index of component and unmarshal it that converts that in int64
+				if _, ok := dbResults[int64(int_k)]; !ok {
+					log.Error("[component] DB missing component %s in table %s\n", k, m.TableName)
+					fmt.Println(dbResults)
+					_ = m.InsertRow(v)
+				}
+			}
+		} else {
+			if _, ok := dbResults[k]; !ok {
+				log.Error("[component] DB missing component '%s' in table %s\n", k, m.TableName)
+				// fmt.Println(dbResults)
+				_ = m.InsertRow(v)
+			}
 		}
+
 	}
 
 	// Remove stale

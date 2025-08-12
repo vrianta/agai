@@ -1,11 +1,13 @@
 package model
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/vrianta/agai/v1/log"
 )
 
 // Joson pattern will be
@@ -28,13 +30,13 @@ func (m *meta) loadComponentFromDisk() {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		log.Printf("[component] Error reading %s: %v\n", path, err)
+		log.Error("Failed to read %s: %v\n", path, err)
 		return
 	}
 
 	var raw components
 	if err := json.Unmarshal(data, &raw); err != nil {
-		log.Printf("[component] Error unmarshaling %s: %v\n", path, err)
+		log.Error("[component] Error unmarshaling %s: %v\n", path, err)
 		return
 	}
 
@@ -52,7 +54,20 @@ func (m *meta) saveComponentToDisk() error {
 	return os.WriteFile(path, bytes, 0644)
 }
 
-// Syncs the in-memory components with the DB table for this model
+/*
+ * syncComponentWithDB ensures that local components and database components match.
+ *
+ * Steps:
+ * 1. If there are no local components, exit.
+ * 2. Fetch current components from the database.
+ * 3. If the database is empty, insert all local components into it.
+ * 4. Add any local components missing from the database.
+ * 5. Remove any database components that don't exist locally.
+ * 6. Replace the local components list with the latest data from the database.
+ * 7. Save the updated components list to disk.
+ *
+ * The database is treated as the final source of truth after syncing.
+ */
 func (m *meta) syncComponentWithDB() error {
 	if len(m.components) == 0 {
 		fmt.Printf("[component] No components to sync for: %s\n", m.TableName)
@@ -67,7 +82,7 @@ func (m *meta) syncComponentWithDB() error {
 	if len(dbResults) == 0 {
 		for _, localItem := range m.components {
 			if err := m.InsertRow(localItem); err != nil {
-				log.Printf("[component] Insert failed: %v\n", err)
+				log.Error("[component] Insert failed: %v\n", err)
 			}
 		}
 		return nil
@@ -76,7 +91,7 @@ func (m *meta) syncComponentWithDB() error {
 	// Add missing
 	for k, v := range m.components {
 		if _, ok := dbResults[k]; !ok {
-			log.Printf("[component] DB missing component '%s' in table %s\n", k, m.TableName)
+			log.Error("[component] DB missing component '%s' in table %s\n", k, m.TableName)
 			_ = m.InsertRow(v)
 		}
 	}
@@ -102,12 +117,12 @@ func (m *meta) syncComponentWithDB() error {
 // Refreshes model's in-memory components from DB and rewrites JSON
 func (m *meta) refreshComponentFromDB() {
 	if !m.HasPrimaryKey() {
-		log.Printf("[component] Model %s missing primary key\n", m.TableName)
+		log.Error("[component] Model %s missing primary key\n", m.TableName)
 		return
 	}
 	results, err := m.Get().Fetch()
 	if err != nil {
-		log.Printf("[component] Fetch error for %s: %v\n", m.TableName, err)
+		log.Error("[component] Fetch error for %s: %v\n", m.TableName, err)
 		return
 	}
 	updated := make(components)
@@ -115,8 +130,29 @@ func (m *meta) refreshComponentFromDB() {
 		c := component(v)
 		updated[fmt.Sprint(k)] = c
 	}
-	m.components = updated
-	_ = m.saveComponentToDisk()
+
+	if len(updated) == 0 && len(m.components) > 0 {
+		// means the local component file has data in it but the database does not have
+		// we would update the database in this stage, but ask the user to confirm
+		log.Info("Database is empty but the local file has data do you want to update the Database?(y/n):")
+		reader := bufio.NewReader(os.Stdin)
+		sentence, _ := reader.ReadString('\n')
+		switch sentence {
+		case "y":
+			// update the database
+			m.syncComponentWithDB()
+		case "n":
+			m.components = updated
+			_ = m.saveComponentToDisk()
+		default:
+			log.Error("Passed Wrong Input: %s", sentence)
+			m.refreshComponentFromDB()
+		}
+	} else {
+		m.components = updated
+		_ = m.saveComponentToDisk()
+	}
+
 }
 
 func (m *meta) GetComponents() components {

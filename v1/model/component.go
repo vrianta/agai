@@ -97,19 +97,23 @@ func (m *meta) syncComponentWithDB() error {
 			} else {
 				// int64 because whe I added "0" in the index of component and unmarshal it that converts that in int64
 				if _, ok := dbResults[int64(int_k)]; !ok {
-					log.Error("[component] DB missing component %s in table %s\n", k, m.TableName)
-					fmt.Println(dbResults)
-					_ = m.InsertRow(v)
+					log.Warn("[component] DB missing component %s in table %s", k, m.TableName)
+					log.Info("We are adding the component %s into the table %s", k, m.TableName)
+					if err := m.InsertRow(v); err != nil {
+						panic("Failed to update the Component :" + err.Error())
+					}
+					dbResults[k] = Result(v)
 				}
 			}
 		} else {
 			if _, ok := dbResults[k]; !ok {
-				log.Error("[component] DB missing component '%s' in table %s\n", k, m.TableName)
-				// fmt.Println(dbResults)
-				_ = m.InsertRow(v)
+				log.Warn("[component] DB missing component '%s' in table %s\n", k, m.TableName)
+				if err := m.InsertRow(v); err != nil {
+					panic("Failed to update the Component :" + err.Error())
+				}
+				dbResults[k] = Result(v)
 			}
 		}
-
 	}
 
 	// Remove stale

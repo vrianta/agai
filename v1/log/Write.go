@@ -103,7 +103,7 @@ func Write(msg string, args ...any) {
 	green := "\033[32m"
 	reset := "\033[0m"
 	formatted := fmt.Sprintf(msg, args...)
-	fmt.Printf("%s%s%s\n", green, formatted, reset)
+	fmt.Printf("%s%s%s", green, formatted, reset)
 }
 
 // Legacy support

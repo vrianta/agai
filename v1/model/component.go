@@ -1,7 +1,6 @@
 package model
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -135,9 +134,10 @@ func (m *meta) refreshComponentFromDB() {
 		// means the local component file has data in it but the database does not have
 		// we would update the database in this stage, but ask the user to confirm
 		log.Info("Database is empty but the local file has data do you want to update the Database?(y/n):")
-		reader := bufio.NewReader(os.Stdin)
-		sentence, _ := reader.ReadString('\n')
-		switch sentence {
+		// reader := bufio.NewReader(os.Stdin)
+		var input string
+		fmt.Scanln(&input)
+		switch input {
 		case "y":
 			// update the database
 			m.syncComponentWithDB()
@@ -145,7 +145,7 @@ func (m *meta) refreshComponentFromDB() {
 			m.components = updated
 			_ = m.saveComponentToDisk()
 		default:
-			log.Error("Passed Wrong Input: %s", sentence)
+			log.Error("Passed Wrong Input: %s", input)
 			m.refreshComponentFromDB()
 		}
 	} else {

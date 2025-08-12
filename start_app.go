@@ -26,6 +26,10 @@ var browser_proc *exec.Cmd
 var output_app_name string
 var wait_for_hot_reloader sync.WaitGroup
 
+// this falag is needed because after we restart the application on componenent file change it again pdate the components so we have to detect
+// if we are not detecting the component after a application start or an application restart
+var FLAG_restarted_application_after_component_change bool = false
+
 func init() {
 	if runtime.GOOS == "windows" {
 		output_app_name = "app.exe"
@@ -191,27 +195,29 @@ func WatchFolders(interval time.Duration) {
 	generalTimestamps := make(map[string]time.Time)
 
 	for {
-		moduleChanged := checkDir("modules", modTimestamps)
+		moduleChanged := checkDir("models", modTimestamps)
 		componentChanged := checkDir("components", componentTimestamps)
 		generalChanged := checkGeneral(".", generalTimestamps)
 
 		if moduleChanged {
-			log.Info("Module files changed")
+			log.Info("Model file changed")
 			onModuleChange()
+			time.Sleep(interval)
 			broadcast("reload")
 		}
 		if componentChanged {
 			log.Info("Component files changed")
-			onComponentChange()
-			broadcast("reload")
+			// onComponentChange()
+			log.Warn("We Deteceted a Component Change Please -restart the application so | curretnly hot reload is not supported for components")
+			// broadcast("reload")
 		}
 		if generalChanged {
 			log.Info("General files changed")
 			onGeneralChange()
+			time.Sleep(interval)
 			broadcast("reload")
 		}
 
-		time.Sleep(interval)
 	}
 }
 
@@ -254,7 +260,7 @@ func checkGeneral(root string, lastMod map[string]time.Time) bool {
 		}
 
 		// Skip specific directories
-		if info.IsDir() && (path == "modules" || path == "components") {
+		if info.IsDir() && (info.Name() == "models" || info.Name() == "components" || info.Name() == ".git") {
 			return filepath.SkipDir
 		}
 		if info.Name() == "sessions.data" || info.Name() == output_app_name {
@@ -325,7 +331,12 @@ func onModuleChange() {
 	if err := migrate_models.Run(); err != nil {
 		log.Error("Model migration failed: %s", err.Error())
 	}
-	fmt.Println(migrate_models.Output())
+	if model_migration_output, err := migrate_models.Output(); err == nil {
+		fmt.Println("Output for Model Migration : ", model_migration_output)
+	} else {
+		panic(err.Error())
+	}
+
 	if err := run_app.Start(); err != nil {
 		panic("Failed to restart server: " + err.Error())
 	}
@@ -333,6 +344,11 @@ func onModuleChange() {
 }
 
 func onComponentChange() {
+	// now on the first run it will skip the component change
+	if !FLAG_restarted_application_after_component_change {
+		FLAG_restarted_application_after_component_change = true
+		return
+	}
 	log.Info("Restarting server due to component changes...")
 	if err := run_app.Process.Kill(); err != nil {
 		log.Error("Failed to kill server: %s", err.Error())
@@ -353,19 +369,23 @@ func onComponentChange() {
 		panic("Failed to restart server: " + err.Error())
 	}
 	log.Info("Server restarted after component migration.")
+	// and if we are restarted the application means by default the components will be updated in the disk
+	// hence we need to make it false again so that we skip the next change scan
+	FLAG_restarted_application_after_component_change = false
 }
 
 func onGeneralChange() {
-	log.Info("Restarting server due to general changes...")
+	log.Warn("Restarting server due to general changes...")
 	if err := run_app.Process.Kill(); err != nil {
-		log.Error("Failed to kill server: %s", err.Error())
+		panic("Failed to kill server: " + err.Error())
 	}
 
-	run_app.Wait()
-	run_app = new_app_cmd()
+	run_app.Wait()          // waiting for the app to close
+	run_app = new_app_cmd() // creating new cmd to start the application
 
 	if err := run_app.Start(); err != nil {
 		panic("Failed to restart server: " + err.Error())
 	}
+	// later I should check if I can connect to the started server before proceeding
 	log.Info("Server restarted due to general change.")
 }

@@ -20,7 +20,7 @@ import "fmt"
 func print_help() {
 	fmt.Println("Flags:")
 	fmt.Printf("  %-32s %s\n", "--create-app, -ca", "Create an application (e.g. --create-app blog)")
-	fmt.Printf("  %-32s %s\n", "--create-controller, -cc", "Create a controller (e.g. --create-controller post)")
+	fmt.Printf("  %-32s %s\n", "--create-controller, -cc", "Create a controller (e.g. --create-controller post) \nTo create view along with the controller you have to mention --create-view/-cv without any name with it")
 	fmt.Printf("  %-32s %s\n", "--create-model, -cm", "Create a model (e.g. --create-model user)")
 	fmt.Printf("  %-32s %s\n", "--create-model-component, -cmc", "Create a component (e.g. --create-component nav)")
 	fmt.Printf("  %-32s %s\n", "--create-view, -cv", "Create a view (optionally pass controller/view name)")

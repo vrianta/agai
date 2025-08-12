@@ -89,7 +89,10 @@ func create_controller() {
 			return
 		}
 
+		// create controller view
+
 		log.Info("✅ Controller '%s' created at %s", controller_name, controller_output_location)
+		log.Warn("There are no option to update the routes automatically - please make sure you update the routes in routes.go file int the root directory")
 	}
 
 	log.Write("---------------------------------")

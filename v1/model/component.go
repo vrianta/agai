@@ -180,10 +180,45 @@ func (m *meta) GetComponents() components {
 	return m.components
 }
 
-func (m *meta) GetComponent(id string) component {
-	return m.components[id]
+func (m *meta) GetComponent(id string) (component, bool) {
+	// have to add conditional checks before returning
+	component, ok := m.components[id]
+	return component, ok
 }
 
-func (c component) FieldValue(field string) any {
-	return c[field]
+// pass the id of the component you want to update and the value you want to put
+func (m *meta) UpdateComponent(id string, value component) error {
+
+	if _, ok := m.components[id]; ok {
+		m.components[id] = value
+	} else {
+		return fmt.Errorf("no componnet found with such name")
+	}
+
+	q := m.Update().Where(m.primary.name).Is(id)
+	for idx, val := range value {
+		q = q.Set(idx).To(val)
+
+	}
+
+	if err := q.Exec(); err != nil {
+		return err
+	}
+
+	if _, ok := m.components[id]; ok {
+		m.components[id] = value
+	} else {
+		return fmt.Errorf("no componnet found with such name")
+	}
+
+	return nil
+}
+
+func (c component) FieldValue(field string) (any, bool) {
+	val, ok := c[field]
+	return val, ok
+}
+
+func (c component) UpdateFieldValue(field string, value any) {
+
 }

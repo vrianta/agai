@@ -207,9 +207,10 @@ func WatchFolders(interval time.Duration) {
 		}
 		if componentChanged {
 			log.Info("Component files changed")
-			// onComponentChange()
-			log.Warn("We Deteceted a Component Change Please -restart the application so | curretnly hot reload is not supported for components")
-			// broadcast("reload")
+			onComponentChange()
+			time.Sleep(interval)
+			// log.Warn("We Deteceted a Component Change Please -restart the application so | curretnly hot reload is not supported for components")
+			broadcast("reload")
 		}
 		if generalChanged {
 			log.Info("General files changed")
@@ -388,4 +389,32 @@ func onGeneralChange() {
 	}
 	// later I should check if I can connect to the started server before proceeding
 	log.Info("Server restarted due to general change.")
+}
+
+func migrate_model_and_component() {
+	if f.migrate_model {
+		// start migrating the models
+
+		log.Info("Migrating Models")
+		migrate_models := new_migrate_model_cmd()
+
+		if err := migrate_models.Run(); err != nil {
+			log.Error("Model migration failed: %s", err.Error())
+		}
+	}
+
+	if f.migrate_component {
+
+		log.Info("Migrating Components")
+		migrate_components := new_migrate_component_cmd()
+
+		if output, err := migrate_components.Output(); err != nil {
+			panic("Component migration failed: " + err.Error())
+		} else {
+			log.Info("%s", string(output))
+		}
+
+		migrate_components.Wait()
+
+	}
 }

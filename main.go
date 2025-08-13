@@ -48,6 +48,8 @@ func main() {
 	create_models()     // create models
 	create_components() // creating components
 
+	migrate_model_and_component() // migrating models and components
+
 	start_app() // starting the application
 
 }

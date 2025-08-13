@@ -4,7 +4,7 @@ import (
 	"github.com/vrianta/agai/v1/model"
 )
 
-var {{ .model_name }} = model.New("{{ .model_name }}", struct {
+var {{ .model_name }} = model.New("{{ .table_name }}", struct {
 	Id       model.Field
 }{
 	Id: model.Field{

@@ -214,6 +214,7 @@ func create_models() {
 		var buf bytes.Buffer
 		err = tmpl.Execute(&buf, map[string]string{
 			"model_name": capitalize(model_name),
+			"table_name": strings.ToLower(model_name),
 		})
 		if err != nil {
 			log.Error("❌ Error: Template execution failed: %v", err)

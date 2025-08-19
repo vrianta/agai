@@ -140,7 +140,9 @@ func New[T any](tableName string, structure T) *Table[T] {
 		if !ok {
 			panic(fmt.Sprintf("[Model Error] Field '%s' is not of type *model.Field of Model %s", structField.Name, tableName))
 		}
-
+		if fieldPtr == nil {
+			panic(fmt.Sprintf("[Validation Error] Field '%s' in Talble %s Body is not Defined", structField.Name, tableName))
+		}
 		// Update metadata
 		fieldPtr.name = structField.Name
 		if fieldPtr.fk == nil {

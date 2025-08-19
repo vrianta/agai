@@ -37,7 +37,7 @@ func init() {
 		output_app_name = "app"
 	}
 
-	run_app = new_app_cmd()
+	run_app = runAppCmd()
 	migrate_models = new_migrate_model_cmd()
 	migrate_components = new_migrate_component_cmd()
 	// config.init()
@@ -45,13 +45,14 @@ func init() {
 
 func start_app() {
 	if !f.start_app {
-		log.Debug("start_app flag is false, exiting.")
 		return
 	}
 
 	log.Info("Starting server process...")
-	if err := run_app.Start(); err != nil {
-		panic("Failed to Start the Server - " + err.Error())
+	if output, err := run_app.Output(); err != nil {
+		panic("Failed to Start the Server:\nError: " + err.Error() + "\nOutput: " + string(output))
+	} else {
+		log.Info("%s", string(output))
 	}
 
 	go start_hot_reload()
@@ -252,6 +253,10 @@ func checkDir(root string, lastMod map[string]time.Time) bool {
 	return changed
 }
 
+/*
+ * Checking general files which are going to created by the user or not really important to do extra lookup
+ * return a bool to show if the system has to restart the server or not
+ */
 func checkGeneral(root string, lastMod map[string]time.Time) bool {
 	changed := false
 
@@ -301,6 +306,17 @@ func app_build() {
 	}
 }
 
+/*
+ * Run the solution
+ * Command it is running is go run .
+ * Returns a exec.Cmd which can be used to run the application
+ */
+func runAppCmd() *exec.Cmd {
+	r := exec.Command("go", "run", ".", "-ss")
+
+	return r
+}
+
 func new_app_cmd() *exec.Cmd {
 	app_build()
 	r := exec.Command("./"+output_app_name, "-ss")
@@ -325,7 +341,7 @@ func onModuleChange() {
 	}
 
 	run_app.Wait()
-	run_app = new_app_cmd()
+	run_app = runAppCmd()
 
 	migrate_models = new_migrate_model_cmd()
 
@@ -335,11 +351,13 @@ func onModuleChange() {
 	if model_migration_output, err := migrate_models.Output(); err == nil {
 		fmt.Println("Output for Model Migration : ", model_migration_output)
 	} else {
-		panic(err.Error())
+		log.Error("Failed to Migrate Model: \nError: %s \nOutput: %s", err.Error(), string(model_migration_output))
 	}
 
-	if err := run_app.Start(); err != nil {
-		panic("Failed to restart server: " + err.Error())
+	if output, err := run_app.Output(); err != nil {
+		log.Error("Failed to restart server:\nError: %s\nOutput: %s", err.Error(), string(output))
+	} else {
+		log.Info("%s", string(output))
 	}
 	log.Info("Server restarted after module migration.")
 }
@@ -356,7 +374,7 @@ func onComponentChange() {
 	}
 
 	run_app.Wait()
-	run_app = new_app_cmd()
+	run_app = runAppCmd()
 
 	migrate_components = new_migrate_component_cmd()
 
@@ -366,8 +384,10 @@ func onComponentChange() {
 
 	fmt.Println(migrate_components.Output())
 
-	if err := run_app.Start(); err != nil {
-		panic("Failed to restart server: " + err.Error())
+	if output, err := run_app.Output(); err != nil {
+		log.Error("Failed to restart server:\nError: %s\nOutput: %s", err.Error(), string(output))
+	} else {
+		log.Info("%s", string(output))
 	}
 	log.Info("Server restarted after component migration.")
 	// and if we are restarted the application means by default the components will be updated in the disk
@@ -378,14 +398,16 @@ func onComponentChange() {
 func onGeneralChange() {
 	log.Warn("Restarting server due to general changes...")
 	if err := run_app.Process.Kill(); err != nil {
-		panic("Failed to kill server: " + err.Error())
+		log.Error("Failed to kill server:\nError: %s", err.Error())
 	}
 
-	run_app.Wait()          // waiting for the app to close
-	run_app = new_app_cmd() // creating new cmd to start the application
+	run_app.Wait()        // waiting for the app to close
+	run_app = runAppCmd() // creating new cmd to start the application
 
-	if err := run_app.Start(); err != nil {
-		panic("Failed to restart server: " + err.Error())
+	if output, err := run_app.Output(); err != nil {
+		log.Error("Failed to restart server:\nError: %s\nOutput: %s", err.Error(), string(output))
+	} else {
+		log.Info("%s", string(output))
 	}
 	// later I should check if I can connect to the started server before proceeding
 	log.Info("Server restarted due to general change.")
@@ -398,8 +420,10 @@ func migrate_model_and_component() {
 		log.Info("Migrating Models")
 		migrate_models := new_migrate_model_cmd()
 
-		if err := migrate_models.Run(); err != nil {
+		if output, err := migrate_models.Output(); err != nil {
 			log.Error("Model migration failed: %s", err.Error())
+		} else {
+			log.Info("%s", string(output))
 		}
 	}
 
@@ -409,7 +433,7 @@ func migrate_model_and_component() {
 		migrate_components := new_migrate_component_cmd()
 
 		if output, err := migrate_components.Output(); err != nil {
-			panic("Component migration failed: " + err.Error())
+			log.Error("Component migration failed:\nError: %s\nOutput: %s", err.Error(), string(output))
 		} else {
 			log.Info("%s", string(output))
 		}

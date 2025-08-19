@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -43,20 +45,83 @@ func init() {
 	// config.init()
 }
 
+// ---- helpers ----
+
+func streamLogs(r io.ReadCloser, prefix string) {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		log.Info("%s %s", prefix, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		log.Error("%s scanner error: %v", prefix, err)
+	}
+}
+
+// Start command asynchronously and stream its output
+func startServer(cmd *exec.Cmd) error {
+	// 1) pipes BEFORE Start()
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("stdout pipe: %w", err)
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("stderr pipe: %w", err)
+	}
+
+	// 2) start
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("start server: %w", err)
+	}
+
+	// 3) stream logs
+	go streamLogs(stdout, "")
+	go streamLogs(stderr, "")
+	return nil
+}
+
+func killApp() {
+	if err := run_app.Process.Kill(); err != nil {
+		log.Error("Failed to Kill the Server Process while restarting the server: %s", err.Error())
+	}
+	if err := run_app.Wait(); err != nil {
+		log.Error("Failed to wait for the all process kill: %s", err.Error())
+	} // reap
+}
+
+// Kill old server (if any), wait (reap), create new cmd, start + stream
+func restartApp() error {
+	run_app = runAppCmd()
+
+	FLAG_restarted_application_after_component_change = false
+
+	return startServer(run_app)
+}
+
+// Run a short-lived command and capture its combined output
+func runAndLog(cmd *exec.Cmd, what string) {
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Error("%s failed: %v\n%s", what, err, string(out))
+		return
+	}
+	log.Info("%s ok:\n%s", what, string(out))
+}
+
 func start_app() {
 	if !f.start_app {
 		return
 	}
 
 	log.Info("Starting server process...")
-	if output, err := run_app.Output(); err != nil {
-		panic("Failed to Start the Server:\nError: " + err.Error() + "\nOutput: " + string(output))
-	} else {
-		log.Info("%s", string(output))
+
+	// NEW: don't Start() first—use startServer which wires pipes then starts
+	if err := startServer(run_app); err != nil {
+		panic("Failed to Start the Server: " + err.Error())
 	}
 
 	go start_hot_reload()
-	go WatchFolders(1 * time.Second)
+	go WatchFolders(5 * time.Second)
 
 	url := "http://" + func() string {
 		if config.GetHost() == "" {
@@ -72,9 +137,11 @@ func start_app() {
 	}
 
 	defer func() {
-		log.Info("Killing server process...")
-
-		run_app.Process.Kill()
+		if run_app != nil && run_app.Process != nil {
+			log.Info("Killing server process...")
+			_ = run_app.Process.Kill()
+			_ = run_app.Wait()
+		}
 	}()
 
 	sigChan := make(chan os.Signal, 1)
@@ -192,31 +259,31 @@ func WatchFolders(interval time.Duration) {
 	log.Info("Starting file watcher...")
 
 	modTimestamps := make(map[string]time.Time)
-	componentTimestamps := make(map[string]time.Time)
+	// componentTimestamps := make(map[string]time.Time)
 	generalTimestamps := make(map[string]time.Time)
 
 	for {
 		moduleChanged := checkDir("models", modTimestamps)
-		componentChanged := checkDir("components", componentTimestamps)
+		// componentChanged := checkDir("components", componentTimestamps)
 		generalChanged := checkGeneral(".", generalTimestamps)
 
 		if moduleChanged {
 			log.Info("Model file changed")
 			onModuleChange()
-			time.Sleep(interval)
+			// time.Sleep(interval)
 			broadcast("reload")
 		}
-		if componentChanged {
-			log.Info("Component files changed")
-			onComponentChange()
-			time.Sleep(interval)
-			// log.Warn("We Deteceted a Component Change Please -restart the application so | curretnly hot reload is not supported for components")
-			broadcast("reload")
-		}
+		// if componentChanged {
+		// 	log.Info("Component files changed")
+		// 	onComponentChange()
+		// 	time.Sleep(interval)
+		// 	// log.Warn("We Deteceted a Component Change Please -restart the application so | curretnly hot reload is not supported for components")
+		// 	broadcast("reload")
+		// }
 		if generalChanged {
 			log.Info("General files changed")
 			onGeneralChange()
-			time.Sleep(interval)
+			// time.Sleep(interval)
 			broadcast("reload")
 		}
 
@@ -336,80 +403,47 @@ func new_migrate_component_cmd() *exec.Cmd {
 
 func onModuleChange() {
 	log.Info("Restarting server due to module changes...")
-	if err := run_app.Process.Kill(); err != nil {
-		log.Error("Failed to kill server: %s", err.Error())
-	}
 
-	run_app.Wait()
-	run_app = runAppCmd()
-
+	killApp()
+	// migrate models (short-lived)
 	migrate_models = new_migrate_model_cmd()
+	runAndLog(migrate_models, "Model migration")
 
-	if err := migrate_models.Run(); err != nil {
-		log.Error("Model migration failed: %s", err.Error())
-	}
-	if model_migration_output, err := migrate_models.Output(); err == nil {
-		fmt.Println("Output for Model Migration : ", model_migration_output)
-	} else {
-		log.Error("Failed to Migrate Model: \nError: %s \nOutput: %s", err.Error(), string(model_migration_output))
-	}
-
-	if output, err := run_app.Output(); err != nil {
-		log.Error("Failed to restart server:\nError: %s\nOutput: %s", err.Error(), string(output))
-	} else {
-		log.Info("%s", string(output))
+	if err := restartApp(); err != nil {
+		log.Error("Failed to restart server: %v", err)
+		return
 	}
 	log.Info("Server restarted after module migration.")
 }
 
 func onComponentChange() {
-	// now on the first run it will skip the component change
 	if !FLAG_restarted_application_after_component_change {
 		FLAG_restarted_application_after_component_change = true
 		return
 	}
+
 	log.Info("Restarting server due to component changes...")
-	if err := run_app.Process.Kill(); err != nil {
-		log.Error("Failed to kill server: %s", err.Error())
-	}
 
-	run_app.Wait()
-	run_app = runAppCmd()
-
+	killApp()
 	migrate_components = new_migrate_component_cmd()
+	runAndLog(migrate_components, "Component migration")
 
-	if err := migrate_components.Run(); err != nil {
-		log.Error("Component migration failed: %s", err.Error())
+	if err := restartApp(); err != nil {
+		log.Error("Failed to restart server: %v", err)
+		return
 	}
 
-	fmt.Println(migrate_components.Output())
-
-	if output, err := run_app.Output(); err != nil {
-		log.Error("Failed to restart server:\nError: %s\nOutput: %s", err.Error(), string(output))
-	} else {
-		log.Info("%s", string(output))
-	}
 	log.Info("Server restarted after component migration.")
-	// and if we are restarted the application means by default the components will be updated in the disk
-	// hence we need to make it false again so that we skip the next change scan
 	FLAG_restarted_application_after_component_change = false
 }
 
 func onGeneralChange() {
 	log.Warn("Restarting server due to general changes...")
-	if err := run_app.Process.Kill(); err != nil {
-		log.Error("Failed to kill server:\nError: %s", err.Error())
+	killApp()
+	if err := restartApp(); err != nil {
+		log.Error("Failed to restart server: %v", err)
+		return
 	}
-
-	run_app.Wait()        // waiting for the app to close
-	run_app = runAppCmd() // creating new cmd to start the application
-
-	if output, err := run_app.Output(); err != nil {
-		log.Error("Failed to restart server:\nError: %s\nOutput: %s", err.Error(), string(output))
-	} else {
-		log.Info("%s", string(output))
-	}
-	// later I should check if I can connect to the started server before proceeding
 	log.Info("Server restarted due to general change.")
 }
 

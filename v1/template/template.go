@@ -63,22 +63,43 @@ func New(file_path, file_name, file_type string) (*Struct, error) {
 	content := Utils.ReadFromFile(full_path)
 
 	if !config.GetBuild() {
-		content += `<script>
-    const source = new EventSource("http://localhost:8888/hot-reload");
+		// Feature: Adding a javascript to impliment hot reload
+		content += `
+<script>
+const source = new EventSource("http://localhost:8888/hot-reload");
+async function isCurrentPageAccessible() {
+    const url = window.location.origin;
+    try {
+        const response = await fetch(url, { method: "HEAD", mode: "no-cors" });
+        return response.ok || response.type === "opaque"; 
+    } catch (err) {
+        return false;
+    }
+}
+async function reloadIfAccessible() {
+    const accessible = await isCurrentPageAccessible();
+    if (accessible) {
+        console.log("[LiveReload] Current page accessible, reloading...");
+        window.location.reload();
+    } else {
+        console.warn("[LiveReload] Current page not accessible, skipping reload");
+    }
+}
 
-    source.onmessage = function(event) {
-        if (event.data === "reload") {
-            window.location.reload();
-        }
-		if (event.data === "close") {
-            window.close();
-        }
-    };
+source.onmessage = function(event) {
+    if (event.data === "reload") {
+        reloadIfAccessible();
+    }
+    if (event.data === "close") {
+        window.close();
+    }
+};
 
-    source.onerror = function(err) {
-        console.warn("[LiveReload] Disconnected from server", err);
-    };
-</script>`
+source.onerror = function(err) {
+    console.warn("[LiveReload] Disconnected from server", err);
+};
+</script>
+`
 	}
 	switch file_type {
 	case "php", "gophp":

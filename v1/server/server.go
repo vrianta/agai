@@ -2,8 +2,10 @@ package server
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/database"
@@ -21,6 +23,21 @@ import (
  * route ->  routes configaration which tells the
  * _config -> send the config of the server can be send nill if default is fine for you
  */
+
+// waitForPort waits until the port is available or timeout occurs
+func waitForPort(addr string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		ln, err := net.Listen("tcp", addr)
+		if err == nil {
+			ln.Close()
+			return nil // port is free
+		}
+		Log.WriteLogf("[WARN]: Port %s is busy, waiting...\n", addr)
+		time.Sleep(500 * time.Millisecond)
+	}
+	return fmt.Errorf("port %s did not become free in time", addr)
+}
 
 // Start runs the HTTP server
 func Start() *instance {
@@ -45,15 +62,21 @@ func Start() *instance {
 	http.HandleFunc("/", routerHandler)
 
 	// Define the server configuration
+	addr := config.GetWebConfig().Host + ":" + config.GetWebConfig().Port
 	s.server = &http.Server{
-		Addr: config.GetWebConfig().Host + ":" + config.GetWebConfig().Port, // Host and port
+		Addr: addr,
+	}
+
+	// Wait for port to be free before starting
+	if err := waitForPort(addr, 20*time.Second); err != nil {
+		panic("[Server] " + err.Error())
 	}
 
 	if config.StartServer {
 		Log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
 		fmt.Print("---------------------------------------------------------\n\n")
 
-		if err := s.server.ListenAndServe(); err != nil {
+		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			panic("[Server] Failed to start: " + err.Error())
 		}
 	}

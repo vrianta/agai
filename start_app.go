@@ -80,17 +80,16 @@ func startServer(cmd *exec.Cmd) error {
 	return nil
 }
 
-func killApp() {
+// Kill old server (if any), wait (reap), create new cmd, start + stream
+func restartApp() error {
+
 	if err := run_app.Process.Kill(); err != nil {
 		log.Error("Failed to Kill the Server Process while restarting the server: %s", err.Error())
 	}
 	if err := run_app.Wait(); err != nil {
 		log.Error("Failed to wait for the all process kill: %s", err.Error())
 	} // reap
-}
 
-// Kill old server (if any), wait (reap), create new cmd, start + stream
-func restartApp() error {
 	run_app = runAppCmd()
 
 	FLAG_restarted_application_after_component_change = false
@@ -404,7 +403,6 @@ func new_migrate_component_cmd() *exec.Cmd {
 func onModuleChange() {
 	log.Info("Restarting server due to module changes...")
 
-	killApp()
 	// migrate models (short-lived)
 	migrate_models = new_migrate_model_cmd()
 	runAndLog(migrate_models, "Model migration")
@@ -424,7 +422,6 @@ func onComponentChange() {
 
 	log.Info("Restarting server due to component changes...")
 
-	killApp()
 	migrate_components = new_migrate_component_cmd()
 	runAndLog(migrate_components, "Component migration")
 
@@ -439,7 +436,7 @@ func onComponentChange() {
 
 func onGeneralChange() {
 	log.Warn("Restarting server due to general changes...")
-	killApp()
+
 	if err := restartApp(); err != nil {
 		log.Error("Failed to restart server: %v", err)
 		return

@@ -119,7 +119,7 @@ func (m *meta) syncComponentWithDB() error {
 	// Remove stale
 	for k := range dbResults {
 		if _, ok := m.components[fmt.Sprint(k)]; !ok {
-			_ = m.Delete().Where(m.GetPrimaryKey().Name()).Is(k).Exec()
+			_ = m.Delete().Where(m.primary).Is(k).Exec()
 		}
 	}
 
@@ -195,7 +195,7 @@ func (m *meta) UpdateComponent(id string, value component) error {
 		return fmt.Errorf("no componnet found with such name")
 	}
 
-	q := m.Update().Where(m.primary.name).Is(id)
+	q := m.Update().Where(m.primary).Is(id)
 	for idx, val := range value {
 		q = q.Set(idx).To(val)
 

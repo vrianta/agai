@@ -153,8 +153,8 @@ func New[T any](tableName string, structure T) *Table[T] {
 	}
 
 	response := &Table[T]{
-		meta:       newModel(tableName, FieldTypeset),
-		Definition: structure,
+		meta:   newModel(tableName, FieldTypeset),
+		Fields: structure,
 	}
 
 	ModelsRegistry[tableName] = &response.meta

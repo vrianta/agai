@@ -14,7 +14,7 @@ type (
 
 	Table[T any] struct {
 		meta
-		Definition T
+		Fields T
 	}
 
 	meta struct {

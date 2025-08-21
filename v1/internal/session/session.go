@@ -161,7 +161,7 @@ func RemoveSession(sessionID *string) {
 	case session_store_type_database, session_store_type_db:
 		// delete the sesssion from the database
 		go func(_sessionId string) {
-			if err := SessionModel.Delete().Where("id").Is(_sessionId).Exec(); err != nil {
+			if err := SessionModel.Delete().Where(SessionModel.Fields.Id).Is(_sessionId).Exec(); err != nil {
 				log.Error("Failed to Remove session ID from DB : %s", err.Error())
 			}
 		}(*sessionID)
@@ -186,7 +186,7 @@ func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, 
 		// TODO : create a session instance and create the session cookies which is importanct becuase working on session storage in Database
 		switch Config.GetWebConfig().SessionStoreType {
 		case session_store_type_db, session_store_type_database:
-			db_session, err := SessionModel.Get().Where("Id").Is(*sessionID).First()
+			db_session, err := SessionModel.Get().Where(SessionModel.Fields.Id).Is(*sessionID).First()
 			if err != nil {
 				log.Error("Failed to get the Session | %s ", err.Error())
 				return nil, false
@@ -301,7 +301,7 @@ func evictLRUSession() {
 
 	switch Config.GetWebConfig().SessionStoreType {
 	case session_store_type_database, session_store_type_db:
-		if err := SessionModel.Delete().Where("id").Is(sessionID).Exec(); err != nil {
+		if err := SessionModel.Delete().Where(SessionModel.Fields.Id).Is(sessionID).Exec(); err != nil {
 			log.Error("Failed to delte LRU Session: %s", err.Error())
 		}
 	}

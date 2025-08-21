@@ -81,8 +81,8 @@ func (m *meta) Delete() *queryBuilder {
 
 // Where begins a WHERE clause, specifying the column to filter on.
 // Example: .Where("age")
-func (q *queryBuilder) Where(column string) *queryBuilder {
-	q.lastColumn = column // Remember which column the next condition is for
+func (q *queryBuilder) Where(f *Field) *queryBuilder {
+	q.lastColumn = f.name // Remember which column the next condition is for
 	return q
 }
 

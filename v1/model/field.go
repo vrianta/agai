@@ -24,7 +24,7 @@ import (
 )
 
 // return the string of the total field expression mostly will be used for table creation
-func (f *Field) String() string {
+func (f *Field) string() string {
 	var response string
 
 	// ENUM support
@@ -346,6 +346,17 @@ func (f *Field) foreignKeyConstraint() string {
 	return stmt
 }
 
+/*
+ * ToForeignKey converts a field to a foreign key with the given onDelete and onUpdate actions.
+ * It requires the field to be a primary key and sets the foreign key metadata.
+ * It also sets the index and unique properties based on the parameters.
+ * @parameters:
+ * onDelete, onUpdate - actions for foreign key constraints
+ * is_primary_key - whether the field is a primary key
+ * is_index - whether the field should be indexed
+ * is_unique - whether the field should be unique
+ * @returns: a new Field with foreign key constraints set
+ */
 func (f *Field) ToForeignKey(onDelete, onUpdate string, is_primary_key, is_index, is_unique bool) *Field {
 
 	if !f.Index.PrimaryKey {

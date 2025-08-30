@@ -273,8 +273,8 @@ func (q *queryBuilder) To(value any) *queryBuilder {
 }
 
 // Set marks the start of an InsertRow operation, specifying which field to InsertRow.
-func (q *InsertRowBuilder) Set(field string) *InsertRowBuilder {
-	q.lastSet = field
+func (q *InsertRowBuilder) Set(field *Field) *InsertRowBuilder {
+	q.lastSet = field.name
 	return q
 }
 

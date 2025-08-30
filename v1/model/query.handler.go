@@ -250,6 +250,14 @@ func (q *queryBuilder) Set(field *Field) *queryBuilder {
 	return q
 }
 
+func (q *queryBuilder) SetWithFieldName(field string) *queryBuilder {
+	q.lastSet = field
+	if q.operation == "" {
+		q.operation = "update" // default fallback
+	}
+	return q
+}
+
 // To specifies the value to set for the previously specified field in an UPDATE.
 // Example: .Set("name").To("Alice")
 func (q *queryBuilder) To(value any) *queryBuilder {

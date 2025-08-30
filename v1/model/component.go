@@ -197,8 +197,7 @@ func (m *meta) UpdateComponent(id string, value component) error {
 
 	q := m.Update().Where(m.primary).Is(id)
 	for idx, val := range value {
-		q = q.Set(idx).To(val)
-
+		q = q.SetWithFieldName(idx).To(val)
 	}
 
 	if err := q.Exec(); err != nil {

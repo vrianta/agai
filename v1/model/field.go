@@ -139,7 +139,12 @@ func (f *Field) columnDefinition() string {
 		}
 	}
 
-	return response
+	// AUTO_INCREMENT support
+	if f.AutoIncrement {
+		response += "AUTO_INCREMENT "
+	}
+
+	return strings.TrimSpace(response)
 }
 
 func (f *Field) addIndexStatement() string {

@@ -110,7 +110,8 @@ func (m *meta) syncTableSchema() {
 			shouldChange = true
 		}
 		// Auto‑increment mismatch.
-		if schema.extra == "auto_increment" && !field.AutoIncrement {
+		// log.Info("incriment Settings: %s", schema.extra)
+		if (schema.extra == "auto_increment" && !field.AutoIncrement) || (schema.extra == "" && field.AutoIncrement) {
 			reasons = append(reasons, "auto_increment mismatch")
 			shouldChange = true
 		}

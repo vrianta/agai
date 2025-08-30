@@ -336,7 +336,17 @@ func (q *queryBuilder) Fetch() (Results, error) {
 	where := q.buildWhere()
 	limit := q.buildLimit()
 
-	queryBuilder := fmt.Sprintf("SELECT * FROM %s %s %s", q.model.TableName, where, limit)
+	order := ""
+	if q.orderBy != "" {
+		order = "ORDER BY " + q.orderBy
+	}
+	group := ""
+	if q.groupBy != "" {
+		group = "GROUP BY " + q.groupBy
+	}
+	queryBuilder := fmt.Sprintf("SELECT * FROM %s %s %s %s %s", q.model.TableName, where, group, order, limit)
+
+	// queryBuilder := fmt.Sprintf("SELECT * FROM %s %s %s", q.model.TableName, where, limit)
 	rows, err := db.Query(queryBuilder, q.whereArgs...)
 	if err != nil {
 		return nil, err

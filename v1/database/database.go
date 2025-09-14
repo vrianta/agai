@@ -21,7 +21,7 @@ func Init() {
 		if config.ShowDsn {
 			fmt.Println(config.GetDSN())
 		}
-		panic("[ERROR] - DB Connection Failed Due to: " + err.Error())
+		panic("[ERROR] - Failed to open DB Connection: " + err.Error())
 	}
 
 	// TODO : Create a Config Element to get the Desired Detail

@@ -32,6 +32,8 @@ func init() {
 			config.ShowDsn = true
 		case "--help", "-h":
 			print_help()
+			os.Exit(1)
+
 		default:
 			println("Wrong Argument Passed plesae use go run . --help/-h to get the list of arguments")
 			os.Exit(1)

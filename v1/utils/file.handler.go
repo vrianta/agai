@@ -1,6 +1,9 @@
 package utils
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 // takes path of the file and return data as string format
 func ReadFromFile(uri string) string {
@@ -9,4 +12,8 @@ func ReadFromFile(uri string) string {
 	} else {
 		return err.Error()
 	}
+}
+
+func JoinPath(parts ...string) string {
+	return filepath.Join(parts...)
 }

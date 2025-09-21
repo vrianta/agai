@@ -1,46 +1,45 @@
 package controller
 
 import (
-	Config "github.com/vrianta/agai/v1/config"
-	Log "github.com/vrianta/agai/v1/log"
-	Template "github.com/vrianta/agai/v1/template"
+	"bytes"
+	"sync"
+
+	"github.com/vrianta/agai/v1/internal/template"
 )
 
-/*
-ExecuteTemplate renders the given template with the provided response data.
-If not in build mode, updates the template before rendering.
-Logs and panics on rendering errors.
+var template_bufPool = sync.Pool{
+	New: func() interface{} { return new(bytes.Buffer) },
+}
 
-Parameters:
-- __template: pointer to the Template.Struct to render.
-- __response: pointer to Template.Response containing data for the template.
+func (c *Context) execute(_template *template.Context, __response *Response) error {
+	// Use buffer pool for rendering
+	buf := template_bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer template_bufPool.Put(buf)
 
-Returns:
-- error: if updating the template fails (in dev mode).
-*/
-func (c *Context) ExecuteTemplate(__template *Template.Struct, __response *Template.Response) error {
-	if __template == nil {
-		if c.templates.View != nil {
-			__template = c.templates.View
+	switch _template.ViewType {
+	case template.ViewTypes.PhpTemplate:
+		if _template.Php != nil {
+			if err := _template.Php.Execute(buf, *__response); err != nil {
+				return err
+			}
 		} else {
-			c.w.Write(__response.AsJson())
-			Log.Debug("Template is nil for controller %s, no template to execute\n", c.View)
-			return nil
+			panic("php Template is not registered")
+		}
+	case template.ViewTypes.HtmlTemplate:
+		if _template.Html != nil {
+			if err := _template.Html.Execute(buf, *__response); err != nil {
+				return err
+			}
+		}
+	default:
+		if _template.Html != nil {
+			if err := _template.Html.Execute(buf, *__response); err != nil {
+				return err
+			}
 		}
 	}
 
-	if !Config.GetWebConfig().Build {
-		__template.Update()
-		if err := __template.Execute(c.w, __response); err != nil {
-			Log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-		return nil
-	}
-
-	if err := __template.Execute(c.w, __response); err != nil {
-		Log.Error("rendering template: %T", err)
-		return err
-	}
+	c.W.Write(buf.Bytes())
 	return nil
 }

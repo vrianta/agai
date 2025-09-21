@@ -3,65 +3,42 @@ package router
 import (
 	"net/http"
 	"os"
+	"sync"
+	"time"
 
-	Controller "github.com/vrianta/agai/v1/controller"
-	Log "github.com/vrianta/agai/v1/log"
-	Utils "github.com/vrianta/agai/v1/utils"
+	requesthandler "github.com/vrianta/agai/v1/internal/request_handler"
+	"github.com/vrianta/agai/v1/log"
+	"github.com/vrianta/agai/v1/utils"
+)
+
+type (
+	route struct {
+		DefaultRoute string
+	}
+
+	FileCacheEntry struct {
+		Uri          string    // path of the template file
+		LastModified time.Time // date when the file last modified
+		Data         string    // template data of the file before modified
+	}
+)
+
+var (
+	fileCache sync.Map // map[string]FileInfo
 )
 
 /*
  * Create a New Router Object with Default route group example / is the default route for this or /api or /v1 etc
  */
-func New(route string) *Struct {
-	return &Struct{
-		defaultRoute: route,
+func New(root string) *route {
+	return &route{
+		DefaultRoute: root,
 	}
 }
 
-/*
- * initialise Requests and Register the paths
- * Syntax - Router.New("").RegisterRoutes(
- *	NewRoute(path, controllerOnject),
- *  NewRoute(path, controllerOnject),
- * )
- * Example - Router.New("").RegisterRoutes(
- *	NewRoute("/home", homeObj),
- *  NewRoute("/list", listObj),
- * )
- */
-func (_r *Struct) RegisterRoutes(_routes ...route) error {
-	for _, rt := range _routes {
-		routeTable[_r.defaultRoute+rt.path] = &rt.controllerObject
-	}
-	return nil
-}
+func (r *route) AddRoute(path string, t any) {
+	requesthandler.CreateRoute[t](r.DefaultRoute + path)
 
-/*
- * Create Route Object
- */
-func Route(path string, obj Controller.Context) route {
-	return route{
-		path:             path,
-		controllerObject: obj,
-	}
-}
-
-// Handler processes incoming HTTP requests and manages user sessions.
-// It checks if the user has an existing session and handles session creation or validation.
-// Based on the session and route, it invokes the appropriate controller method.
-// Parameters:
-// - w: The HTTP response writer.
-// - r: The HTTP request.
-func Handler(w http.ResponseWriter, r *http.Request) {
-
-	var tempController *Controller.Context
-	if _controller, found := routeTable[r.URL.Path]; found {
-		tempController = _controller.Copy()
-		tempController.Init(w, r)
-	} else {
-		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
-		return
-	}
 }
 
 // A Function to Create and Return
@@ -83,7 +60,7 @@ func StaticFileHandler(contentType string) http.HandlerFunc {
 
 		info, err := os.Stat(_filePath)
 		if err != nil {
-			Log.WriteLog(err.Error())
+			log.WriteLog(err.Error())
 			http.Error(w, "File not found", http.StatusNotFound)
 			return
 		}
@@ -97,7 +74,7 @@ func StaticFileHandler(contentType string) http.HandlerFunc {
 		}
 
 		// Read file from disk and cache it
-		_fileData := Utils.ReadFromFile(_filePath)
+		_fileData := utils.ReadFromFile(_filePath)
 		newRecord := FileCacheEntry{
 			Uri:          _filePath,
 			LastModified: info.ModTime(),
@@ -108,21 +85,16 @@ func StaticFileHandler(contentType string) http.HandlerFunc {
 	}
 }
 
-// Get Function to return all the Routes
-func GetRoutes() *routes {
-	return &routeTable
-}
-
 // return a list of all the views from the controllers
 // loop throgh all the controllers and make a array of strings
-func ListViews() []string {
-	routerSize := len(routeTable)
-	if routerSize < 1 {
-		return nil
-	}
-	response := make([]string, 0, routerSize)
-	for _, controller := range routeTable {
-		response = append(response, controller.View)
-	}
-	return response
-}
+// func ListViews() []string {
+// 	routerSize := len(routeTable)
+// 	if routerSize < 1 {
+// 		return nil
+// 	}
+// 	response := make([]string, 0, routerSize)
+// 	for _, controller := range routeTable {
+// 		response = append(response, controller.View)
+// 	}
+// 	return response
+// }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/vrianta/agai/v1/config"
@@ -48,7 +47,6 @@ func Start() *instance {
 	s.setup_static_folders()
 	s.setup_css_folder()
 	s.setup_js_folder()
-	s.setup_views() // Register all the views with the RenderEngine
 
 	model.Init() // intialsing model with creating tables and updating them
 
@@ -108,26 +106,4 @@ func (s *instance) setup_js_folder() {
 	for _, folder := range config.GetWebConfig().JsFolders {
 		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("application/javascript; charset=utf-8"))
 	}
-}
-
-// function to go through all the routes and register their Views and create templates
-func (s *instance) setup_views() {
-
-	routes := Router.GetRoutes()
-	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("[Views Setup] Registering templates for controllers:\n")
-	fmt.Print("---------------------------------------------------------\n")
-	for route, controller := range *routes {
-		if controller.View != "" {
-			if err := controller.RegisterTemplate(); err != nil {
-				fmt.Printf("[Error]   Template: %-20s | %v\n", controller.View, err)
-				os.Exit(1)
-			} else {
-				fmt.Printf("[Success] Template: %s and Route: %-20s | Registered\n", controller.View, route)
-			}
-		}
-	}
-	fmt.Print("---------------------------------------------------------\n")
-	fmt.Print("[Views Setup] All views registered successfully.\n")
-	fmt.Print("---------------------------------------------------------\n\n")
 }

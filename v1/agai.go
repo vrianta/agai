@@ -1,4 +1,4 @@
-package agi
+package agai
 
 import (
 	"fmt"

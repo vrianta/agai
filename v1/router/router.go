@@ -2,24 +2,9 @@ package router
 
 import (
 	"net/http"
-	"os"
-	"sync"
-	"time"
 
-	requesthandler "github.com/vrianta/agai/v1/internal/request_handler"
-	"github.com/vrianta/agai/v1/log"
-	"github.com/vrianta/agai/v1/utils"
+	"github.com/vrianta/agai/v1/internal/requestHandler"
 )
-
-type (
-	FileCacheEntry struct {
-		Uri          string    // path of the template file
-		LastModified time.Time // date when the file last modified
-		Data         string    // template data of the file before modified
-	}
-)
-
-var fileCache sync.Map // map[string]FileInfo
 
 // /*
 //  * Create a New Router Object with Default route group example / is the default route for this or /api or /v1 etc
@@ -28,54 +13,12 @@ var fileCache sync.Map // map[string]FileInfo
 // 	defaultRoute = root
 // }
 
-func CreateRoute[T requesthandler.RouteDestination](route string) {
+func CreateRoute[T requestHandler.RouteDestination](route string) {
 
-	requesthandler.RouteTable[route] = func(w http.ResponseWriter, r *http.Request) requesthandler.RouteDestination {
+	requestHandler.RouteTable[route] = func(w http.ResponseWriter, r *http.Request) requestHandler.RouteDestination {
 		var t T
 		return t
 	}
 }
 
 // A Function to Create and Return
-
-// StaticFileHandler serves static files with caching support.
-// It checks if the file exists in the cache and serves it directly if the cache is valid.
-// Otherwise, it reads the file from disk, caches it, and serves it.
-// Parameters:
-// - contentType: The MIME type of the file being served.
-// Returns:
-// - http.HandlerFunc: A handler function for serving static files.
-func StaticFileHandler(contentType string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		_filePath := "." + r.URL.Path
-
-		// Attempt to load from cache
-		val, _ := fileCache.Load(_filePath)
-		cached, ok := val.(FileCacheEntry)
-
-		info, err := os.Stat(_filePath)
-		if err != nil {
-			log.WriteLog(err.Error())
-			http.Error(w, "File not found", http.StatusNotFound)
-			return
-		}
-
-		w.Header().Set("Content-Type", contentType)
-
-		// If cached data exists and mod time matches then serve from cache
-		if ok && cached.LastModified.Equal(info.ModTime()) {
-			w.Write([]byte(cached.Data))
-			return
-		}
-
-		// Read file from disk and cache it
-		_fileData := utils.ReadFromFile(_filePath)
-		newRecord := FileCacheEntry{
-			Uri:          _filePath,
-			LastModified: info.ModTime(),
-			Data:         _fileData,
-		}
-		fileCache.Store(_filePath, newRecord)
-		w.Write([]byte(_fileData))
-	}
-}

@@ -1,4 +1,4 @@
-package requesthandler
+package requestHandler
 
 import (
 	"net/http"
@@ -13,7 +13,7 @@ import (
 // // - w: The HTTP response writer.
 // // - r: The HTTP request.
 type (
-	RouteDestination interface {
+	RouteDestination interface { // Resembeles Controller Package
 		GET(self *controller.Context)
 		POST(self *controller.Context)
 		PUT(self *controller.Context)

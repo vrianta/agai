@@ -9,10 +9,10 @@ import (
 	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/database"
 	"github.com/vrianta/agai/v1/internal/flags"
+	"github.com/vrianta/agai/v1/internal/requestHandler"
 	Session "github.com/vrianta/agai/v1/internal/session"
 	Log "github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/model"
-	Router "github.com/vrianta/agai/v1/router"
 )
 
 /*
@@ -99,12 +99,12 @@ func (s *instance) setup_static_folders() {
 // Generating Creating Routes for the Css Folders
 func (s *instance) setup_css_folder() {
 	for _, folder := range config.GetWebConfig().CssFolders {
-		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("text/css; charset=utf-8"))
+		http.HandleFunc("/"+folder+"/", requestHandler.StaticFileHandler("text/css; charset=utf-8"))
 	}
 }
 
 func (s *instance) setup_js_folder() {
 	for _, folder := range config.GetWebConfig().JsFolders {
-		http.HandleFunc("/"+folder+"/", Router.StaticFileHandler("application/javascript; charset=utf-8"))
+		http.HandleFunc("/"+folder+"/", requestHandler.StaticFileHandler("application/javascript; charset=utf-8"))
 	}
 }

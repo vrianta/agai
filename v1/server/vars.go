@@ -1,8 +1,8 @@
 package server
 
-import "github.com/vrianta/agai/v1/router"
+import "github.com/vrianta/agai/v1/internal/requestHandler"
 
 // Global instance of the server
 var (
-	routerHandler = router.Handler
+	routerHandler = requestHandler.Handler
 )

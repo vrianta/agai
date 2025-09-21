@@ -12,10 +12,6 @@ import (
 )
 
 type (
-	route struct {
-		DefaultRoute string
-	}
-
 	FileCacheEntry struct {
 		Uri          string    // path of the template file
 		LastModified time.Time // date when the file last modified
@@ -23,22 +19,21 @@ type (
 	}
 )
 
-var (
-	fileCache sync.Map // map[string]FileInfo
-)
+var fileCache sync.Map // map[string]FileInfo
 
-/*
- * Create a New Router Object with Default route group example / is the default route for this or /api or /v1 etc
- */
-func New(root string) *route {
-	return &route{
-		DefaultRoute: root,
+// /*
+//  * Create a New Router Object with Default route group example / is the default route for this or /api or /v1 etc
+//  */
+// func New(root string) {
+// 	defaultRoute = root
+// }
+
+func CreateRoute[T requesthandler.RouteDestination](route string) {
+
+	requesthandler.RouteTable[route] = func(w http.ResponseWriter, r *http.Request) requesthandler.RouteDestination {
+		var t T
+		return t
 	}
-}
-
-func (r *route) AddRoute(path string, t any) {
-	requesthandler.CreateRoute[t](r.DefaultRoute + path)
-
 }
 
 // A Function to Create and Return
@@ -84,17 +79,3 @@ func StaticFileHandler(contentType string) http.HandlerFunc {
 		w.Write([]byte(_fileData))
 	}
 }
-
-// return a list of all the views from the controllers
-// loop throgh all the controllers and make a array of strings
-// func ListViews() []string {
-// 	routerSize := len(routeTable)
-// 	if routerSize < 1 {
-// 		return nil
-// 	}
-// 	response := make([]string, 0, routerSize)
-// 	for _, controller := range routeTable {
-// 		response = append(response, controller.View)
-// 	}
-// 	return response
-// }

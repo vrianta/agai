@@ -37,8 +37,6 @@ See Also:
 package controller
 
 import (
-	"net/http"
-
 	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/internal/template"
 	"github.com/vrianta/agai/v1/log"
@@ -55,7 +53,7 @@ and renders the corresponding template. It also assigns and updates the session 
 Parameters:
 - session: pointer to the current Session.Instance for the request.
 */
-func (c *Context) runRequest() {
+func (c *Context) RunRequest() {
 
 	switch c.R.Method {
 	case "GET":
@@ -243,22 +241,6 @@ func (c *Context) runRequest() {
 			panic(err)
 		}
 	}
-}
-
-/*
-InitWR initializes the controller with the HTTP response writer and request.
-Call this before handling a request.
-
-Parameters:
-- w: http.ResponseWriter for the response.
-- r: *http.Request for the incoming request.
-*/
-func (c *Context) Init(w http.ResponseWriter, r *http.Request) {
-	c.W = w
-	c.R = r
-
-	c.runRequest()
-
 }
 
 func (c *Context) GET(self *Context) view {

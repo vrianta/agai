@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/internal/flags"
 	log "github.com/vrianta/agai/v1/log"
 )
 
@@ -18,7 +19,7 @@ func Init() {
 	}
 	var err error
 	if database, err = sql.Open(config.GetDatabaseDriver(), config.GetDSN()); err != nil {
-		if config.ShowDsn {
+		if flags.ShowDsn {
 			fmt.Println(config.GetDSN())
 		}
 		panic("[ERROR] - Failed to open DB Connection: " + err.Error())
@@ -28,7 +29,7 @@ func Init() {
 	database.SetConnMaxIdleTime(time.Second * 10)
 	database.SetMaxOpenConns(10000)
 	if err := database.Ping(); err != nil {
-		if config.ShowDsn {
+		if flags.ShowDsn {
 			log.Info("DNS of the Database Server : %s", config.GetDSN())
 		}
 		panic("[ERROR] - DB Connection Failed Due to: " + err.Error())

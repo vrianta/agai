@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/internal/flags"
 	"github.com/vrianta/agai/v1/server"
 )
 
@@ -23,13 +23,13 @@ func init() {
 	for _, arg := range os.Args[1:] {
 		switch arg {
 		case "--migrate-model", "-mm":
-			config.SyncDatabaseEnabled = true
+			flags.SyncDatabaseEnabled = true
 		case "--migrate-component", "-mc":
-			config.SyncComponentsEnabled = true
+			flags.SyncComponentsEnabled = true
 		case "--start-server", "-ss":
-			config.StartServer = true
+			flags.StartServer = true
 		case "--show-dsn", "-sdn":
-			config.ShowDsn = true
+			flags.ShowDsn = true
 		case "--help", "-h":
 			print_help()
 			os.Exit(1)

@@ -1,4 +1,4 @@
-package config
+package flags
 
 var SyncDatabaseEnabled = false
 var RunServer = false

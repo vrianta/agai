@@ -8,6 +8,7 @@ import (
 
 	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/internal/flags"
 	Session "github.com/vrianta/agai/v1/internal/session"
 	Log "github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/model"
@@ -70,7 +71,7 @@ func Start() *instance {
 		panic("[Server] " + err.Error())
 	}
 
-	if config.StartServer {
+	if flags.StartServer {
 		Log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
 		fmt.Print("---------------------------------------------------------\n\n")
 

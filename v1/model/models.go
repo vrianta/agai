@@ -10,6 +10,7 @@ import (
 
 	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/internal/flags"
 	"github.com/vrianta/agai/v1/log"
 )
 
@@ -59,7 +60,7 @@ func Init() {
 	for _, model := range ModelsRegistry {
 		model.CreateTableIfNotExists()
 
-		if config.SyncDatabaseEnabled {
+		if flags.SyncDatabaseEnabled {
 			log.Info("[Models] Initializing model and syncing database tables for: %s", model.TableName)
 			model.SyncModelSchema()
 			model.syncTableSchema()
@@ -75,7 +76,7 @@ func Init() {
 		_, err := os.Stat(filepath.Join(componentsDir, model.TableName+".component.json"))
 		if !os.IsNotExist(err) {
 			model.loadComponentFromDisk()
-			if config.SyncComponentsEnabled {
+			if flags.SyncComponentsEnabled {
 				model.syncComponentWithDB()
 				model.loadComponentFromDisk()
 			} else {

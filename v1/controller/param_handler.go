@@ -16,12 +16,12 @@ func (_c *Context) ParseRequest() {
 	_c.userInputs = make(map[string]interface{}, 30)
 
 	// Log handling of queryBuilder parameters for non-POST methods
-	for key, values := range _c.R.URL.Query() {
+	for key, values := range _c.r.URL.Query() {
 		_c.processqueryBuilderParams(key, values)
 	}
 
-	if _c.R.Method == http.MethodPost {
-		contentType := _c.R.Header.Get("Content-Type")
+	if _c.r.Method == http.MethodPost {
+		contentType := _c.r.Header.Get("Content-Type")
 		switch contentType {
 		case "application/json":
 			// Handle JSON data
@@ -33,7 +33,7 @@ func (_c *Context) ParseRequest() {
 
 		case "application/x-www-form-urlencoded":
 			// Handle form data (application/x-www-form-urlencoded)
-			err := _c.R.ParseForm()
+			err := _c.r.ParseForm()
 			if err != nil {
 				Log.WriteLogf("Error parsing form data | Error - %s", err.Error())
 				return
@@ -42,7 +42,7 @@ func (_c *Context) ParseRequest() {
 		case "multipart/form-data":
 			// Handle multipart form data (file upload)
 			// Note: This case is handled separately below
-			if err := _c.R.ParseMultipartForm(10 << 20); err != nil { // 10 MB
+			if err := _c.r.ParseMultipartForm(10 << 20); err != nil { // 10 MB
 				Log.WriteLogf("Error parsing multipart form data | Error - %s", err.Error())
 				return
 			}
@@ -54,7 +54,7 @@ func (_c *Context) ParseRequest() {
 		// Log handling of queryBuilder parameters for non-POST methods
 		// _c.userInputs = _c.r.PostForm
 
-		for key, values := range _c.R.PostForm {
+		for key, values := range _c.r.PostForm {
 			_c.processPostParams(key, values)
 		}
 	}

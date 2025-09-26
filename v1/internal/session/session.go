@@ -13,7 +13,6 @@ import (
 	Config "github.com/vrianta/agai/v1/config"
 	Cookies "github.com/vrianta/agai/v1/cookies"
 	"github.com/vrianta/agai/v1/log"
-	Log "github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/utils"
 )
 
@@ -330,7 +329,7 @@ func StartSessionHandler() {
 			RemoveSession(&next.ID)
 			sessionHeap.Pop()
 			heapAccessMutex.Unlock()
-			Log.WriteLog("Session expired: " + next.ID)
+			log.WriteLog("Session expired: " + next.ID)
 			continue
 		}
 
@@ -387,22 +386,4 @@ func (sh *Instance) setCookie(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Cookies.AddCookie(c, w, r)
-}
-
-/*
- * Disable the Caching on Local Machine For certain pages to make
- */
-func (s *Instance) EnableCaching() {
-
-}
-
-// useful for debug
-func (s *Instance) print() {
-	fmt.Printf("Session ID: %s\n", s.ID)
-	// fmt.Printf("  POST: %+v\n", s.PostParameters)
-	// fmt.Printf("  GET: %+v\n", s.GetParameters)
-	fmt.Printf("  Store: %+v\n", s.Data)
-	fmt.Printf("  isLoggedIn: %v\n", s.IsAuthenticated)
-	fmt.Printf("  Expiry: %s\n", s.ExpirationTime.String())
-	fmt.Println("------------------------")
 }

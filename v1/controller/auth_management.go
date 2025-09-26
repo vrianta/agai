@@ -17,10 +17,10 @@ func (controller *Context) IsLoggedIn() bool {
 	if controller.session == nil {
 		// getting the session ID from the cookies
 		// the session not present then the sessionID will be nil
-		sessionID, err := session.GetSessionID(controller.R)
+		sessionID, err := session.GetSessionID(controller.r)
 
 		if err == nil && sessionID != "" { // it means the user had the session ID
-			sess, _ := session.Get(&sessionID, controller.W, controller.R)
+			sess, _ := session.Get(&sessionID, controller.w, controller.r)
 			controller.session = sess
 		}
 	}
@@ -33,10 +33,10 @@ func (controller *Context) IsLoggedIn() bool {
 func (controller *Context) Login() bool {
 
 	if controller.session == nil {
-		sessionID, err := session.GetSessionID(controller.R)
+		sessionID, err := session.GetSessionID(controller.r)
 
 		if err == nil && sessionID != "" { // it means the user had the session ID
-			sess, _ := session.Get(&sessionID, controller.W, controller.R)
+			sess, _ := session.Get(&sessionID, controller.w, controller.r)
 			controller.session = sess
 		}
 	}
@@ -45,13 +45,13 @@ func (controller *Context) Login() bool {
 	}
 	var err error
 
-	controller.session, err = session.New(controller.W, controller.R)
+	controller.session, err = session.New(controller.w, controller.r)
 	if err != nil {
 		log.Error("Failed to create the login session: %s", err.Error())
 		return false
 	}
 
-	controller.session.Login(controller.W, controller.R)
+	controller.session.Login(controller.w, controller.r)
 
 	return true
 }
@@ -59,10 +59,10 @@ func (controller *Context) Login() bool {
 func (controller *Context) Logout() {
 
 	if controller.session == nil {
-		sessionID, err := session.GetSessionID(controller.R)
+		sessionID, err := session.GetSessionID(controller.r)
 
 		if err == nil && sessionID != "" { // it means the user had the session ID
-			sess, _ := session.Get(&sessionID, controller.W, controller.R)
+			sess, _ := session.Get(&sessionID, controller.w, controller.r)
 			controller.session = sess
 		}
 	}
@@ -72,8 +72,8 @@ func (controller *Context) Logout() {
 		controller.session = nil // Clear the session after logout
 	}
 
-	controller.W.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-	controller.W.Header().Set("Pragma", "no-cache")
-	controller.W.Header().Set("Expires", "0")
+	controller.w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	controller.w.Header().Set("Pragma", "no-cache")
+	controller.w.Header().Set("Expires", "0")
 
 }

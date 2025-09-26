@@ -40,6 +40,6 @@ func (c *Context) execute(_template *template.Context, __response *Response) err
 		}
 	}
 
-	c.W.Write(buf.Bytes())
+	c.w.Write(buf.Bytes())
 	return nil
 }

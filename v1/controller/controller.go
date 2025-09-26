@@ -55,12 +55,12 @@ Parameters:
 */
 func (c *Context) RunRequest() {
 
-	switch c.R.Method {
+	switch c.r.Method {
 	case "GET":
 		view := c.GET(c) // GET method of controller returns a view
 		if view.asJson {
 			// user want the response to be send as json
-			c.W.Write(view.response.toJson())
+			c.w.Write(view.response.toJson())
 			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
 			return
 		}
@@ -83,7 +83,7 @@ func (c *Context) RunRequest() {
 		view := c.POST(c) // GET method of controller returns a view
 		if view.asJson {
 			// user want the response to be send as json
-			c.W.Write(view.response.toJson())
+			c.w.Write(view.response.toJson())
 			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
 			return
 		}
@@ -106,7 +106,7 @@ func (c *Context) RunRequest() {
 		view := c.DELETE(c) // GET method of controller returns a view
 		if view.asJson {
 			// user want the response to be send as json
-			c.W.Write(view.response.toJson())
+			c.w.Write(view.response.toJson())
 			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
 			return
 		}
@@ -129,7 +129,7 @@ func (c *Context) RunRequest() {
 		view := c.PATCH(c) // GET method of controller returns a view
 		if view.asJson {
 			// user want the response to be send as json
-			c.W.Write(view.response.toJson())
+			c.w.Write(view.response.toJson())
 			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
 			return
 		}
@@ -152,7 +152,7 @@ func (c *Context) RunRequest() {
 		view := c.PUT(c) // GET method of controller returns a view
 		if view.asJson {
 			// user want the response to be send as json
-			c.W.Write(view.response.toJson())
+			c.w.Write(view.response.toJson())
 			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
 			return
 		}
@@ -175,7 +175,7 @@ func (c *Context) RunRequest() {
 		view := c.HEAD(c) // GET method of controller returns a view
 		if view.asJson {
 			// user want the response to be send as json
-			c.W.Write(view.response.toJson())
+			c.w.Write(view.response.toJson())
 			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
 			return
 		}
@@ -198,7 +198,7 @@ func (c *Context) RunRequest() {
 		view := c.OPTIONS(c) // GET method of controller returns a view
 		if view.asJson {
 			// user want the response to be send as json
-			c.W.Write(view.response.toJson())
+			c.w.Write(view.response.toJson())
 			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
 			return
 		}
@@ -221,7 +221,7 @@ func (c *Context) RunRequest() {
 		view := c.GET(c) // GET method of controller returns a view
 		if view.asJson {
 			// user want the response to be send as json
-			c.W.Write(view.response.toJson())
+			c.w.Write(view.response.toJson())
 			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
 			return
 		}

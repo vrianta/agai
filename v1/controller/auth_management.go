@@ -49,9 +49,13 @@ func (controller *Context) Login() bool {
 	if err != nil {
 		log.Error("Failed to create the login session: %s", err.Error())
 		return false
+	} else {
+		log.WriteLogf("Successfully Loggedin with session %s", controller.session.ID)
 	}
 
 	controller.session.Login(controller.w, controller.r)
+	// asser
+	controller.session.Controller[controller.r.URL.Path] = controller // storing the controller objects in the session
 
 	return true
 }

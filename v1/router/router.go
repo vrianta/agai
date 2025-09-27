@@ -1,24 +1,26 @@
 package router
 
 import (
-	"net/http"
-
 	"github.com/vrianta/agai/v1/internal/requestHandler"
 )
 
-// /*
-//  * Create a New Router Object with Default route group example / is the default route for this or /api or /v1 etc
-//  */
-// func New(root string) {
-// 	defaultRoute = root
-// }
+type context struct {
+	root string
+}
 
-func CreateRoute[T requestHandler.RouteDestination](route string) {
-
-	requestHandler.RouteTable[route] = func(w http.ResponseWriter, r *http.Request) requestHandler.RouteDestination {
-		var t T
-		return t
+func New(root string) *context {
+	return &context{
+		root: root,
 	}
 }
 
-// A Function to Create and Return
+func (c *context) AddRoute(route string, controller requestHandler.ControllerInterface) *context {
+	requestHandler.RouteTable[c.root+"/"+route] = controller
+
+	return c
+}
+
+func CreateRoute[T requestHandler.ControllerInterface](route string, controller T) {
+
+	requestHandler.RouteTable[route] = controller
+}

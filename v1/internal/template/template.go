@@ -53,7 +53,7 @@ var (
 
 	templateRecordsMutex = &sync.RWMutex{}
 
-	templateRegistry map[string]*Contexts // holding all the templates in the solution
+	templateRegistry map[string]*Contexts = make(map[string]*Contexts) // holding all the templates in the solution
 )
 
 // Create Template Object stores it in the memory

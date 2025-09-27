@@ -93,6 +93,6 @@ func (_c *Context) Redirect(uri string) {
 	http.Redirect(_c.w, _c.r, uri, int(HttpStatus.PermanentRedirect)) // if golang developpers worked so hard to create this why should I do it again :P
 }
 
-func (_c *Context) Withcode(uri string, _code code) {
+func (_c *Context) WithCode(uri string, _code code) {
 	http.Redirect(_c.w, _c.r, uri, int(_code))
 }

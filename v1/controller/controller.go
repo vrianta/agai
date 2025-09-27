@@ -37,239 +37,66 @@ See Also:
 package controller
 
 import (
-	"github.com/vrianta/agai/v1/config"
-	"github.com/vrianta/agai/v1/internal/template"
-	"github.com/vrianta/agai/v1/log"
+	"net/http"
+
+	"github.com/vrianta/agai/v1/internal/session"
 )
+
+func (c *Context) Init(w http.ResponseWriter, r *http.Request, seesion *session.Instance) {
+	c.w = w
+	c.r = r
+	c.session = seesion
+}
 
 /*
 This file contains local methods for the Controller struct, providing default and internal logic.
 */
 
-/*
-runRequest dispatches the HTTP request to the appropriate handler method (GET, POST, etc.)
-and renders the corresponding template. It also assigns and updates the session for the request.
-
-Parameters:
-- session: pointer to the current Session.Instance for the request.
-*/
-func (c *Context) RunRequest() {
-
-	switch c.r.Method {
-	case "GET":
-		view := c.GET(c) // GET method of controller returns a view
-		if view.asJson {
-			// user want the response to be send as json
-			c.w.Write(view.response.toJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
-			return
-		}
-		__template, ok := template.GetTemplate(view.name)
-
-		if !ok {
-			log.Error("No Template Available as such name %s", view.name)
-			panic("")
-		}
-
-		get_template := __template.GET()
-		if !config.GetWebConfig().Build {
-			get_template.Update()
-		}
-		if err := c.execute(get_template, view.response); err != nil {
-			log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-	case "POST":
-		view := c.POST(c) // GET method of controller returns a view
-		if view.asJson {
-			// user want the response to be send as json
-			c.w.Write(view.response.toJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
-			return
-		}
-		__template, ok := template.GetTemplate(view.name)
-
-		if !ok {
-			log.Error("No Template Available as such name %s", view.name)
-			panic("")
-		}
-
-		get_template := __template.POST()
-		if !config.GetWebConfig().Build {
-			get_template.Update()
-		}
-		if err := c.execute(get_template, view.response); err != nil {
-			log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-	case "DELETE":
-		view := c.DELETE(c) // GET method of controller returns a view
-		if view.asJson {
-			// user want the response to be send as json
-			c.w.Write(view.response.toJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
-			return
-		}
-		__template, ok := template.GetTemplate(view.name)
-
-		if !ok {
-			log.Error("No Template Available as such name %s", view.name)
-			panic("")
-		}
-
-		get_template := __template.DELETE()
-		if !config.GetWebConfig().Build {
-			get_template.Update()
-		}
-		if err := c.execute(get_template, view.response); err != nil {
-			log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-	case "PATCH":
-		view := c.PATCH(c) // GET method of controller returns a view
-		if view.asJson {
-			// user want the response to be send as json
-			c.w.Write(view.response.toJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
-			return
-		}
-		__template, ok := template.GetTemplate(view.name)
-
-		if !ok {
-			log.Error("No Template Available as such name %s", view.name)
-			panic("")
-		}
-
-		get_template := __template.PATCH()
-		if !config.GetWebConfig().Build {
-			get_template.Update()
-		}
-		if err := c.execute(get_template, view.response); err != nil {
-			log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-	case "PUT":
-		view := c.PUT(c) // GET method of controller returns a view
-		if view.asJson {
-			// user want the response to be send as json
-			c.w.Write(view.response.toJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
-			return
-		}
-		__template, ok := template.GetTemplate(view.name)
-
-		if !ok {
-			log.Error("No Template Available as such name %s", view.name)
-			panic("")
-		}
-
-		get_template := __template.PUT()
-		if !config.GetWebConfig().Build {
-			get_template.Update()
-		}
-		if err := c.execute(get_template, view.response); err != nil {
-			log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-	case "HEAD":
-		view := c.HEAD(c) // GET method of controller returns a view
-		if view.asJson {
-			// user want the response to be send as json
-			c.w.Write(view.response.toJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
-			return
-		}
-		__template, ok := template.GetTemplate(view.name)
-
-		if !ok {
-			log.Error("No Template Available as such name %s", view.name)
-			panic("")
-		}
-
-		get_template := __template.HEAD()
-		if !config.GetWebConfig().Build {
-			get_template.Update()
-		}
-		if err := c.execute(get_template, view.response); err != nil {
-			log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-	case "OPTIONS":
-		view := c.OPTIONS(c) // GET method of controller returns a view
-		if view.asJson {
-			// user want the response to be send as json
-			c.w.Write(view.response.toJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
-			return
-		}
-		__template, ok := template.GetTemplate(view.name)
-
-		if !ok {
-			log.Error("No Template Available as such name %s", view.name)
-			panic("")
-		}
-
-		get_template := __template.OPTIONS()
-		if !config.GetWebConfig().Build {
-			get_template.Update()
-		}
-		if err := c.execute(get_template, view.response); err != nil {
-			log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-	default:
-		view := c.GET(c) // GET method of controller returns a view
-		if view.asJson {
-			// user want the response to be send as json
-			c.w.Write(view.response.toJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.name)
-			return
-		}
-		__template, ok := template.GetTemplate(view.name)
-
-		if !ok {
-			log.Error("No Template Available as such name %s", view.name)
-			panic("")
-		}
-
-		get_template := __template.INDEX()
-		if !config.GetWebConfig().Build {
-			get_template.Update()
-		}
-		if err := c.execute(get_template, view.response); err != nil {
-			log.Error("Error rendering template: %T", err)
-			panic(err)
-		}
-	}
-}
-
-func (c *Context) GET(self *Context) view {
+func (c *Context) GET() View {
 	response := Response{
 		"Massage": "Welcome to Defalut Get Page",
 	}
 	return response.AsJson()
 }
 
-func (c *Context) POST(self *Context) view {
-	return c.GET(self)
+func (c *Context) POST() View {
+	response := Response{
+		"Massage": "Welcome to Defalut Get Page",
+	}
+	return response.AsJson()
 }
 
-func (c *Context) PUT(self *Context) view {
-	return c.GET(self)
+func (c *Context) PUT() View {
+	response := Response{
+		"Massage": "Welcome to Defalut Get Page",
+	}
+	return response.AsJson()
 }
 
-func (c *Context) PATCH(self *Context) view {
-	return c.GET(self)
+func (c *Context) PATCH() View {
+	response := Response{
+		"Massage": "Welcome to Defalut Get Page",
+	}
+	return response.AsJson()
 }
 
-func (c *Context) DELETE(self *Context) view {
-	return c.GET(self)
+func (c *Context) DELETE() View {
+	response := Response{
+		"Massage": "Welcome to Defalut Get Page",
+	}
+	return response.AsJson()
 }
 
-func (c *Context) HEAD(self *Context) view {
-	return c.GET(self)
+func (c *Context) HEAD() View {
+	response := Response{
+		"Massage": "Welcome to Defalut Get Page",
+	}
+	return response.AsJson()
 }
 
-func (c *Context) OPTIONS(self *Context) view {
-	return c.GET(self)
+func (c *Context) OPTIONS() View {
+	response := Response{
+		"Massage": "Welcome to Defalut Get Page",
+	}
+	return response.AsJson()
 }

@@ -1,7 +1,10 @@
 package session
 
 import (
+	"net/http"
 	"time"
+
+	"github.com/vrianta/agai/v1/view"
 )
 
 type (
@@ -27,8 +30,9 @@ type (
 		IsAuthenticated bool
 
 		ExpirationTime time.Time
+		Controller     map[string]ControllerInterface // [route]ControllerInterface
 		// lastUsed atomic.Int64
-		
+
 		heapIndex int // Index in the session heap for efficient updates
 	}
 
@@ -46,3 +50,17 @@ type (
 // if session.ExpirationTime != oldExpiration {
 //     heap.Fix(&sessionHeap, session.heapIndex)
 // }
+
+type (
+	View                = func() view.Context
+	ControllerInterface interface { // Resembeles Controller Package
+		GET() View
+		POST() View
+		PUT() View
+		DELETE() View
+		PATCH() View
+		HEAD() View
+		OPTIONS() View
+		Init(w http.ResponseWriter, r *http.Request, seesion *Instance)
+	}
+)

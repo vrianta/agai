@@ -38,9 +38,6 @@ type (
 )
 
 var (
-	EmptyResponse = Response{}
-	NoResponse    = Response{}
-
 	ViewTypes = struct {
 		GoTemplate   ViewType
 		HtmlTemplate ViewType

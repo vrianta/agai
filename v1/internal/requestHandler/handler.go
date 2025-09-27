@@ -40,19 +40,19 @@ var template_bufPool = sync.Pool{
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 
-	// fmt.Println(r.URL.Path, RouteTable)
 	if _c, found := RouteTable[r.URL.Path]; found {
-		sessionID, err := session.GetSessionID(r)
-
-		if err == nil && sessionID != "" { // it means the user had the session ID
+		if sessionID, err := session.GetSessionID(r); err == nil && sessionID != "" { // it means the user had the session ID
 			if sess, _ := session.Get(&sessionID, w, r); sess != nil {
 				if tempController, ok := sess.Controller[r.URL.Path]; ok {
 					tempController.Init(w, r, sess)
+					// log.WriteLogf("controller found in sesion\n")
 					runRequest(w, r, tempController)
+					return
 				} else {
 					tempController := _c
 					tempController.Init(w, r, sess)
 					sess.Controller[r.URL.Path] = tempController
+					// log.WriteLogf("controller not found in sesion\n")
 					runRequest(w, r, tempController)
 					return
 				}
@@ -60,11 +60,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 		tempController := _c
 		tempController.Init(w, r, nil)
+		// log.WriteLogf("session ID not found\n")
 		runRequest(w, r, tempController)
 
 	} else {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
-		return
 	}
 }
 
@@ -89,6 +89,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 
 		get_template := __template.GET()
 		if !config.GetWebConfig().Build {
+			// log.WriteLogf("Updating the Template")
 			get_template.Update()
 		}
 		if err := executeTemplate(w, get_template, view.Response.Get()); err != nil {
@@ -240,6 +241,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 			panic(err)
 		}
 	default:
+		log.WriteLogf("Getting Default Method")
 		vfucn := c.GET()
 		view := vfucn() // GET method of controller returns a view
 		if view.AsJson {

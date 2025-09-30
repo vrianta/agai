@@ -1,7 +1,6 @@
 package session
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/vrianta/agai/v1/view"
@@ -51,15 +50,5 @@ type (
 // }
 
 type (
-	View                = func() view.Context
-	ControllerInterface interface { // Resembeles Controller Package
-		GET() View
-		POST() View
-		PUT() View
-		DELETE() View
-		PATCH() View
-		HEAD() View
-		OPTIONS() View
-		Init(w http.ResponseWriter, r *http.Request, seesion *Instance)
-	}
+	View = func() view.Context
 )

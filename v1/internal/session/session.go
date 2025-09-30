@@ -162,6 +162,8 @@ func RemoveSession(sessionID *string) {
 		go func(_sessionId string) {
 			if err := SessionModel.Delete().Where(SessionModel.Fields.Id).Is(_sessionId).Exec(); err != nil {
 				log.Error("Failed to Remove session ID from DB : %s", err.Error())
+			} else {
+				log.Debug("Successfully Deleted the Session")
 			}
 		}(*sessionID)
 	}
@@ -195,21 +197,20 @@ func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, 
 				data := db_session["Data"]
 				data_object := SessionData{}
 				json.Unmarshal([]byte(data.(string)), &data_object)
-				ins := Instance{
+				session = &Instance{
 					ID:   id.(string),
 					Data: SessionData(data_object),
 					// Controller:     make(map[string]ControllerInterface),
 					ExpirationTime: time.Now().Add(time.Second * 30),
 				}
-
-				// ins.print()
-
-				go Store(&ins)
-
-				log.Write("Successfully Stored")
+				log.Debug("Found Session in DB")
+				go Store(session)
+			} else {
+				return nil, false
 			}
 		}
-		return nil, false
+	} else {
+		log.Debug("Found session %s, in the Memory", *sessionID)
 	}
 
 	go func(sessionID string) {
@@ -372,6 +373,10 @@ func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
 	sh.IsAuthenticated = true
 	sh.setCookie(w, r)
 	Store(sh)
+}
+
+func (sh *Instance) Logout(w http.ResponseWriter, r *http.Request) {
+	Cookies.RemoveCookie("sessionid", w, r)
 }
 
 // Sets the session cookie in the client's browser

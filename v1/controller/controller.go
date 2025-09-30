@@ -41,9 +41,20 @@ import (
 )
 
 func (c *Context) Init(w http.ResponseWriter, r *http.Request) {
-	c.w = w
-	c.r = r
+	c.W = w
+	c.R = r
 }
+
+// /**
+//  * To Clone a Controller object and it is for internal use only
+// **/
+// func (c *Context) Clone(w http.ResponseWriter, r *http.Request) ControllerInterface {
+// 	CloneC := *c
+// 	CloneC.w = w
+// 	CloneC.r = r
+
+// 	return CloneC
+// }
 
 /*
 This file contains local methods for the Controller struct, providing default and internal logic.

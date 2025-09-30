@@ -28,8 +28,7 @@ type (
 		OPTIONS() func() view.Context
 		Init(w http.ResponseWriter, r *http.Request)
 	}
-
-	routes map[string]ControllerInterface
+	routes map[string]func() ControllerInterface
 )
 
 var RouteTable routes = make(routes)
@@ -41,7 +40,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	if _c, found := RouteTable[r.URL.Path]; found {
 
-		tempController := _c
+		tempController := _c()
 		tempController.Init(w, r)
 		// log.WriteLogf("session ID not found\n")
 		runRequest(w, r, tempController)
@@ -78,14 +77,13 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		if view.AsJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.Name)
 			return
 		}
 		__template, ok := template.GetTemplate(view.Name)
 
 		if !ok {
 			log.Error("No Template Available as such name %s", view.Name)
-			panic("")
+			return
 		}
 
 		get_template := __template.GET()
@@ -103,14 +101,13 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		if view.AsJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.Name)
 			return
 		}
 		__template, ok := template.GetTemplate(view.Name)
 
 		if !ok {
 			log.Error("No Template Available as such name %s", view.Name)
-			panic("")
+			return
 		}
 
 		get_template := __template.POST()
@@ -127,14 +124,13 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		if view.AsJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.Name)
 			return
 		}
 		__template, ok := template.GetTemplate(view.Name)
 
 		if !ok {
 			log.Error("No Template Available as such name %s", view.Name)
-			panic("")
+			return
 		}
 
 		get_template := __template.DELETE()
@@ -143,7 +139,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		}
 		if err := executeTemplate(w, get_template, view.Response.Get()); err != nil {
 			log.Error("Error rendering template: %T", err)
-			panic(err)
+			return
 		}
 	case "PATCH":
 		vfucn := c.PATCH()
@@ -151,14 +147,13 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		if view.AsJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.Name)
 			return
 		}
 		__template, ok := template.GetTemplate(view.Name)
 
 		if !ok {
 			log.Error("No Template Available as such name %s", view.Name)
-			panic("")
+			return
 		}
 
 		get_template := __template.PATCH()
@@ -175,14 +170,13 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		if view.AsJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.Name)
 			return
 		}
 		__template, ok := template.GetTemplate(view.Name)
 
 		if !ok {
 			log.Error("No Template Available as such name %s", view.Name)
-			panic("")
+			return
 		}
 
 		get_template := __template.PUT()
@@ -190,7 +184,6 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 			get_template.Update()
 		}
 		if err := executeTemplate(w, get_template, view.Response.Get()); err != nil {
-			log.Error("Error rendering template: %T", err)
 			panic(err)
 		}
 	case "HEAD":
@@ -199,14 +192,13 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		if view.AsJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.Name)
 			return
 		}
 		__template, ok := template.GetTemplate(view.Name)
 
 		if !ok {
 			log.Error("No Template Available as such name %s", view.Name)
-			panic("")
+			return
 		}
 
 		get_template := __template.HEAD()
@@ -223,14 +215,13 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		if view.AsJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.Name)
 			return
 		}
 		__template, ok := template.GetTemplate(view.Name)
 
 		if !ok {
 			log.Error("No Template Available as such name %s", view.Name)
-			panic("")
+			return
 		}
 
 		get_template := __template.OPTIONS()
@@ -248,14 +239,13 @@ func runRequest(w http.ResponseWriter, r *http.Request, c ControllerInterface) {
 		if view.AsJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
-			log.Debug("Template is nil for controller %s, no template to execute\n", view.Name)
 			return
 		}
 		__template, ok := template.GetTemplate(view.Name)
 
 		if !ok {
 			log.Error("No Template Available as such name %s", view.Name)
-			panic("")
+			return
 		}
 
 		get_template := __template.INDEX()

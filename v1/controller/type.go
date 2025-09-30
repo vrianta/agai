@@ -13,8 +13,8 @@ type (
 		session *Session.Instance // Session object to handle user session
 
 		// privte objects
-		w http.ResponseWriter
-		r *http.Request
+		W http.ResponseWriter
+		R *http.Request
 
 		userInputs map[string]interface{}
 	}

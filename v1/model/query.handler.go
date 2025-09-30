@@ -51,11 +51,17 @@ func (m *meta) Create() *InsertRowBuilder {
 	}
 }
 
-func (m *meta) Update() *queryBuilder {
-	return &queryBuilder{
+func (m *meta) Update(f *Field) *queryBuilder {
+	q := &queryBuilder{
 		model:     m,
 		operation: "update",
 	}
+
+	if f != nil {
+		q.Set(f)
+	}
+
+	return q
 }
 
 // =======================

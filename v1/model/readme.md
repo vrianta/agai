@@ -114,7 +114,7 @@ user, err := Users.Get().Where("userName").Is("Alice").First()
 
 ```go
 // Update the password of a user with userId = 'u123'
-err := Users.Get().Set("password").To("newpass").Where("userId").Is("u123").Exec()
+err := Users.Update().Set("password").To("newpass").Where("userId").Is("u123").Exec()
 ```
 
 ### Deleting Data (DELETE)

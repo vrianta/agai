@@ -195,7 +195,7 @@ func (m *meta) UpdateComponent(id string, value component) error {
 		return fmt.Errorf("no componnet found with such name")
 	}
 
-	q := m.Update().Where(m.primary).Is(id)
+	q := m.Update(nil).Where(m.primary).Is(id)
 	for idx, val := range value {
 		q = q.SetWithFieldName(idx).To(val)
 	}

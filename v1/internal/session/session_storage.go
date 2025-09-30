@@ -2,6 +2,7 @@ package session
 
 import (
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -39,4 +40,17 @@ func loadAllSessionsFromDisk() error {
 
 	fmt.Printf("[Sessions] Loaded %d sessions from sessions.data\n", len(instances))
 	return nil
+}
+
+/*
+Store the data the user is sending
+*/
+func (sh *Instance) Store(index string, data any) {
+	sh.Data[index] = data
+
+	go func(data any, sh *Instance) {
+		data_json, _ := json.Marshal(data)
+		SessionModel.Update(SessionModel.Fields.Data).To(string(data_json)).Where(SessionModel.Fields.Id).Is(sh.ID).Exec()
+	}(data, sh)
+
 }

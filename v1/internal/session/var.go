@@ -15,11 +15,11 @@ var (
 	// Channel-based communication
 	cleanupTriggerChan = make(chan struct{}, 1) // Triggers cleanup goroutine
 
-	lruOperationChan = make(chan LRUCacheOperation, 1000) // Buffered channel for LRU operations
+	lruOperationChan = make(chan lRUCacheOperation, 1000) // Buffered channel for LRU operations
 
 	// Synchronization primitives
-	sessionUpdateMutex = sync.Mutex{} // Protects session creation/updates
-	sessionCleanMutex  = sync.Mutex{} // Protects cleanup operations
+	// sessionUpdateMutex = sync.Mutex{} // Protects session creation/updates
+	// sessionCleanMutex  = sync.Mutex{} // Protects cleanup operations
 
 	sessionStoreMutex = sync.RWMutex{} // Protects session storage map
 	lruCacheMutex     = sync.RWMutex{} // Protects LRU cache operations
@@ -32,12 +32,12 @@ var (
 )
 
 // count of total sessions are there in the system right now
-var createdSessionCount int
+// var createdSessionCount int
 
 // type SessionStoreType string
 
 const (
-	session_store_type_memory   string = "memory"
+	// session_store_type_memory   string = "memory"
 	session_store_type_disk     string = "disk"
 	session_store_type_storage  string = "storage"
 	session_store_type_db       string = "db"

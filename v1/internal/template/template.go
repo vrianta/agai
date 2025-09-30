@@ -11,7 +11,6 @@ import (
 )
 
 type (
-	Response map[string]any
 	ViewType int16
 
 	Context struct {
@@ -21,7 +20,6 @@ type (
 		Html         *htmltemplate.Template // template data of the file before modified
 		Php          *htmltemplate.Template // template which will hold the data for php templates
 		ViewType     ViewType               // type of the view file (html, php, etc.)
-		initialised  bool                   // will hold information if the template is initialised
 	}
 
 	// holdingh different templates for differect method

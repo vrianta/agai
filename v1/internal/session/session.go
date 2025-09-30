@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	Config "github.com/vrianta/agai/v1/config"
-	Cookies "github.com/vrianta/agai/v1/cookies"
+	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/cookies"
 	"github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/utils"
 )
@@ -83,11 +83,11 @@ func init() {
 	heap.Init(&sessionHeap)
 	// LoadAllSessionsFromDisk()
 
-	switch Config.GetWebConfig().SessionStoreType {
+	switch config.GetWebConfig().SessionStoreType {
 	case "disk", "storage":
 		loadAllSessionsFromDisk()
 		// case "db", "database":
-		// 	if Config.GetDatabaseConfig().Host == "" || !database.Initialized {
+		// 	if config.GetDatabaseConfig().Host == "" || !database.Initialized {
 		// 		panic("You want to use DB as the Session Storage but the Database Is not Initialised please chcek you database connection or the database config")
 		// 	}
 	}
@@ -102,7 +102,7 @@ func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
 			ID:              sessionID,
 			IsAuthenticated: false,
 			ExpirationTime:  time.Now().Add(time.Second * 30),
-			Data: SessionData{
+			Data: sessionData{
 				"uid": "Guest",
 			},
 		}
@@ -110,7 +110,7 @@ func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
 
 		ins.setCookie(w, r)
 
-		switch Config.GetWebConfig().SessionStoreType {
+		switch config.GetWebConfig().SessionStoreType {
 		case session_store_type_database, session_store_type_db:
 			data_json, _ := json.Marshal(ins.Data)
 			if err := SessionModel.InsertRow(map[string]any{
@@ -131,7 +131,7 @@ func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
 }
 
 func GetSessionID(r *http.Request) (string, error) {
-	cookie, err := Cookies.GetCookie("sessionid", r)
+	cookie, err := cookies.GetCookie("sessionid", r)
 	if cookie != nil {
 		return cookie.Value, nil
 	}
@@ -154,7 +154,7 @@ func RemoveSession(sessionID *string) {
 
 	// Delete the session from the map
 
-	switch Config.GetWebConfig().SessionStoreType {
+	switch config.GetWebConfig().SessionStoreType {
 	case session_store_type_disk, session_store_type_storage:
 		go saveAllSessionsToDisk()
 	case session_store_type_database, session_store_type_db:
@@ -185,7 +185,7 @@ func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, 
 		// if the session does not existst with the system then will check in the DB
 		// by this we can reduce the load on DB
 		// TODO : create a session instance and create the session cookies which is importanct becuase working on session storage in Database
-		switch Config.GetWebConfig().SessionStoreType {
+		switch config.GetWebConfig().SessionStoreType {
 		case session_store_type_db, session_store_type_database:
 			db_session, err := SessionModel.Get().Where(SessionModel.Fields.Id).Is(*sessionID).First()
 			if err != nil {
@@ -195,11 +195,11 @@ func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, 
 			if db_session != nil {
 				id := db_session["Id"]
 				data := db_session["Data"]
-				data_object := SessionData{}
+				data_object := sessionData{}
 				json.Unmarshal([]byte(data.(string)), &data_object)
 				session = &Instance{
 					ID:   id.(string),
-					Data: SessionData(data_object),
+					Data: sessionData(data_object),
 					// Controller:     make(map[string]ControllerInterface),
 					ExpirationTime: time.Now().Add(time.Second * 30),
 				}
@@ -230,7 +230,7 @@ func Store(session *Instance) {
 		return
 	}
 
-	if len(instances) >= Config.GetWebConfig().MaxSessionCount {
+	if len(instances) >= config.GetWebConfig().MaxSessionCount {
 		go evictLRUSession()
 	}
 
@@ -243,13 +243,13 @@ func Store(session *Instance) {
 	heap.Push(&sessionHeap, session)
 	heapAccessMutex.Unlock()
 
-	switch Config.GetWebConfig().SessionStoreType {
+	switch config.GetWebConfig().SessionStoreType {
 	case "disk", "storage":
 		go saveAllSessionsToDisk()
 	}
 
 	select {
-	case lruOperationChan <- LRUCacheOperation{ID: session.ID, OperationType: "move"}:
+	case lruOperationChan <- lRUCacheOperation{ID: session.ID, OperationType: "move"}:
 	default:
 	}
 	select {
@@ -300,7 +300,7 @@ func evictLRUSession() {
 
 	delete(lruElementMap, sessionID)
 
-	switch Config.GetWebConfig().SessionStoreType {
+	switch config.GetWebConfig().SessionStoreType {
 	case session_store_type_database, session_store_type_db:
 		if err := SessionModel.Delete().Where(SessionModel.Fields.Id).Is(sessionID).Exec(); err != nil {
 			log.Error("Failed to delte LRU Session: %s", err.Error())
@@ -376,7 +376,7 @@ func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (sh *Instance) Logout(w http.ResponseWriter, r *http.Request) {
-	Cookies.RemoveCookie("sessionid", w, r)
+	cookies.RemoveCookie("sessionid", w, r)
 }
 
 // Sets the session cookie in the client's browser
@@ -387,9 +387,9 @@ func (sh *Instance) setCookie(w http.ResponseWriter, r *http.Request) {
 	c := &http.Cookie{
 		Name:     "sessionid",
 		Value:    sh.ID,
-		HttpOnly: Config.GetWebConfig().Https,
+		HttpOnly: config.GetWebConfig().Https,
 		Expires:  sh.ExpirationTime,
 	}
 
-	Cookies.AddCookie(c, w, r)
+	cookies.AddCookie(c, w, r)
 }

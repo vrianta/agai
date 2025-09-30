@@ -2,8 +2,6 @@ package session
 
 import (
 	"time"
-
-	"github.com/vrianta/agai/v1/view"
 )
 
 type (
@@ -11,31 +9,31 @@ type (
 	collection []*Instance
 
 	// SessionData stores arbitrary key-value data for a session
-	SessionData map[string]any
+	sessionData map[string]any
 
 	// HTTPPostParameters represents POST request parameters
-	HTTPPostParameters map[string]string
+	// hTTPPostParameters map[string]string
 
 	// HTTPGetParameters represents GET request parameters
-	HTTPGetParameters map[string]string
+	// hTTPGetParameters map[string]string
 
 	Instance struct {
 		ID string
 
 		// PostParameters HTTPPostParameters
 		// GetParameters  HTTPGetParameters
-		Data SessionData
+		Data sessionData
 
 		IsAuthenticated bool
 
 		ExpirationTime time.Time
 		// lastUsed atomic.Int64
 
-		heapIndex int // Index in the session heap for efficient updates
+		// heapIndex int // Index in the session heap for efficient updates
 	}
 
 	// LRUCacheOperation represents an operation to update the LRU cache
-	LRUCacheOperation struct {
+	lRUCacheOperation struct {
 		ID            string
 		OperationType string // "move_to_front" or "insert" or "remove"
 	}
@@ -50,5 +48,5 @@ type (
 // }
 
 type (
-	View = func() view.Context
+// viewT = func() view.Context
 )

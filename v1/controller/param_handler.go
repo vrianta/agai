@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	Log "github.com/vrianta/agai/v1/log"
@@ -24,12 +25,13 @@ func (_c *Context) ParseRequest() {
 		contentType := _c.r.Header.Get("Content-Type")
 		switch contentType {
 		case "application/json":
+			b := _c.r.Body
+			fmt.Println(b)
 			// Handle JSON data
 			// if err := Utils.ParseJSONBody(sh.R, &sh.POST); err != nil {
 			// 	http.Error(sh.W, fmt.Sprintf("Error parsing JSON body | Error - %s", err.Error()), http.StatusBadRequest)
 			// 	return
 			// }
-			break
 
 		case "application/x-www-form-urlencoded":
 			// Handle form data (application/x-www-form-urlencoded)
@@ -37,6 +39,9 @@ func (_c *Context) ParseRequest() {
 			if err != nil {
 				Log.WriteLogf("Error parsing form data | Error - %s", err.Error())
 				return
+			}
+			for key, values := range _c.r.PostForm {
+				_c.processPostParams(key, values)
 			}
 
 		case "multipart/form-data":
@@ -46,6 +51,9 @@ func (_c *Context) ParseRequest() {
 				Log.WriteLogf("Error parsing multipart form data | Error - %s", err.Error())
 				return
 			}
+			for key, values := range _c.r.PostForm {
+				_c.processPostParams(key, values)
+			}
 
 		default:
 			break
@@ -54,9 +62,6 @@ func (_c *Context) ParseRequest() {
 		// Log handling of queryBuilder parameters for non-POST methods
 		// _c.userInputs = _c.r.PostForm
 
-		for key, values := range _c.r.PostForm {
-			_c.processPostParams(key, values)
-		}
 	}
 
 }

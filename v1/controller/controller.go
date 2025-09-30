@@ -38,14 +38,11 @@ package controller
 
 import (
 	"net/http"
-
-	"github.com/vrianta/agai/v1/internal/session"
 )
 
-func (c *Context) Init(w http.ResponseWriter, r *http.Request, seesion *session.Instance) {
+func (c *Context) Init(w http.ResponseWriter, r *http.Request) {
 	c.w = w
 	c.r = r
-	c.session = seesion
 }
 
 /*

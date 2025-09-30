@@ -101,7 +101,6 @@ func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
 		ins := &Instance{
 			ID:              sessionID,
 			IsAuthenticated: false,
-			Controller:      make(map[string]ControllerInterface),
 			ExpirationTime:  time.Now().Add(time.Second * 30),
 			Data: SessionData{
 				"uid": "Guest",
@@ -197,9 +196,9 @@ func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, 
 				data_object := SessionData{}
 				json.Unmarshal([]byte(data.(string)), &data_object)
 				ins := Instance{
-					ID:             id.(string),
-					Data:           SessionData(data_object),
-					Controller:     make(map[string]ControllerInterface),
+					ID:   id.(string),
+					Data: SessionData(data_object),
+					// Controller:     make(map[string]ControllerInterface),
 					ExpirationTime: time.Now().Add(time.Second * 30),
 				}
 

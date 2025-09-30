@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/vrianta/agai/v1/config"
-	"github.com/vrianta/agai/v1/internal/session"
 	"github.com/vrianta/agai/v1/internal/template"
 	"github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/view"
@@ -27,7 +26,7 @@ type (
 		PATCH() func() view.Context
 		HEAD() func() view.Context
 		OPTIONS() func() view.Context
-		Init(w http.ResponseWriter, r *http.Request, seesion *session.Instance)
+		Init(w http.ResponseWriter, r *http.Request)
 	}
 
 	routes map[string]ControllerInterface
@@ -41,27 +40,29 @@ var template_bufPool = sync.Pool{
 func Handler(w http.ResponseWriter, r *http.Request) {
 
 	if _c, found := RouteTable[r.URL.Path]; found {
-		if sessionID, err := session.GetSessionID(r); err == nil && sessionID != "" { // it means the user had the session ID
-			if sess, _ := session.Get(&sessionID, w, r); sess != nil {
-				if tempController, ok := sess.Controller[r.URL.Path]; ok {
-					tempController.Init(w, r, sess)
-					// log.WriteLogf("controller found in sesion\n")
-					runRequest(w, r, tempController)
-					return
-				} else {
-					tempController := _c
-					tempController.Init(w, r, sess)
-					sess.Controller[r.URL.Path] = tempController
-					// log.WriteLogf("controller not found in sesion\n")
-					runRequest(w, r, tempController)
-					return
-				}
-			}
-		}
+
 		tempController := _c
-		tempController.Init(w, r, nil)
+		tempController.Init(w, r)
 		// log.WriteLogf("session ID not found\n")
 		runRequest(w, r, tempController)
+
+		// if sessionID, err := session.GetSessionID(r); err == nil && sessionID != "" { // it means the user had the session ID
+		// 	if sess, _ := session.Get(&sessionID, w, r); sess != nil {
+		// 		if tempController, ok := sess.Controller[r.URL.Path]; ok {
+		// 			tempController.Init(w, r, sess)
+		// 			// log.WriteLogf("controller found in sesion\n")
+		// 			runRequest(w, r, tempController)
+		// 			return
+		// 		} else {
+		// 			tempController := _c
+		// 			tempController.Init(w, r, sess)
+		// 			sess.Controller[r.URL.Path] = tempController
+		// 			// log.WriteLogf("controller not found in sesion\n")
+		// 			runRequest(w, r, tempController)
+		// 			return
+		// 		}
+		// 	}
+		// }
 
 	} else {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)

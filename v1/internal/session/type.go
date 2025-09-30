@@ -30,7 +30,6 @@ type (
 		IsAuthenticated bool
 
 		ExpirationTime time.Time
-		Controller     map[string]ControllerInterface // [route]ControllerInterface
 		// lastUsed atomic.Int64
 
 		heapIndex int // Index in the session heap for efficient updates

@@ -55,7 +55,7 @@ func (controller *Context) Login() bool {
 
 	controller.session.Login(controller.w, controller.r)
 	// asser
-	controller.session.Controller[controller.r.URL.Path] = controller // storing the controller objects in the session
+	// controller.session.Controller[controller.r.URL.Path] = controller // storing the controller objects in the session
 
 	return true
 }

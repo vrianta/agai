@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"fmt"
+	"encoding/json"
+	"io"
 	"net/http"
 
-	Log "github.com/vrianta/agai/v1/log"
+	"github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/utils"
 )
 
@@ -25,19 +26,24 @@ func (_c *Context) ParseRequest() {
 		contentType := _c.R.Header.Get("Content-Type")
 		switch contentType {
 		case "application/json":
-			b := _c.R.Body
-			fmt.Println(b)
-			// Handle JSON data
-			// if err := Utils.ParseJSONBody(sh.R, &sh.POST); err != nil {
-			// 	http.Error(sh.W, fmt.Sprintf("Error parsing JSON body | Error - %s", err.Error()), http.StatusBadRequest)
-			// 	return
-			// }
+			// log.Debug("Got Json Body")
+			// b :=
+
+			if p, err := io.ReadAll(_c.R.Body); err != nil {
+				log.Error("Failed to Read the Joson Data, %v", err)
+			} else {
+				if er := json.Unmarshal(p, &_c.userInputs); er != nil {
+					log.Error("Failed to Render the Json Data, %v", er)
+				}
+			}
+			// fmt.Println(string(p))
+			// fmt.Println(_c.userInputs)
 
 		case "application/x-www-form-urlencoded":
 			// Handle form data (application/x-www-form-urlencoded)
 			err := _c.R.ParseForm()
 			if err != nil {
-				Log.WriteLogf("Error parsing form data | Error - %s", err.Error())
+				log.WriteLogf("Error parsing form data | Error - %s", err.Error())
 				return
 			}
 			for key, values := range _c.R.PostForm {
@@ -48,7 +54,7 @@ func (_c *Context) ParseRequest() {
 			// Handle multipart form data (file upload)
 			// Note: This case is handled separately below
 			if err := _c.R.ParseMultipartForm(10 << 20); err != nil { // 10 MB
-				Log.WriteLogf("Error parsing multipart form data | Error - %s", err.Error())
+				log.WriteLogf("Error parsing multipart form data | Error - %s", err.Error())
 				return
 			}
 			for key, values := range _c.R.PostForm {

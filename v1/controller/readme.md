@@ -117,7 +117,6 @@ If `View: "home"`, templates should be in `Views/home/`.
 
 ## 8. Registering Controllers
 
-<<<<<<< HEAD
 Register your controllers with the router using the `Router.Route` and `Router.RegisterRoutes` functions.
 
 ```go
@@ -135,9 +134,7 @@ func main() {
 ```
 
 ---
-=======
 Register your controller in the router to make it available for handling requests.
->>>>>>> 1559b5cb4f55d903a1f6f41803258cd1614abb53
 
 ## 9. Summary of Public Variables and Methods
 

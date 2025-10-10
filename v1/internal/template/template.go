@@ -266,17 +266,3 @@ func (c *Contexts) OPTIONS() *Context {
 }
 
 // // TRACE returns the TRACE Context handler, or falls back to INDEX if nil.
-// func (c *Contexts) TRACE() *Context {
-// 	if c.trace == nil {
-// 		return c.index
-// 	}
-// 	return c.trace
-// }
-
-// // CONNECT returns the CONNECT Context handler, or falls back to INDEX if nil.
-// func (c *Contexts) CONNECT() *Context {
-// 	if c.connect == nil {
-// 		return c.index
-// 	}
-// 	return c.connect
-// }

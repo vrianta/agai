@@ -40,8 +40,8 @@ func init() {
 	}
 }
 
-func New() server {
-	return server{}
+func New() app {
+	return app{}
 }
 
 func print_help() {

@@ -25,7 +25,7 @@ import (
 
 type (
 	// Server represents the HTTP server with session management
-	server struct {
+	app struct {
 		server *http.Server
 
 		state bool // hold 0 or 1 to ensure if the server is runnning or not
@@ -53,7 +53,7 @@ func waitForPort(addr string, timeout time.Duration) error {
 }
 
 // Start runs the HTTP server
-func (s *server) Start() {
+func (s *app) Start() {
 
 	database.Init()
 	s.setup_static_folders()
@@ -91,11 +91,11 @@ func (s *server) Start() {
 }
 
 // if the user want to have a custom Routing Handler the they can use this function to register it
-func (s *server) RegisterCustomRoutingHandler(_func func(w http.ResponseWriter, r *http.Request)) {
+func (s *app) RegisterCustomRoutingHandler(_func func(w http.ResponseWriter, r *http.Request)) {
 	routerHandler = _func
 }
 
-func (s *server) setup_static_folders() {
+func (s *app) setup_static_folders() {
 	// Create a file server handler
 	for _, folder := range config.GetWebConfig().StaticFolders {
 		fs := http.FileServer(http.Dir(folder))
@@ -104,13 +104,13 @@ func (s *server) setup_static_folders() {
 }
 
 // Generating Creating Routes for the Css Folders
-func (s *server) setup_css_folder() {
+func (s *app) setup_css_folder() {
 	for _, folder := range config.GetWebConfig().CssFolders {
 		http.HandleFunc("/"+folder+"/", staticFileHandler("text/css; charset=utf-8"))
 	}
 }
 
-func (s *server) setup_js_folder() {
+func (s *app) setup_js_folder() {
 	for _, folder := range config.GetWebConfig().JsFolders {
 		http.HandleFunc("/"+folder+"/", staticFileHandler("application/javascript; charset=utf-8"))
 	}

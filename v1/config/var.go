@@ -3,9 +3,8 @@ package config
 // Config package provides configuration settings for the server
 
 var (
-	webConfigFile  = "config.web.json"
-	dBConfigFile   = "config.database.json"
-	smtpConfigFile = "config.smtp.json"
+	webConfigFile = "config.web.json"
+	dBConfigFile  = "config.database.json"
 
 	webConfig = webConfigStruct{
 		Port: "1080", // Default port for the server
@@ -35,13 +34,5 @@ var (
 		Password: "",
 		Database: "mydatabase",
 		Protocol: "tcp", // Default protocol for MySQL
-	}
-
-	smtpConfig = smtpConfigStruct{
-		Host:     "",
-		Port:     587,
-		Username: "",
-		Password: "",
-		UseTLS:   true,
 	}
 )

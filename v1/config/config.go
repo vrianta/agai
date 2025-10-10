@@ -95,7 +95,3 @@ func GetDatabaseDriver() string {
 func GetDatabaseConfig() *databaseConfigStruct {
 	return &databaseConfig
 }
-
-func GetSmtpConfig() *smtpConfigStruct {
-	return &smtpConfig
-}

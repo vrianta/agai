@@ -7,7 +7,6 @@ import (
 	"net/smtp"
 	"strings"
 
-	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/log"
 )
 
@@ -17,15 +16,17 @@ type (
 	}
 	SMTP struct {
 		// For local use
-		sMTPConfig *sMTPConfig
-		auth       smtp.Auth
-		address    string
+		sMTPConfig  *sMTPConfig
+		auth        smtp.Auth
+		address     string
+		initialised bool
 
 		// for initialise public use
 		Host               string
 		Port               int
 		Username, Password string
-		initialised        bool
+		UseTLS             bool // true for certification varification
+
 	}
 )
 
@@ -63,7 +64,7 @@ func (s *SMTP) SendMail(to []string, subject, body string) error {
 	}
 
 	// Skip TLS setup to use an unencrypted connection
-	if err := client.StartTLS(&tls.Config{InsecureSkipVerify: !config.GetSmtpConfig().UseTLS}); err != nil {
+	if err := client.StartTLS(&tls.Config{InsecureSkipVerify: !s.UseTLS}); err != nil {
 		log.Error("failed to start TLS: %s", err.Error())
 		return err
 	}

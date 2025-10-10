@@ -3,7 +3,7 @@ package config
 // Config package provides configuration settings for the server
 
 var (
-	webConfigFile = "config.web.json"
+	webConfigFile = "appsettings.json"
 	dBConfigFile  = "config.database.json"
 
 	webConfig = webConfigStruct{

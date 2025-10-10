@@ -7,7 +7,7 @@ import (
 
 	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/internal/flags"
-	log "github.com/vrianta/agai/v1/log"
+	"github.com/vrianta/agai/v1/log"
 )
 
 // Function to init the Database with the Database/sql object and store it in the program

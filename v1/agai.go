@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/vrianta/agai/v1/internal/flags"
-	"github.com/vrianta/agai/v1/server"
 )
 
 /*
@@ -41,8 +40,8 @@ func init() {
 	}
 }
 
-func New() {
-	server.Start()
+func New() server {
+	return server{}
 }
 
 func print_help() {

@@ -1,8 +1,4 @@
-package controller
-
-import (
-	"github.com/vrianta/agai/v1/view"
-)
+package agai
 
 type (
 	Response map[string]any
@@ -11,9 +7,9 @@ type (
 /**
  * @param - name : name of the View where you want to send the respnse
  **/
-func (r *Response) ToView(name string) View {
-	return func() view.Context {
-		return view.Context{
+func (r *Response) AsView(name string) View {
+	return func() view {
+		return view{
 			Name:     name,
 			Response: r,
 		}
@@ -22,8 +18,8 @@ func (r *Response) ToView(name string) View {
 }
 
 func (r *Response) AsJson() View {
-	return func() view.Context {
-		return view.Context{
+	return func() view {
+		return view{
 			AsJson:   true,
 			Response: r,
 		}

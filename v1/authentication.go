@@ -1,4 +1,4 @@
-package controller
+package agai
 
 import (
 	"github.com/vrianta/agai/v1/internal/session"
@@ -13,7 +13,7 @@ import (
 /*
  * Check if the User is Logged in to the system or not
  */
-func (controller *Context) IsLoggedIn() bool {
+func (controller *Controller) IsLoggedIn() bool {
 	if controller.session == nil {
 		// getting the session ID from the cookies
 		// the session not present then the sessionID will be nil
@@ -34,7 +34,7 @@ func (controller *Context) IsLoggedIn() bool {
 /*
  * Login the user to the system
  */
-func (controller *Context) Login() bool {
+func (controller *Controller) Login() bool {
 
 	if controller.session == nil {
 		sessionID, err := session.GetSessionID(controller.R)
@@ -64,7 +64,7 @@ func (controller *Context) Login() bool {
 	return true
 }
 
-func (controller *Context) Logout() {
+func (controller *Controller) Logout() {
 
 	if controller.session == nil {
 		sessionID, err := session.GetSessionID(controller.R)

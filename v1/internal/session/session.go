@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/vrianta/agai/v1/config"
-	"github.com/vrianta/agai/v1/cookies"
 	"github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/utils"
 )
@@ -131,7 +130,7 @@ func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
 }
 
 func GetSessionID(r *http.Request) (string, error) {
-	cookie, err := cookies.GetCookie("sessionid", r)
+	cookie, err := utils.GetCookie("sessionid", r)
 	if cookie != nil {
 		return cookie.Value, nil
 	}
@@ -376,7 +375,7 @@ func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (sh *Instance) Logout(w http.ResponseWriter, r *http.Request) {
-	cookies.RemoveCookie("sessionid", w, r)
+	utils.RemoveCookie("sessionid", w, r)
 }
 
 // Sets the session cookie in the client's browser
@@ -391,5 +390,5 @@ func (sh *Instance) setCookie(w http.ResponseWriter, r *http.Request) {
 		Expires:  sh.ExpirationTime,
 	}
 
-	cookies.AddCookie(c, w, r)
+	utils.AddCookie(c, w, r)
 }

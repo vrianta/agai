@@ -1,12 +1,4 @@
-package router
-
-import (
-	"github.com/vrianta/agai/v1/internal/requestHandler"
-)
-
-type context struct {
-	root string
-}
+package agai
 
 // func New(root string) *context {
 // 	return &context{
@@ -28,10 +20,10 @@ type context struct {
 
 func CreateRoute[T any, PT interface {
 	*T
-	requestHandler.ControllerInterface
+	controllerInterface
 }](route string) {
 
-	requestHandler.RouteTable[route] = func() requestHandler.ControllerInterface {
+	routeTable[route] = func() controllerInterface {
 		var c PT = new(T)
 		return c
 	}

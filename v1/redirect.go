@@ -1,45 +1,51 @@
-package response
+package agai
 
-var (
+// Redirect Response codes
 
-	// Codes holds standard HTTP Code codes
-	Codes = struct {
+type (
+	code int
+
+	httpStatus struct {
 		// 1xx - Informational
-		Continue           Code
-		SwitchingProtocols Code
-		Processing         Code
-		EarlyHints         Code
+		Continue           code
+		SwitchingProtocols code
+		Processing         code
+		EarlyHints         code
 
 		// 2xx - Success
-		OK        Code
-		Created   Code
-		Accepted  Code
-		NoContent Code
+		OK        code
+		Created   code
+		Accepted  code
+		NoContent code
 
 		// 3xx - Redirection
-		MovedPermanently  Code
-		Found             Code
-		SeeOther          Code
-		NotModified       Code
-		TemporaryRedirect Code
-		PermanentRedirect Code
+		MovedPermanently  code
+		Found             code
+		SeeOther          code
+		NotModified       code
+		TemporaryRedirect code
+		PermanentRedirect code
 
 		// 4xx - Client Errors
-		BadRequest       Code
-		Unauthorized     Code
-		Forbidden        Code
-		NotFound         Code
-		MethodNotAllowed Code
-		Conflict         Code
-		TooManyRequests  Code
+		BadRequest       code
+		Unauthorized     code
+		Forbidden        code
+		NotFound         code
+		MethodNotAllowed code
+		Conflict         code
+		TooManyRequests  code
 
 		// 5xx - Server Errors
-		InternalServerError Code
-		NotImplemented      Code
-		BadGateway          Code
-		ServiceUnavailable  Code
-		GatewayTimeout      Code
-	}{
+		InternalServerError code
+		NotImplemented      code
+		BadGateway          code
+		ServiceUnavailable  code
+		GatewayTimeout      code
+	}
+)
+
+var (
+	HttpStatus = httpStatus{
 		// 1xx
 		Continue:           100,
 		SwitchingProtocols: 101,

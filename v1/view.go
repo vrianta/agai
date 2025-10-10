@@ -1,11 +1,11 @@
-package view
+package agai
 
 import (
 	"encoding/json"
 	"log"
 )
 
-type Context struct {
+type view struct {
 	Name     string // name of the view
 	AsJson   bool   // indicate if we have send the value as json not to some view
 	Response interface {
@@ -13,7 +13,7 @@ type Context struct {
 	}
 }
 
-func (c *Context) ToJson() []byte {
+func (c *view) ToJson() []byte {
 	jsonBytes, err := json.MarshalIndent(c.Response, "", "  ")
 	if err != nil {
 		log.Println("Failed to marshal response to JSON:", err)

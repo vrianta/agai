@@ -28,7 +28,7 @@ type (
 		PATCH() View
 		HEAD() View
 		OPTIONS() View
-		Init(w http.ResponseWriter, r *http.Request)
+		init(w http.ResponseWriter, r *http.Request)
 	}
 	routes map[string]func() controllerInterface
 )
@@ -43,7 +43,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if _c, found := routeTable[r.URL.Path]; found {
 
 		tempController := _c()
-		tempController.Init(w, r)
+		tempController.init(w, r)
 		// log.WriteLogf("session ID not found\n")
 		runRequest(w, r, tempController)
 

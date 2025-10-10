@@ -61,7 +61,7 @@ type (
 	View = func() view
 )
 
-func (c *Controller) Init(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) init(w http.ResponseWriter, r *http.Request) {
 	c.W = w
 	c.R = r
 }
@@ -149,7 +149,7 @@ func (_c *Controller) WithCode(uri string, _code code) {
 // Return all Inputs at once
 func (_c *Controller) GetInputs() *map[string]interface{} {
 	if _c.userInputs == nil {
-		_c.ParseRequest()
+		_c.parseRequest()
 	}
 	return &_c.userInputs
 }
@@ -158,7 +158,7 @@ func (_c *Controller) GetInputs() *map[string]interface{} {
 // if present then value else nil
 func (_c *Controller) GetInput(key string) interface{} {
 	if _c.userInputs == nil {
-		_c.ParseRequest()
+		_c.parseRequest()
 	}
 	if v, ok := _c.userInputs[key]; ok {
 		return v
@@ -170,9 +170,9 @@ func (_c *Controller) GetInput(key string) interface{} {
  * This File is to handle User Inputs
  */
 
-func (_c *Controller) ParseRequest() {
+func (_c *Controller) parseRequest() {
 
-	_c.userInputs = make(map[string]interface{}, 30)
+	_c.userInputs = make(map[string]any, 30)
 
 	// Log handling of queryBuilder parameters for non-POST methods
 	for key, values := range _c.R.URL.Query() {
@@ -183,9 +183,6 @@ func (_c *Controller) ParseRequest() {
 		contentType := _c.R.Header.Get("Content-Type")
 		switch contentType {
 		case "application/json":
-			// log.Debug("Got Json Body")
-			// b :=
-
 			if p, err := io.ReadAll(_c.R.Body); err != nil {
 				log.Error("Failed to Read the Joson Data, %v", err)
 			} else {
@@ -193,9 +190,6 @@ func (_c *Controller) ParseRequest() {
 					log.Error("Failed to Render the Json Data, %v", er)
 				}
 			}
-			// fmt.Println(string(p))
-			// fmt.Println(_c.userInputs)
-
 		case "application/x-www-form-urlencoded":
 			// Handle form data (application/x-www-form-urlencoded)
 			err := _c.R.ParseForm()
@@ -221,10 +215,6 @@ func (_c *Controller) ParseRequest() {
 		default:
 			break
 		}
-
-		// Log handling of queryBuilder parameters for non-POST methods
-		// _c.userInputs = _c.R.PostForm
-
 	}
 
 }

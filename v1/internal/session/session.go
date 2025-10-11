@@ -170,13 +170,13 @@ func RemoveSession(sessionID *string) {
 
 // Function to Get Session using Session ID in
 // the request, if it exists
-func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, bool) {
-	if sessionID == nil {
+func Get(sessionID string, w http.ResponseWriter, r *http.Request) (*Instance, bool) {
+	if sessionID == "" {
 		return nil, false
 	}
 
 	sessionStoreMutex.Lock()
-	session, exists := instances[*sessionID]
+	session, exists := instances[sessionID]
 	sessionStoreMutex.Unlock()
 
 	if !exists {
@@ -186,7 +186,7 @@ func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, 
 		// TODO : create a session instance and create the session cookies which is importanct becuase working on session storage in Database
 		switch config.GetWebConfig().SessionStoreType {
 		case session_store_type_db, session_store_type_database:
-			db_session, err := SessionModel.Get().Where(SessionModel.Fields.Id).Is(*sessionID).First()
+			db_session, err := SessionModel.Get().Where(SessionModel.Fields.Id).Is(sessionID).First()
 			if err != nil {
 				log.Error("Failed to get the Session | %s ", err.Error())
 				return nil, false
@@ -209,7 +209,7 @@ func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, 
 			}
 		}
 	} else {
-		log.Debug("Found session %s, in the Memory", *sessionID)
+		log.Debug("Found session %s, in the Memory", sessionID)
 	}
 
 	go func(sessionID string) {
@@ -219,7 +219,7 @@ func Get(sessionID *string, w http.ResponseWriter, r *http.Request) (*Instance, 
 			lruOrderList.MoveToFront(elem)
 		}
 		lruCacheMutex.Unlock()
-	}(*sessionID)
+	}(sessionID)
 
 	return session, true
 }

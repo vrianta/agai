@@ -18,12 +18,11 @@ func (controller *Controller) IsLoggedIn() bool {
 		// getting the session ID from the cookies
 		// the session not present then the sessionID will be nil
 		if sessionID, err := session.GetSessionID(controller.R); err == nil && sessionID != "" { // it means the user had the session ID
-			sess, _ := session.Get(&sessionID, controller.W, controller.R)
+			sess, _ := session.Get(sessionID, controller.W, controller.R)
 			controller.session = sess
 			log.Debug("Found Session with session ID %s\n", sessionID)
-		} else {
-			token := controller.GetInput("token").(string)
-			sess, _ := session.Get(&token, controller.W, controller.R)
+		} else if token, err := controller.GetInput("token"); err != nil {
+			sess, _ := session.Get(token.(string), controller.W, controller.R)
 			controller.session = sess
 		}
 	}
@@ -37,11 +36,10 @@ func (controller *Controller) Login() bool {
 
 	if controller.session == nil {
 		if sessionID, err := session.GetSessionID(controller.R); err == nil && sessionID != "" { // it means the user had the session ID
-			sess, _ := session.Get(&sessionID, controller.W, controller.R)
+			sess, _ := session.Get(sessionID, controller.W, controller.R)
 			controller.session = sess
-		} else {
-			token := controller.GetInput("token").(string)
-			sess, _ := session.Get(&token, controller.W, controller.R)
+		} else if token, err := controller.GetInput("token"); err != nil {
+			sess, _ := session.Get(token.(string), controller.W, controller.R)
 			controller.session = sess
 		}
 	}
@@ -71,7 +69,7 @@ func (controller *Controller) Logout() {
 		sessionID, err := session.GetSessionID(controller.R)
 
 		if err == nil && sessionID != "" { // it means the user had the session ID
-			sess, _ := session.Get(&sessionID, controller.W, controller.R)
+			sess, _ := session.Get(sessionID, controller.W, controller.R)
 			controller.session = sess
 		} else {
 			log.Debug("Session not found\n")

@@ -38,6 +38,7 @@ See Also:
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -125,14 +126,14 @@ func (_c *Controller) GetInputs() *map[string]any {
 
 // Return specific input
 // if present then value else nil
-func (_c *Controller) GetInput(key string) any {
+func (_c *Controller) GetInput(key string) (any, error) {
 	if _c.userInputs == nil {
 		_c.parseRequest()
 	}
 	if v, ok := _c.userInputs[key]; ok {
-		return v
+		return v, nil
 	}
-	return nil
+	return nil, errors.New("NOINPUT")
 }
 
 /*

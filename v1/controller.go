@@ -73,7 +73,7 @@ func (c *Controller) GET() View {
 	response := Response{
 		"Massage": "Welcome to Defalut Get Page",
 	}
-	return response.AsJson()
+	return response.AsJson(c)
 }
 
 func (c *Controller) POST() View {

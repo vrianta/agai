@@ -20,7 +20,8 @@ func (r *Response) ToView(name string) View {
 /**
  * If you want to send the response as json
 **/
-func (r *Response) AsJson() View {
+func (r *Response) AsJson(c *Controller) View {
+	(*r)["token"] = c.session.ID
 	return func() *view {
 		return &view{
 			asJson:   true,

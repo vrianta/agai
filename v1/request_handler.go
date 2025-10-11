@@ -56,6 +56,9 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 	case "GET":
 		vfucn := c.GET()
 		view := vfucn() // GET method of controller returns a view
+		if view == nil {
+			return
+		}
 		if view.asJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
@@ -80,6 +83,9 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 	case "POST":
 		vfucn := c.POST()
 		view := vfucn() // GET method of controller returns a view
+		if view == nil {
+			return
+		}
 		if view.asJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
@@ -103,6 +109,9 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 	case "DELETE":
 		vfucn := c.DELETE()
 		view := vfucn() // GET method of controller returns a view
+		if view == nil {
+			return
+		}
 		if view.asJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
@@ -126,6 +135,9 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 	case "PATCH":
 		vfucn := c.PATCH()
 		view := vfucn() // GET method of controller returns a view
+		if view == nil {
+			return
+		}
 		if view.asJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
@@ -149,6 +161,9 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 	case "PUT":
 		vfucn := c.PUT()
 		view := vfucn() // GET method of controller returns a view
+		if view == nil {
+			return
+		}
 		if view.asJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
@@ -171,6 +186,9 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 	case "HEAD":
 		vfucn := c.HEAD()
 		view := vfucn() // GET method of controller returns a view
+		if view == nil {
+			return
+		}
 		if view.asJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
@@ -194,6 +212,9 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 	case "OPTIONS":
 		vfucn := c.OPTIONS()
 		view := vfucn() // GET method of controller returns a view
+		if view == nil {
+			return
+		}
 		if view.asJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())
@@ -218,6 +239,9 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		log.WriteLogf("Getting Default Method")
 		vfucn := c.GET()
 		view := vfucn() // GET method of controller returns a view
+		if view == nil {
+			return
+		}
 		if view.asJson {
 			// user want the response to be send as json
 			w.Write(view.ToJson())

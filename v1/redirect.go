@@ -94,9 +94,9 @@ func (_c *Controller) Redirect(uri string) view {
 	}
 }
 
-func (_c *Controller) RedirectWithCode(uri string, _code code) view {
+func (_c *Controller) RedirectWithCode(uri string, _code code) View {
 	http.Redirect(_c.W, _c.R, uri, int(_code))
-	return view{
-		redirected: true,
+	return func() *view {
+		return nil
 	}
 }

@@ -58,7 +58,7 @@ type (
 		userInputs map[string]any
 	}
 
-	View = func() view
+	View = func() *view
 )
 
 func (c *Controller) init(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +67,7 @@ func (c *Controller) init(w http.ResponseWriter, r *http.Request) {
 }
 
 // To run the controller and execute it
-func (c *Controller) execute(w http.ResponseWriter, r *http.Request) view {
+func (c *Controller) execute(w http.ResponseWriter, r *http.Request) *view {
 
 	c.W = w
 	c.R = r

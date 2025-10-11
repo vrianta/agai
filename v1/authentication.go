@@ -21,8 +21,8 @@ func (controller *Controller) IsLoggedIn() bool {
 			sess, _ := session.Get(sessionID, controller.W, controller.R)
 			controller.session = sess
 			log.Debug("Found Session with session ID %s\n", sessionID)
-		} else if token, err := controller.GetInput("token"); err != nil {
-			sess, _ := session.Get(token.(string), controller.W, controller.R)
+		} else if token, ok := controller.GetInput("token").(string); ok {
+			sess, _ := session.Get(token, controller.W, controller.R)
 			controller.session = sess
 		}
 	}
@@ -38,8 +38,8 @@ func (controller *Controller) Login() bool {
 		if sessionID, err := session.GetSessionID(controller.R); err == nil && sessionID != "" { // it means the user had the session ID
 			sess, _ := session.Get(sessionID, controller.W, controller.R)
 			controller.session = sess
-		} else if token, err := controller.GetInput("token"); err != nil {
-			sess, _ := session.Get(token.(string), controller.W, controller.R)
+		} else if token, ok := controller.GetInput("token").(string); ok {
+			sess, _ := session.Get(token, controller.W, controller.R)
 			controller.session = sess
 		}
 	}
@@ -57,8 +57,6 @@ func (controller *Controller) Login() bool {
 	}
 
 	controller.session.Login(controller.W, controller.R)
-	// asser
-	// controller.session.Controller[controller.R.URL.Path] = controller // storing the controller objects in the session
 
 	return true
 }

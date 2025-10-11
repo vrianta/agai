@@ -136,6 +136,11 @@ func (_c *Controller) GetInput(key string) (any, error) {
 	return nil, errors.New("NOINPUT")
 }
 
+// func (c *Controller) getToken() (string, error) {
+// 	if c.R.Body.Close()
+// 	return "", errors.New("no token present")
+// }
+
 /*
  * This File is to handle User Inputs
  */

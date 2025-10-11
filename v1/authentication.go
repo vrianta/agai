@@ -20,10 +20,10 @@ func (controller *Controller) IsLoggedIn() bool {
 		if sessionID, err := session.GetSessionID(controller.R); err == nil && sessionID != "" { // it means the user had the session ID
 			sess, _ := session.Get(&sessionID, controller.W, controller.R)
 			controller.session = sess
-			log.Debug("Found Session with session ID %s", sessionID)
+			log.Debug("Found Session with session ID %s\n", sessionID)
 			return true
 		} else {
-			log.Debug("Checking is LoggedIn for Session ID %s but the session not found", sessionID)
+			log.Debug("Checking is LoggedIn for Session ID %s but the session not found\n", sessionID)
 			return false
 		}
 	}
@@ -51,10 +51,10 @@ func (controller *Controller) Login() bool {
 
 	controller.session, err = session.New(controller.W, controller.R)
 	if err != nil {
-		log.Error("Failed to create the login session: %s", err.Error())
+		log.Error("Failed to create the login session: %s\n", err.Error())
 		return false
 	} else {
-		log.WriteLogf("Successfully Loggedin with session %s", controller.session.ID)
+		log.WriteLogf("Successfully Loggedin with session %s\n", controller.session.ID)
 	}
 
 	controller.session.Login(controller.W, controller.R)
@@ -73,7 +73,7 @@ func (controller *Controller) Logout() {
 			sess, _ := session.Get(&sessionID, controller.W, controller.R)
 			controller.session = sess
 		} else {
-			log.Debug("Session not found")
+			log.Debug("Session not found\n")
 		}
 	}
 
@@ -82,7 +82,7 @@ func (controller *Controller) Logout() {
 		session.RemoveSession(&controller.session.ID)
 		controller.session = nil // Clear the session after logout
 	} else {
-		log.Debug("Session is nill and no need to logout")
+		log.Debug("Session is nill and no need to logout\n")
 	}
 
 	controller.W.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")

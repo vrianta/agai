@@ -1,5 +1,7 @@
 package agai
 
+import "net/http"
+
 // Redirect Response codes
 
 type (
@@ -83,3 +85,18 @@ var (
 		GatewayTimeout:      504,
 	}
 )
+
+// Redirects to the URI user provided
+func (_c *Controller) Redirect(uri string) view {
+	http.Redirect(_c.W, _c.R, uri, int(HttpStatus.SeeOther)) // if golang developpers worked so hard to create this why should I do it again :P
+	return view{
+		redirected: true,
+	}
+}
+
+func (_c *Controller) RedirectWithCode(uri string, _code code) view {
+	http.Redirect(_c.W, _c.R, uri, int(_code))
+	return view{
+		redirected: true,
+	}
+}

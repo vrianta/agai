@@ -7,30 +7,32 @@ type (
 /**
  * @param - name : name of the View where you want to send the respnse
  **/
-func (r *Response) AsView(name string) View {
+func (r *Response) ToView(name string) View {
 	return func() view {
 		return view{
-			Name:     name,
-			Response: r,
+			name:     name,
+			response: r,
 		}
 	}
 
 }
 
+/**
+ * If you want to send the response as json
+**/
 func (r *Response) AsJson() View {
 	return func() view {
 		return view{
-			AsJson:   true,
-			Response: r,
+			asJson:   true,
+			response: r,
 		}
 	}
-
 }
 
 func (r *Response) Get() any {
 	return r
 }
 
-func EmptyResponse() *Response {
+func (c *Controller) EmptyResponse() *Response {
 	return &Response{}
 }

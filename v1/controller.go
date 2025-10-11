@@ -55,7 +55,7 @@ type (
 		W http.ResponseWriter
 		R *http.Request
 
-		userInputs map[string]interface{}
+		userInputs map[string]any
 	}
 
 	View = func() view
@@ -66,10 +66,43 @@ func (c *Controller) init(w http.ResponseWriter, r *http.Request) {
 	c.R = r
 }
 
+// To run the controller and execute it
+func (c *Controller) execute(w http.ResponseWriter, r *http.Request) view {
+
+	c.W = w
+	c.R = r
+
+	switch r.Method {
+	case "GET":
+		vfucn := c.GET()
+		return vfucn() // GET method of controller returns a view
+	case "POST":
+		vfucn := c.POST()
+		return vfucn() // GET method of controller returns a view
+	case "DELETE":
+		vfucn := c.DELETE()
+		return vfucn() // GET method of controller returns a view
+	case "PATCH":
+		vfucn := c.PATCH()
+		return vfucn() // GET method of controller returns a view
+	case "PUT":
+		vfucn := c.PUT()
+		return vfucn() // GET method of controller returns a view
+	case "HEAD":
+		vfucn := c.HEAD()
+		return vfucn() // GET method of controller returns a view
+	case "OPTIONS":
+		vfucn := c.OPTIONS()
+		return vfucn() // GET method of controller returns a view
+	default:
+		vfucn := c.GET()
+		return vfucn() // GET method of controller returns a view
+	}
+}
+
 /*
 This file contains local methods for the Controller struct, providing default and internal logic.
 */
-
 func (c *Controller) GET() View {
 	response := Response{
 		"Massage": "Welcome to Defalut Get Page",
@@ -78,45 +111,27 @@ func (c *Controller) GET() View {
 }
 
 func (c *Controller) POST() View {
-	response := Response{
-		"Massage": "Welcome to Defalut Get Page",
-	}
-	return response.AsJson()
+	return c.GET()
 }
 
 func (c *Controller) PUT() View {
-	response := Response{
-		"Massage": "Welcome to Defalut Get Page",
-	}
-	return response.AsJson()
+	return c.GET()
 }
 
 func (c *Controller) PATCH() View {
-	response := Response{
-		"Massage": "Welcome to Defalut Get Page",
-	}
-	return response.AsJson()
+	return c.GET()
 }
 
 func (c *Controller) DELETE() View {
-	response := Response{
-		"Massage": "Welcome to Defalut Get Page",
-	}
-	return response.AsJson()
+	return c.GET()
 }
 
 func (c *Controller) HEAD() View {
-	response := Response{
-		"Massage": "Welcome to Defalut Get Page",
-	}
-	return response.AsJson()
+	return c.GET()
 }
 
 func (c *Controller) OPTIONS() View {
-	response := Response{
-		"Massage": "Welcome to Defalut Get Page",
-	}
-	return response.AsJson()
+	return c.GET()
 }
 
 /**
@@ -135,15 +150,6 @@ func (_c *Controller) StoreData(index string, _d any) {
 func (_c *Controller) GetStoredData(index string) (any, bool) {
 	data, ok := _c.session.Data[index]
 	return data, ok
-}
-
-// Redirects to the URI user provided
-func (_c *Controller) Redirect(uri string) {
-	http.Redirect(_c.W, _c.R, uri, int(HttpStatus.PermanentRedirect)) // if golang developpers worked so hard to create this why should I do it again :P
-}
-
-func (_c *Controller) WithCode(uri string, _code code) {
-	http.Redirect(_c.W, _c.R, uri, int(_code))
 }
 
 // Return all Inputs at once
@@ -184,17 +190,17 @@ func (_c *Controller) parseRequest() {
 		switch contentType {
 		case "application/json":
 			if p, err := io.ReadAll(_c.R.Body); err != nil {
-				log.Error("Failed to Read the Joson Data, %v", err)
+				log.Error("Failed to Read the Joson Data, %v\n", err)
 			} else {
 				if er := json.Unmarshal(p, &_c.userInputs); er != nil {
-					log.Error("Failed to Render the Json Data, %v", er)
+					log.Error("Failed to Render the Json Data, %v\n", er)
 				}
 			}
 		case "application/x-www-form-urlencoded":
 			// Handle form data (application/x-www-form-urlencoded)
 			err := _c.R.ParseForm()
 			if err != nil {
-				log.WriteLogf("Error parsing form data | Error - %s", err.Error())
+				log.WriteLogf("Error parsing form data | Error - %s\n", err.Error())
 				return
 			}
 			for key, values := range _c.R.PostForm {
@@ -205,7 +211,7 @@ func (_c *Controller) parseRequest() {
 			// Handle multipart form data (file upload)
 			// Note: This case is handled separately below
 			if err := _c.R.ParseMultipartForm(10 << 20); err != nil { // 10 MB
-				log.WriteLogf("Error parsing multipart form data | Error - %s", err.Error())
+				log.WriteLogf("Error parsing multipart form data | Error - %s\n", err.Error())
 				return
 			}
 			for key, values := range _c.R.PostForm {

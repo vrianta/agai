@@ -6,18 +6,22 @@ import (
 )
 
 type view struct {
-	Name     string // name of the view
-	AsJson   bool   // indicate if we have send the value as json not to some view
-	Response interface {
+	name     string // name of the view
+	asJson   bool   // indicate if we have send the value as json not to some view
+	response interface {
 		Get() any
 	}
+	redirected bool
 }
 
 func (c *view) ToJson() []byte {
-	jsonBytes, err := json.MarshalIndent(c.Response, "", "  ")
+	jsonBytes, err := json.MarshalIndent(c.response, "", "  ")
 	if err != nil {
 		log.Println("Failed to marshal response to JSON:", err)
 		return []byte("{}")
 	}
 	return jsonBytes
 }
+
+// enable redirect when the user is instructed to redirte
+// func (c *view)

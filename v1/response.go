@@ -5,13 +5,15 @@ type (
 )
 
 /**
- * @param - name : name of the View where you want to send the respnse
+ * @param
+ * name : name of the View where you want to send the respnse
+ * Data you want to pass to the view
  **/
-func (r *Response) ToView(name string) View {
+func (c *Controller) View(name string, data any) View {
 	return func() *view {
 		return &view{
 			name:     name,
-			response: r,
+			response: data,
 		}
 	}
 
@@ -20,12 +22,12 @@ func (r *Response) ToView(name string) View {
 /**
  * If you want to send the response as json
 **/
-func (r *Response) AsJson(c *Controller) View {
-	(*r)["token"] = c.session.ID
+func (c *Controller) ResponseAsJson(data Response) View {
+	data["token"] = c.session.ID
 	return func() *view {
 		return &view{
 			asJson:   true,
-			response: r,
+			response: data,
 		}
 	}
 }

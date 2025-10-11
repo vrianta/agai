@@ -75,7 +75,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 			// log.WriteLogf("Updating the Template")
 			get_template.Update()
 		}
-		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
+		if err := executeTemplate(w, get_template, view.response); err != nil {
 			log.Error("Error rendering template: %T\n", err)
 			panic(err.Error())
 		}
@@ -101,7 +101,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		if !config.GetWebConfig().Build {
 			get_template.Update()
 		}
-		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
+		if err := executeTemplate(w, get_template, view.response); err != nil {
 			log.Error("Error rendering template: %T", err)
 			panic(err)
 		}
@@ -127,7 +127,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		if !config.GetWebConfig().Build {
 			get_template.Update()
 		}
-		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
+		if err := executeTemplate(w, get_template, view.response); err != nil {
 			log.Error("Error rendering template: %T", err)
 			return
 		}
@@ -153,7 +153,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		if !config.GetWebConfig().Build {
 			get_template.Update()
 		}
-		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
+		if err := executeTemplate(w, get_template, view.response); err != nil {
 			log.Error("Error rendering template: %T", err)
 			panic(err)
 		}
@@ -179,7 +179,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		if !config.GetWebConfig().Build {
 			get_template.Update()
 		}
-		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
+		if err := executeTemplate(w, get_template, view.response); err != nil {
 			panic(err)
 		}
 	case "HEAD":
@@ -204,7 +204,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		if !config.GetWebConfig().Build {
 			get_template.Update()
 		}
-		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
+		if err := executeTemplate(w, get_template, view.response); err != nil {
 			log.Error("Error rendering template: %T", err)
 			panic(err)
 		}
@@ -230,7 +230,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		if !config.GetWebConfig().Build {
 			get_template.Update()
 		}
-		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
+		if err := executeTemplate(w, get_template, view.response); err != nil {
 			log.Error("Error rendering template: %T", err)
 			panic(err)
 		}
@@ -257,7 +257,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		if !config.GetWebConfig().Build {
 			get_template.Update()
 		}
-		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
+		if err := executeTemplate(w, get_template, view.response); err != nil {
 			log.Error("Error rendering template: %T", err)
 			panic(err)
 		}

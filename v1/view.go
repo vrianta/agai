@@ -8,9 +8,7 @@ import (
 type view struct {
 	name     string // name of the view
 	asJson   bool   // indicate if we have send the value as json not to some view
-	response interface {
-		Get() any
-	}
+	response any
 }
 
 func (c *view) ToJson() []byte {

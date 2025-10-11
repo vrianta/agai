@@ -25,4 +25,11 @@ var ReponseFuncMaps = template.FuncMap{
 	"print": func(data any) string {
 		return fmt.Sprintln(data)
 	},
+	"import": func(import_obj string) string {
+		if template, ok := templateComponents[import_obj]; !ok {
+			panic("Template :" + import_obj + " is not present")
+		} else {
+			return string(template)
+		}
+	},
 }

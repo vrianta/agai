@@ -30,7 +30,7 @@ func init() {
 			}
 
 			folder_path := utils.JoinPath(view_folder, folder_name)
-			c, err := registerTemplate(folder_path)
+			c, err := registerTemplate(folder_path, folder_name)
 			if err != nil {
 				log.Error("Failed to Register Tempalte - %s", err)
 				panic("")
@@ -50,7 +50,9 @@ Panics if no default view is found.
 Returns:
 - error: if reading the directory or registering a template fails.
 */
-func registerTemplate(view_path string) (*Contexts, error) {
+func registerTemplate(view_path string, view_name string) (*Contexts, error) {
+	// view name is the folder name where the view files are present
+	// view_path is the exact full path of the view
 
 	// fmt.Printf("Registering templates for controller: %T, view path: %s\n", c, view_path)
 	files, err := os.ReadDir(view_path)
@@ -63,7 +65,7 @@ func registerTemplate(view_path string) (*Contexts, error) {
 	var gotDefaultView = false // Track if a default view is found
 	for _, entry := range files {
 		if !entry.IsDir() {
-			full_file_name := entry.Name()
+			full_file_name := entry.Name()                                        // name of file ex. hello.go
 			var file_type = strings.TrimPrefix(filepath.Ext(full_file_name), ".") // File extension/type
 			file_name := full_file_name[:len(full_file_name)-len(file_type)-1]    // Name without extension
 
@@ -123,7 +125,11 @@ func registerTemplate(view_path string) (*Contexts, error) {
 					}
 					c.options = _template
 				default:
-					// Ignore unknown files
+					if template_content, err := _template.Execute(struct{}{}); err != nil {
+						panic("There a issue with the template : " + view_name + " - " + file_name + "Issue is : " + err.Error())
+					} else {
+						templateComponents[view_name+"."+file_name] = template_content
+					}
 				}
 				_template = nil
 			}

@@ -1,6 +1,7 @@
 package template
 
 import (
+	"bytes"
 	htmltemplate "html/template"
 	"os"
 	"sync"
@@ -48,7 +49,11 @@ var (
 
 	templateRecordsMutex = &sync.RWMutex{}
 
-	templateRegistry map[string]*Contexts = make(map[string]*Contexts) // holding all the templates in the solution
+	templateRegistry   map[string]*Contexts = make(map[string]*Contexts) // holding all the templates in the solution
+	templateComponents                      = make(map[string][]byte)    // chunk of template pices which can be imported in the other views
+	template_bufPool                        = sync.Pool{
+		New: func() any { return new(bytes.Buffer) },
+	}
 )
 
 // Create Template Object stores it in the memory
@@ -195,6 +200,39 @@ func (t *Context) Update() error {
 		}
 	}
 	return nil
+}
+
+func (t *Context) Execute(response any) ([]byte, error) {
+
+	// Use buffer pool for rendering
+	buf := template_bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer template_bufPool.Put(buf)
+
+	switch t.ViewType {
+	case ViewTypes.PhpTemplate:
+		if t.Php != nil {
+			if err := t.Php.Execute(buf, response); err != nil {
+				return nil, err
+			}
+		} else {
+			panic("php Template is not registered")
+		}
+	case ViewTypes.HtmlTemplate:
+		if t.Html != nil {
+			if err := t.Html.Execute(buf, response); err != nil {
+				return nil, err
+			}
+		}
+	default:
+		if t.Html != nil {
+			if err := t.Html.Execute(buf, response); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return buf.Bytes(), nil
 }
 
 // Returning the Templte Contexts which have all the Method Related Templates

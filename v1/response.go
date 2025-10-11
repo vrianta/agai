@@ -22,8 +22,11 @@ func (c *Controller) View(name string, data any) View {
 /**
  * If you want to send the response as json
 **/
-func (c *Controller) ResponseAsJson(data Response) View {
-	data["token"] = c.session.ID
+func (c *Controller) ViewAsJson(data Response) View {
+	if c.session != nil {
+		data["token"] = c.session.ID
+	}
+
 	return func() *view {
 		return &view{
 			asJson:   true,

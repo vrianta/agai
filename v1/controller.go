@@ -71,9 +71,9 @@ This file contains local methods for the Controller struct, providing default an
 */
 func (c *Controller) GET() View {
 	response := Response{
-		"Massage": "Welcome to Defalut Get Page",
+		"Massage": "Method Not Implimented",
 	}
-	return c.ResponseAsJson(response)
+	return c.ViewAsJson(response)
 }
 
 func (c *Controller) POST() View {
@@ -161,7 +161,7 @@ func (_c *Controller) parseRequest() {
 			log.Error("Failed to Read the Joson Data, %v\n", err)
 		} else {
 			if er := json.Unmarshal(p, &_c.userInputs); er != nil {
-				log.Error("Failed to Render the Json Data, %v\n", er)
+				log.Error("Failed to Render the Json Data, %v\n the Json Data: \n %s", er, string(p))
 			}
 		}
 	case "application/x-www-form-urlencoded":

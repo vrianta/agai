@@ -11,7 +11,6 @@ type view struct {
 	response interface {
 		Get() any
 	}
-	redirected bool
 }
 
 func (c *view) ToJson() []byte {

@@ -66,40 +66,6 @@ func (c *Controller) init(w http.ResponseWriter, r *http.Request) {
 	c.R = r
 }
 
-// To run the controller and execute it
-func (c *Controller) execute(w http.ResponseWriter, r *http.Request) *view {
-
-	c.W = w
-	c.R = r
-
-	switch r.Method {
-	case "GET":
-		vfucn := c.GET()
-		return vfucn() // GET method of controller returns a view
-	case "POST":
-		vfucn := c.POST()
-		return vfucn() // GET method of controller returns a view
-	case "DELETE":
-		vfucn := c.DELETE()
-		return vfucn() // GET method of controller returns a view
-	case "PATCH":
-		vfucn := c.PATCH()
-		return vfucn() // GET method of controller returns a view
-	case "PUT":
-		vfucn := c.PUT()
-		return vfucn() // GET method of controller returns a view
-	case "HEAD":
-		vfucn := c.HEAD()
-		return vfucn() // GET method of controller returns a view
-	case "OPTIONS":
-		vfucn := c.OPTIONS()
-		return vfucn() // GET method of controller returns a view
-	default:
-		vfucn := c.GET()
-		return vfucn() // GET method of controller returns a view
-	}
-}
-
 /*
 This file contains local methods for the Controller struct, providing default and internal logic.
 */
@@ -172,7 +138,6 @@ func (_c *Controller) GetInput(key string) any {
 /*
  * This File is to handle User Inputs
  */
-
 func (_c *Controller) parseRequest() {
 
 	_c.userInputs = make(map[string]any, 30)

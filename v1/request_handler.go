@@ -78,7 +78,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 		}
 		if err := executeTemplate(w, get_template, view.response.Get()); err != nil {
 			log.Error("Error rendering template: %T\n", err)
-			panic(err)
+			panic(err.Error())
 		}
 	case "POST":
 		vfucn := c.POST()

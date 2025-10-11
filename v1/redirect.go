@@ -87,10 +87,10 @@ var (
 )
 
 // Redirects to the URI user provided
-func (_c *Controller) Redirect(uri string) view {
+func (_c *Controller) Redirect(uri string) View {
 	http.Redirect(_c.W, _c.R, uri, int(HttpStatus.SeeOther)) // if golang developpers worked so hard to create this why should I do it again :P
-	return view{
-		redirected: true,
+	return func() *view {
+		return nil
 	}
 }
 

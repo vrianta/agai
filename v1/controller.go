@@ -134,9 +134,6 @@ func (c *Controller) OPTIONS() View {
 	return c.GET()
 }
 
-/**
-* Storing Session Data
-**/
 /*
  * Store Data in the Session
  */
@@ -153,7 +150,7 @@ func (_c *Controller) GetStoredData(index string) (any, bool) {
 }
 
 // Return all Inputs at once
-func (_c *Controller) GetInputs() *map[string]interface{} {
+func (_c *Controller) GetInputs() *map[string]any {
 	if _c.userInputs == nil {
 		_c.parseRequest()
 	}
@@ -162,7 +159,7 @@ func (_c *Controller) GetInputs() *map[string]interface{} {
 
 // Return specific input
 // if present then value else nil
-func (_c *Controller) GetInput(key string) interface{} {
+func (_c *Controller) GetInput(key string) any {
 	if _c.userInputs == nil {
 		_c.parseRequest()
 	}
@@ -181,46 +178,45 @@ func (_c *Controller) parseRequest() {
 	_c.userInputs = make(map[string]any, 30)
 
 	// Log handling of queryBuilder parameters for non-POST methods
-	for key, values := range _c.R.URL.Query() {
-		_c.processqueryBuilderParams(key, values)
+	if _c.R.Method == http.MethodGet {
+		for key, values := range _c.R.URL.Query() {
+			_c.processqueryBuilderParams(key, values)
+		}
 	}
 
-	if _c.R.Method == http.MethodPost {
-		contentType := _c.R.Header.Get("Content-Type")
-		switch contentType {
-		case "application/json":
-			if p, err := io.ReadAll(_c.R.Body); err != nil {
-				log.Error("Failed to Read the Joson Data, %v\n", err)
-			} else {
-				if er := json.Unmarshal(p, &_c.userInputs); er != nil {
-					log.Error("Failed to Render the Json Data, %v\n", er)
-				}
+	contentType := _c.R.Header.Get("Content-Type")
+	switch contentType {
+	case "application/json":
+		if p, err := io.ReadAll(_c.R.Body); err != nil {
+			log.Error("Failed to Read the Joson Data, %v\n", err)
+		} else {
+			if er := json.Unmarshal(p, &_c.userInputs); er != nil {
+				log.Error("Failed to Render the Json Data, %v\n", er)
 			}
-		case "application/x-www-form-urlencoded":
-			// Handle form data (application/x-www-form-urlencoded)
-			err := _c.R.ParseForm()
-			if err != nil {
-				log.WriteLogf("Error parsing form data | Error - %s\n", err.Error())
-				return
-			}
-			for key, values := range _c.R.PostForm {
-				_c.processPostParams(key, values)
-			}
-
-		case "multipart/form-data":
-			// Handle multipart form data (file upload)
-			// Note: This case is handled separately below
-			if err := _c.R.ParseMultipartForm(10 << 20); err != nil { // 10 MB
-				log.WriteLogf("Error parsing multipart form data | Error - %s\n", err.Error())
-				return
-			}
-			for key, values := range _c.R.PostForm {
-				_c.processPostParams(key, values)
-			}
-
-		default:
-			break
 		}
+	case "application/x-www-form-urlencoded":
+		// Handle form data (application/x-www-form-urlencoded)
+		if err := _c.R.ParseForm(); err != nil {
+			log.WriteLogf("Error parsing form data | Error - %s\n", err.Error())
+		} else {
+			for key, values := range _c.R.PostForm {
+				_c.processPostParams(key, values)
+			}
+		}
+
+	case "multipart/form-data":
+		// Handle multipart form data (file upload)
+		// Note: This case is handled separately below
+		if err := _c.R.ParseMultipartForm(10 << 20); err != nil { // 10 MB
+			log.WriteLogf("Error parsing multipart form data | Error - %s\n", err.Error())
+			return
+		}
+		for key, values := range _c.R.PostForm {
+			_c.processPostParams(key, values)
+		}
+
+	default:
+		log.Error("Content-Type %s not supported yet raise a issue in github to get it implimented", contentType)
 	}
 
 }

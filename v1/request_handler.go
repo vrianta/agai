@@ -26,7 +26,6 @@ type (
 		HEAD() View
 		OPTIONS() View
 		init(w http.ResponseWriter, r *http.Request)
-		execute(w http.ResponseWriter, r *http.Request) view
 	}
 	routes map[string]func() controllerInterface
 )
@@ -40,7 +39,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	if _c, found := routeTable[r.URL.Path]; found {
 
-		log.WriteLogf("url you Hit, %s\n", r.URL.Path)
+		// log.WriteLogf("url you Hit, %s\n", r.URL.Path)
 		tempController := _c()
 		tempController.init(w, r)
 		runRequest(w, r, tempController)

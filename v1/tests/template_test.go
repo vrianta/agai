@@ -307,17 +307,17 @@ func TestConvertPHPBlockToGo_ForLoop(t *testing.T) {
 		{
 			name:     "array foreach style",
 			input:    `for($i = 0; $i < count($users); $i++)`,
-			expected: "range $i, $iItem := .users",
+			expected: "{{ range $i, $iItem := .users }}",
 		},
 		{
 			name:     "numeric limit",
 			input:    `for($i = 0; $i < $n; $i++)`,
-			expected: "/* FOR converted: for($i = 0; $i < $n; $i++) - verify and provide seq() if needed */ range $i := seq 0 .n",
+			expected: "{{ /* FOR converted: for($i = 0; $i < $n; $i++) - verify and provide seq() if needed */ range $i := seq 0 .n }}",
 		},
 		{
 			name:     "unconvertible",
 			input:    `for($i = 1; $i < $n; $i += 2)`,
-			expected: "/* FOR loop not auto-converted: ($i = 1; $i < $n; $i += 2) - review */",
+			expected: "{{ /* FOR loop not auto-converted: ($i = 1; $i < $n; $i += 2) - review */ }}",
 		},
 	}
 
@@ -348,20 +348,20 @@ func TestPHPToGoTemplate(t *testing.T) {
 <?php /* top */ ?>
 <div>ok</div>
 <?php /* bottom */ ?>`,
-			expected: "{{}}\n<div>ok</div>\n{{}}",
+			expected: "<div>ok</div>",
 		},
 		{
 			name: "remove one-line comments outside PHP",
 			input: `<?php // outside ?>
 <div>ok</div> <?php // tail ?>`,
-			expected: "{{}}\n<div>ok</div> {{}}",
+			expected: "\n<div>ok</div>",
 		},
 		{
 			name: "remove comment-only PHP block",
 			input: `
 <?php /* inside php comment */ ?>
 <span>ok</span>`,
-			expected: "{{}}\n<span>ok</span>",
+			expected: "<span>ok</span>",
 		},
 
 		// --- raw short echo ---
@@ -456,7 +456,7 @@ func TestPHPToGoTemplate(t *testing.T) {
 <?= strtoupper($$name) /* tail */ ?>
 </body>
 </html>`,
-			expected: "{{}}\n<html>\n{{}}\n<body>\n{{ Upper .name }}\n</body>\n</html>",
+			expected: "<html>\n\n<body>\n{{ Upper .name }}\n</body>\n</html>",
 		},
 	}
 

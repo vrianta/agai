@@ -11,35 +11,33 @@ import (
 	"github.com/vrianta/agai/v1/utils"
 )
 
-func init() {
+var view_folder = utils.JoinPath(".", config.GetViewFolder())
 
-	// register all the templates
-	// view folder of the solution
-	view_folder := utils.JoinPath(".", config.GetViewFolder())
+// func init() {
 
-	if folders, err := os.ReadDir(view_folder); err != nil {
-		log.Error("Failed to load read Directory %v", err)
-		panic("Failed Loading View Folder")
-	} else {
-		for _, folder := range folders {
-			folder_name := folder.Name()
+// 	if folders, err := os.ReadDir(view_folder); err != nil {
+// 		log.Error("Failed to load read Directory %v", err)
+// 		panic("Failed Loading View Folder")
+// 	} else {
+// 		for _, folder := range folders {
+// 			folder_name := folder.Name()
 
-			if !folder.IsDir() {
-				log.Warn("Files are not Reccomented in the View Directory - %s is found in %s", folder_name, view_folder)
-				continue
-			}
+// 			if !folder.IsDir() {
+// 				log.Warn("Files are not Reccomented in the View Directory - %s is found in %s", folder_name, view_folder)
+// 				continue
+// 			}
 
-			folder_path := utils.JoinPath(view_folder, folder_name)
-			c, err := registerTemplate(folder_path, folder_name)
-			if err != nil {
-				log.Error("Failed to Register Tempalte - %s", err)
-				panic("")
-			}
-			templateRegistry[folder_name] = c
-		}
-	}
+// 			folder_path := utils.JoinPath(view_folder, folder_name)
+// 			c, err := registerTemplate(folder_path, folder_name)
+// 			if err != nil {
+// 				log.Error("Failed to Register Tempalte: %s - %s", folder_name, err)
+// 				panic("")
+// 			}
+// 			templateRegistry[folder_name] = c
+// 		}
+// 	}
 
-}
+// }
 
 /*
 RegisterTemplate scans the controller's view directory and registers templates for each HTTP method.
@@ -71,6 +69,7 @@ func registerTemplate(view_path string, view_name string) (*Contexts, error) {
 
 			// Register the template using the custom Template package
 			if _template, err := create(view_path, full_file_name, file_type); err != nil {
+				println("testing")
 				return nil, err
 			} else {
 				// fmt.Printf("  Found template: %s (type: %s) for controller: %T and file_name:%s Path:%s\n", full_file_name, file_type, c, file_name, view_path)
@@ -125,11 +124,8 @@ func registerTemplate(view_path string, view_name string) (*Contexts, error) {
 					}
 					c.options = _template
 				default:
-					if template_content, err := _template.Execute(struct{}{}); err != nil {
-						panic("There a issue with the template : " + view_name + " - " + file_name + "Issue is : " + err.Error())
-					} else {
-						templateComponents[view_name+"."+file_name] = template_content
-					}
+					templateComponents[view_name+"."+file_name] = _template
+					gotDefaultView = true
 				}
 				_template = nil
 			}

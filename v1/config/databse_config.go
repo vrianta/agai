@@ -8,7 +8,7 @@ import (
 
 func init() {
 	__config := databaseConfigStruct{}
-	json.Unmarshal([]byte(Utils.ReadFromFile(dBConfigFile)), &__config)
+	json.Unmarshal(Utils.ReadFromFile(dBConfigFile), &__config)
 
 	if envHost := Utils.GetEnvString("DB_HOST"); envHost != nil && *envHost != "" {
 		databaseConfig.Host = *envHost

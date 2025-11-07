@@ -50,7 +50,7 @@ var (
 	templateRecordsMutex = &sync.RWMutex{}
 
 	templateRegistry   map[string]*Contexts = make(map[string]*Contexts) // holding all the templates in the solution
-	templateComponents                      = make(map[string][]byte)    // chunk of template pices which can be imported in the other views
+	templateComponents                      = make(map[string]*Context)  // chunk of template pices which can be imported in the other views
 	template_bufPool                        = sync.Pool{
 		New: func() any { return new(bytes.Buffer) },
 	}
@@ -71,7 +71,7 @@ func create(file_path, file_name, file_type string) (*Context, error) {
 		return nil, err
 	}
 
-	content := utils.ReadFromFile(full_path)
+	content := string(utils.ReadFromFile(full_path))
 
 	if !config.GetBuild() {
 		// Feature: Adding a javascript to impliment hot reload
@@ -123,6 +123,8 @@ source.onerror = function(err) {
 				ViewType:     ViewTypes.PhpTemplate,
 			}, nil
 		} else {
+			println(PHPToGoTemplate(content))
+			println("testing php template error")
 			return nil, err
 		}
 	case "html", "gohtml":
@@ -159,7 +161,7 @@ func (t *Context) Update() error {
 	templateRecordsMutex.Lock()
 	defer templateRecordsMutex.Unlock()
 
-	content := utils.ReadFromFile(t.uri)
+	content := string(utils.ReadFromFile(t.uri))
 
 	if !config.GetBuild() {
 		content += `<script>

@@ -55,7 +55,7 @@ func staticFileHandler(contentType string) http.HandlerFunc {
 		newRecord := fileCacheEntry{
 			Uri:          _filePath,
 			LastModified: info.ModTime(),
-			Data:         _fileData,
+			Data:         string(_fileData),
 		}
 		fileCache.Store(_filePath, newRecord)
 		w.Write([]byte(_fileData))

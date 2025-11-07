@@ -8,6 +8,11 @@
       "mode": "auto",
       "program": "${fileDirname}",
       "showLog": true
+    },
+    {
+      "name": "Test Go",
+      "type": "go",
+      "mode": "test"
     }
   ]
 }

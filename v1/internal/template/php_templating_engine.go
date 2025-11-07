@@ -6,20 +6,49 @@ import (
 	"strings"
 )
 
+var phpBlockPattern = regexp.MustCompile(`<\?php([\s\S]*?)\?>`)
+
+// / removing comments
+var longComments = regexp.MustCompile(`/\*[\s\S]*?\*/`)
+var oneLineComment = regexp.MustCompile(`//.*(\r?\n|$)`)
+
+var foreachPattern = regexp.MustCompile(`foreach\s*\(\s*(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*(?:->\w+)*)\s+as\s+(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*)(?:\s*=>\s*(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*))?\s*\)\s*:?`)
+var endforeachPattern = regexp.MustCompile(`(?m)\bendforeach\b\s*[:;]?`)
+
+var ifPattern = regexp.MustCompile(`if\s*\(((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*)\)\s*:??`)
+var elseifPattern = regexp.MustCompile(`(?m)(?:else\s*if|elseif)\s*\(([\s\S]*?)\)\s*:?`)
+var elsePattern = regexp.MustCompile(`(?m)\belse\b\s*[:;]?`)
+var endifPattern = regexp.MustCompile(`(?m)\bendif\b\s*[:;]?`)
+
+var forPattern = regexp.MustCompile(`(?m)for\s*\(\s*([^;]+)\s*;\s*([^;]+)\s*;\s*([^)]+)\)\s*:?`)
+
 // PHPToGoTemplate converts PHP template code to Go html/template syntax
 func PHPToGoTemplate(phpTemplate string) string {
-	// Step 1: Convert short echo tags <?= ... ?> to Go template syntax
+
+	// // Step 1: Convert short echo tags <?= ... ?> to Go template syntax
 	shortEchoPattern := regexp.MustCompile(`<\?=\s*(.*?)\s*\?>`)
 	phpTemplate = shortEchoPattern.ReplaceAllStringFunc(phpTemplate, func(match string) string {
+		// removing commnet
+		match = oneLineComment.ReplaceAllString(match, "")
+		// removing long commands /**/
+		match = longComments.ReplaceAllString(match, "")
+
 		expr := shortEchoPattern.FindStringSubmatch(match)[1]
 		return "{{ " + convertPHPExprToGo(expr) + " }}"
 	})
 
-	// Step 2: Convert PHP blocks <?php ... ?>
-	phpBlockPattern := regexp.MustCompile(`<\?php\s*(.*?)\s*\?>`)
+	// Handling php Blocks <?php ?>
 	phpTemplate = phpBlockPattern.ReplaceAllStringFunc(phpTemplate, func(match string) string {
-		code := phpBlockPattern.FindStringSubmatch(match)[1]
-		return convertPHPBlockToGo(code)
+
+		match = oneLineComment.ReplaceAllString(match, "") // replacing all the // comments
+		match = longComments.ReplaceAllString(match, "")   // remove all /**/
+
+		m := phpBlockPattern.FindStringSubmatch(match)
+		if len(m) < 2 {
+			return match
+		}
+		code := strings.TrimSpace(m[1]) // handles one-liners cleanly
+		return "{{" + ConvertPHPBlockToGo(code) + "}}"
 	})
 
 	// fmt.Println(phpTemplate)
@@ -28,7 +57,7 @@ func PHPToGoTemplate(phpTemplate string) string {
 
 func convertPHPExprToGo(expr string) string {
 	// Step 1: Replace -> with . for property access
-	expr = strings.ReplaceAll(expr, "->", ".")
+	// expr = strings.ReplaceAll(expr, "->", ".")
 
 	// Step 2: Handle function calls first
 	functionCallPattern := regexp.MustCompile(`(\w+)\((.*?)\)`)
@@ -63,11 +92,146 @@ func convertPHPExprToGo(expr string) string {
 	expr = convertPHPVarsToGo(expr)
 
 	// Step 4: Optional cleanup (for readability)
-	expr = strings.ReplaceAll(expr, "&&", "and")
-	expr = strings.ReplaceAll(expr, "||", "or")
-	expr = strings.ReplaceAll(expr, "!", "not ")
+	// expr = strings.ReplaceAll(expr, "&&", "and")
+	// expr = strings.ReplaceAll(expr, "||", "or")
+	// expr = strings.ReplaceAll(expr, "!", "not ")
 
 	return expr
+}
+
+// converting php codes : you have to pass code inside <?php ?> it will convert them one by one
+func ConvertPHPBlockToGo(code string) string {
+
+	code = foreachPattern.ReplaceAllStringFunc(code, func(match string) string {
+		m := foreachPattern.FindStringSubmatch(match)
+		if len(m) < 4 {
+			return match
+		}
+
+		collection := convertPHPVarsToGo(m[1])
+		k := strings.TrimSpace(m[2]) // first var after `as`
+		v := strings.TrimSpace(m[3]) // second var if key=>value, else ""
+
+		switch {
+		case v != "":
+			// foreach ($arr as $k => $v)
+			return fmt.Sprintf("range %s, %s := %s",
+				convertPHPVarsToGo(k), convertPHPVarsToGo(v), collection)
+
+		default:
+			// foreach ($arr as $v)  -> {{ range $v := .collection }}
+			return fmt.Sprintf("range %s := %s", convertPHPVarsToGo(k), collection)
+		}
+	})
+
+	// Replace all matches with Go template end
+	code = endforeachPattern.ReplaceAllString(code, "end")
+
+	ifPattern.ReplaceAllStringFunc(code, func(match string) string {
+		matches := ifPattern.FindStringSubmatch(match)
+
+		condition := convertPHPExprToGo(matches[1])
+		return fmt.Sprintf("if %s", condition)
+	})
+
+	// Handle elseif / else if blocks in multi-line code
+
+	code = elseifPattern.ReplaceAllStringFunc(code, func(match string) string {
+		matches := elseifPattern.FindStringSubmatch(match)
+		if len(matches) < 2 {
+			return match // fallback if regex fails
+		}
+		condition := convertPHPExprToGo(matches[1])
+		return fmt.Sprintf("else if %s", condition)
+	})
+
+	// Handle else statements
+
+	code = elsePattern.ReplaceAllString(code, "else")
+
+	// Handle endif statements
+
+	code = endifPattern.ReplaceAllString(code, "end")
+
+	// Handle for loops (auto-convert common patterns)
+
+	code = forPattern.ReplaceAllStringFunc(code, func(match string) string {
+		m := forPattern.FindStringSubmatch(match)
+		if len(m) < 4 {
+			return match
+		}
+		init := strings.TrimSpace(m[1])
+		cond := strings.TrimSpace(m[2])
+		post := strings.TrimSpace(m[3])
+
+		// case 1: for($i = 0; $i < count($arr); $i++)
+		if im := regexp.MustCompile(`^\$([a-zA-Z_]\w*)\s*=\s*0$`).FindStringSubmatch(init); im != nil {
+			idx := im[1]
+			if cm := regexp.MustCompile(`^\$` + idx + `\s*<\s*count\s*\(\s*\$([a-zA-Z_]\w*)\s*\)\s*$`).FindStringSubmatch(cond); cm != nil {
+				arr := cm[1]
+				// $item name: use idx + "Item" to avoid collisions
+				itemVar := idx + "Item"
+				return fmt.Sprintf("{{ range $%s, $%s := .%s }}", idx, itemVar, arr)
+			}
+		}
+
+		// case 2: for($i = 0; $i < $n; $i++) -> best-effort placeholder using seq helper
+		if im := regexp.MustCompile(`^\$([a-zA-Z_]\w*)\s*=\s*0$`).FindStringSubmatch(init); im != nil {
+			idx := im[1]
+			if cm := regexp.MustCompile(`^\$` + idx + `\s*<\s*\$?([a-zA-Z_]\w*)\s*$`).FindStringSubmatch(cond); cm != nil {
+				bound := cm[1]
+				// Note: this assumes you provide a "seq" or equivalent template func that yields 0..bound-1
+				// If you don't have seq, this is a documentation placeholder.
+				return fmt.Sprintf("{{/* FOR converted: for(%s; %s; %s) - verify and provide seq() if needed */}}\n{{ range $%s := seq 0 .%s }}", init, cond, post, idx, bound)
+			}
+		}
+
+		// fallback: cannot auto-convert safely
+		return fmt.Sprintf("{{/* FOR loop not auto-converted: (%s; %s; %s) - review */}}", init, cond, post)
+	})
+
+	// Handle endfor
+	if code == "endfor" || code == "endfor;" || code == "endfor :" {
+		return "end"
+	}
+
+	// Handle while loops
+	if strings.HasPrefix(code, "while") {
+		// Go templates don't have direct while loop equivalents
+		whilePattern := regexp.MustCompile(`while\s*\((.*?)\)(?:\s*:)?`)
+		matches := whilePattern.FindStringSubmatch(code)
+		if len(matches) > 1 {
+			condition := convertPHPExprToGo(matches[1])
+			return fmt.Sprintf("{{ /* WHILE loop conversion - REVIEW THIS */ }}\n{{ if %s }}", condition)
+		}
+	}
+
+	// Handle endwhile
+	if code == "endwhile" || code == "endwhile;" || code == "endwhile :" {
+		return "end"
+	}
+
+	// // Handle comments
+	// commentPattern := regexp.MustCompile(`//\s*(.*?)$`)
+	// if commentPattern.MatchString(code) {
+	// 	comment := commentPattern.FindStringSubmatch(code)[1]
+	// 	return fmt.Sprintf("{{/* %s */}}", comment)
+	// }
+
+	// Handle PHP echo statements
+	if strings.HasPrefix(code, "echo") {
+		echoPattern := regexp.MustCompile(`echo\s+(.*?)(;|\s*$)`)
+		matches := echoPattern.FindStringSubmatch(code)
+		if len(matches) > 1 {
+			expr := convertPHPExprToGo(matches[1])
+			return fmt.Sprintf(" %s ", expr)
+		}
+	}
+
+	return code
+
+	// If we couldn't match to a known pattern, return a comment
+	// return fmt.Sprintf("{{/* Unconverted PHP code: %s */}}", code)
 }
 
 // convertPHPVarsToGo converts PHP-style variable expressions into Go template syntax.
@@ -164,126 +328,4 @@ func convertPHPVarsToGo(expr string) string {
 		return match
 	})
 	// return expr
-}
-
-// convertPHPBlockToGo converts a PHP code block to Go template syntax
-func convertPHPBlockToGo(code string) string {
-	// Handle foreach loops
-	if strings.HasPrefix(code, "foreach") {
-		// fmt.Println("Found Foreach 270", code)
-		foreachPattern := regexp.MustCompile(`foreach\s*\(\s*(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*(?:->\w+)*)\s+as\s+(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*)(?:\s*=>\s*(\${1,2}[a-zA-Z_][a-zA-Z0-9_]*))?\s*\)\s*:?`)
-		matches := foreachPattern.FindStringSubmatch(code)
-		if len(matches) >= 3 {
-			collection := matches[1]
-
-			// Check if this is a key-value foreach
-			if len(matches) > 3 && matches[3] != "" {
-				// Key-value foreach ($array as $key => $value)
-				keyVar := matches[2]
-				valueVar := matches[3]
-				// In Go templates, the convention is to use $ prefix for variables in range
-				// fmt.Printf("-- {{ range %s, %s := %s }}", convertPHPVarsToGo(keyVar), convertPHPVarsToGo(valueVar), convertPHPVarsToGo(collection))
-				return fmt.Sprintf("{{ range %s, %s := %s }}", convertPHPVarsToGo(keyVar), convertPHPVarsToGo(valueVar), convertPHPVarsToGo(collection))
-			} else {
-				// Simple foreach ($array as $item)
-				// Use the iterVar as a named variable in the range loop
-				return fmt.Sprintf("{{ range %s }}", convertPHPVarsToGo(collection))
-			}
-		}
-
-	}
-
-	// Handle endforeach
-	if code == "endforeach" || code == "endforeach;" || code == "endforeach :" {
-		return "{{ end }}"
-	}
-
-	// Handle if statements
-	if strings.HasPrefix(code, "if") {
-		ifPattern := regexp.MustCompile(`if\s*\(((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*)\)\s*:??`)
-		matches := ifPattern.FindStringSubmatch(code)
-		if len(matches) > 1 {
-			condition := convertPHPExprToGo(matches[1])
-			// fmt.Printf("304 - %s - %s\n", matches[1], condition)
-			return fmt.Sprintf("{{ if %s }}", condition)
-		}
-	}
-
-	// Handle elseif statements
-	if strings.HasPrefix(code, "elseif") || strings.HasPrefix(code, "else if") {
-		elseifPattern := regexp.MustCompile(`else\s*if\s*\((.*?)\)(?:\s*:)?`)
-		matches := elseifPattern.FindStringSubmatch(code)
-		if len(matches) == 0 {
-			elseifPattern = regexp.MustCompile(`elseif\s*\((.*?)\)(?:\s*:)?`)
-			matches = elseifPattern.FindStringSubmatch(code)
-		}
-
-		if len(matches) > 1 {
-			condition := convertPHPExprToGo(matches[1])
-			return fmt.Sprintf("{{ else if %s }}", condition)
-		}
-	}
-
-	// Handle else statements
-	if code == "else" || code == "else:" {
-		return "{{ else }}"
-	}
-
-	// Handle endif
-	if code == "endif" || code == "endif;" || code == "endif :" {
-		return "{{ end }}"
-	}
-
-	// Handle for loops
-	if strings.HasPrefix(code, "for") {
-		// Simple conversion - Go templates don't have direct for loop equivalents
-		// This is a limitation - we assume a range loop might be appropriate
-		forPattern := regexp.MustCompile(`for\s*\((.*?);(.*?);(.*?)\)(?:\s*:)?`)
-		matches := forPattern.FindStringSubmatch(code)
-		if len(matches) > 3 {
-			// This is a naive implementation - proper conversion would need more context
-			return "{{ /* FOR loop converted to range - REVIEW THIS */ }}\n{{ range i := seq X Y }}"
-		}
-	}
-
-	// Handle endfor
-	if code == "endfor" || code == "endfor;" || code == "endfor :" {
-		return "{{ end }}"
-	}
-
-	// Handle while loops
-	if strings.HasPrefix(code, "while") {
-		// Go templates don't have direct while loop equivalents
-		whilePattern := regexp.MustCompile(`while\s*\((.*?)\)(?:\s*:)?`)
-		matches := whilePattern.FindStringSubmatch(code)
-		if len(matches) > 1 {
-			condition := convertPHPExprToGo(matches[1])
-			return fmt.Sprintf("{{ /* WHILE loop conversion - REVIEW THIS */ }}\n{{ if %s }}", condition)
-		}
-	}
-
-	// Handle endwhile
-	if code == "endwhile" || code == "endwhile;" || code == "endwhile :" {
-		return "{{ end }}"
-	}
-
-	// Handle comments
-	commentPattern := regexp.MustCompile(`//\s*(.*?)$`)
-	if commentPattern.MatchString(code) {
-		comment := commentPattern.FindStringSubmatch(code)[1]
-		return fmt.Sprintf("{{/* %s */}}", comment)
-	}
-
-	// Handle PHP echo statements
-	if strings.HasPrefix(code, "echo") {
-		echoPattern := regexp.MustCompile(`echo\s+(.*?)(;|\s*$)`)
-		matches := echoPattern.FindStringSubmatch(code)
-		if len(matches) > 1 {
-			expr := convertPHPExprToGo(matches[1])
-			return fmt.Sprintf("{{ %s }}", expr)
-		}
-	}
-
-	// If we couldn't match to a known pattern, return a comment
-	return fmt.Sprintf("{{/* Unconverted PHP code: %s */}}", code)
 }

@@ -13,31 +13,31 @@ import (
 
 var view_folder = utils.JoinPath(".", config.GetViewFolder())
 
-// func init() {
+func init() {
 
-// 	if folders, err := os.ReadDir(view_folder); err != nil {
-// 		log.Error("Failed to load read Directory %v", err)
-// 		panic("Failed Loading View Folder")
-// 	} else {
-// 		for _, folder := range folders {
-// 			folder_name := folder.Name()
+	if folders, err := os.ReadDir(view_folder); err != nil {
+		log.Error("Failed to load read Directory %v", err)
+		panic("Failed Loading View Folder")
+	} else {
+		for _, folder := range folders {
+			folder_name := folder.Name()
 
-// 			if !folder.IsDir() {
-// 				log.Warn("Files are not Reccomented in the View Directory - %s is found in %s", folder_name, view_folder)
-// 				continue
-// 			}
+			if !folder.IsDir() {
+				log.Warn("Files are not Reccomented in the View Directory - %s is found in %s", folder_name, view_folder)
+				continue
+			}
 
-// 			folder_path := utils.JoinPath(view_folder, folder_name)
-// 			c, err := registerTemplate(folder_path, folder_name)
-// 			if err != nil {
-// 				log.Error("Failed to Register Tempalte: %s - %s", folder_name, err)
-// 				panic("")
-// 			}
-// 			templateRegistry[folder_name] = c
-// 		}
-// 	}
+			folder_path := utils.JoinPath(view_folder, folder_name)
+			c, err := registerTemplate(folder_path, folder_name)
+			if err != nil {
+				log.Error("Failed to Register Tempalte: %s - %s", folder_name, err)
+				panic("")
+			}
+			templateRegistry[folder_name] = c
+		}
+	}
 
-// }
+}
 
 /*
 RegisterTemplate scans the controller's view directory and registers templates for each HTTP method.

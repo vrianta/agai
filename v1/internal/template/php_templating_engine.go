@@ -254,7 +254,7 @@ func convertPHPExprToGo(expr string) string {
 		case "array_keys":
 			return fmt.Sprintf("keys %s", args)
 		case "include":
-			return fmt.Sprintf("include %s", args)
+			return fmt.Sprintf("include %s .", args)
 		default:
 			// unknown: call .foo arg1 arg2 ...
 			if args != "" {

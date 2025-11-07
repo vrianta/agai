@@ -25,4 +25,15 @@ var ReponseFuncMaps = template.FuncMap{
 	"print": func(data any) string {
 		return fmt.Sprintln(data)
 	},
+	"include": func(template_idx string) string {
+		if t, ok := templateComponents[template_idx]; !ok {
+			return "No Template Found: " + template_idx
+		} else {
+			if data, err := t.Execute(nil); err != nil {
+				return "Failed to Execute the template: " + template_idx + " Error: " + err.Error()
+			} else {
+				return string(data)
+			}
+		}
+	},
 }

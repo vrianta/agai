@@ -253,6 +253,8 @@ func convertPHPExprToGo(expr string) string {
 			return fmt.Sprintf("values %s", args)
 		case "array_keys":
 			return fmt.Sprintf("keys %s", args)
+		case "include":
+			return fmt.Sprintf("include %s", args)
 		default:
 			// unknown: call .foo arg1 arg2 ...
 			if args != "" {
@@ -447,26 +449,19 @@ func convertPHPVarsToGo(expr string) string {
 	expr = varOrChain.ReplaceAllStringFunc(expr, func(s string) string {
 		// detect $$ vs $
 		double := len(s) >= 2 && s[1] == '$'
-
-		// strip leading $/$$
-		body := s[1:]
-		if double {
-			body = s[2:]
-		}
+		fmt.Println("len: ", len(s), "s: ", s, " ", s[1])
 
 		// object chain?
-		if strings.Contains(body, "->") {
+		if strings.Contains(s, "->") {
 			// both $obj->x and $$obj->x become .obj.x  (matches your prior behavior)
-			return "." + strings.ReplaceAll(body, "->", ".")
+			s = strings.ReplaceAll(s, "->", ".")
 		}
 
-		// scalar
 		if double {
-			// $$x -> .x
-			return "." + body
+			return "." + s[2:]
+		} else {
+			return s
 		}
-		// $x -> $x (template var)
-		return "$" + body
 	})
 
 	// 4) Binary comparisons to prefix ops

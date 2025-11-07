@@ -69,7 +69,6 @@ func registerTemplate(view_path string, view_name string) (*Contexts, error) {
 
 			// Register the template using the custom Template package
 			if _template, err := create(view_path, full_file_name, file_type); err != nil {
-				println("testing")
 				return nil, err
 			} else {
 				// fmt.Printf("  Found template: %s (type: %s) for controller: %T and file_name:%s Path:%s\n", full_file_name, file_type, c, file_name, view_path)

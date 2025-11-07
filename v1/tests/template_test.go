@@ -20,6 +20,11 @@ func TestPHPToGoTemplate_ShortEcho(t *testing.T) {
 			expected: `{{ Upper .name }}`,
 		},
 		{
+			name:     "Short Object Conversion (<?= $CallToAction->Href ?>)",
+			input:    "<?= $CallToAction->Href ?>",
+			expected: "{{ $CallToAction.Href }}",
+		},
+		{
 			name:     "strtolower",
 			input:    `<?= strtolower($$name) ?>`,
 			expected: `{{ lower .name }}`,
@@ -475,3 +480,5 @@ func TestPHPToGoTemplate(t *testing.T) {
 		})
 	}
 }
+
+// <?= $CallToAction->Href ?>

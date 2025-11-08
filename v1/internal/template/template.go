@@ -58,7 +58,7 @@ var (
 
 // Create Template Object stores it in the memory
 // name - name of the template
-func create(file_path, file_name, file_type string) (*Context, error) {
+func create(file_path, file_name, file_type string, add_js bool) (*Context, error) {
 
 	if file_path == "" {
 		return nil, nil
@@ -73,7 +73,7 @@ func create(file_path, file_name, file_type string) (*Context, error) {
 
 	content := string(utils.ReadFromFile(full_path))
 
-	if !config.GetBuild() {
+	if !config.GetBuild() || add_js {
 		// Feature: Adding a javascript to impliment hot reload
 		content += `
 <script>

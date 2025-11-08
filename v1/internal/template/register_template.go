@@ -67,66 +67,98 @@ func registerTemplate(view_path string, view_name string) (*Contexts, error) {
 			var file_type = strings.TrimPrefix(filepath.Ext(full_file_name), ".") // File extension/type
 			file_name := full_file_name[:len(full_file_name)-len(file_type)-1]    // Name without extension
 
-			// Register the template using the custom Template package
-			if _template, err := create(view_path, full_file_name, file_type); err != nil {
-				return nil, err
-			} else {
-				// fmt.Printf("  Found template: %s (type: %s) for controller: %T and file_name:%s Path:%s\n", full_file_name, file_type, c, file_name, view_path)
-				switch file_name {
-				case "default", "index":
+			// fmt.Printf("  Found template: %s (type: %s) for controller: %T and file_name:%s Path:%s\n", full_file_name, file_type, c, file_name, view_path)
+			switch file_name {
+			case "default", "index":
+				// Register the template using the custom Template package
+				if _template, err := create(view_path, full_file_name, file_type, true); err != nil {
+					return nil, err
+				} else {
 					if c.index != nil {
 						log.Error("You have two Defailt templates for %s, which is not allowed", view_path)
 						panic("")
 					}
 					c.index = _template
 					gotDefaultView = true
-				case "get":
+				}
+
+			case "get":
+				if _template, err := create(view_path, full_file_name, file_type, true); err != nil {
+					return nil, err
+				} else {
 					if c.get != nil {
 						log.Error("You have two Get templates for %s, which is not allowed", view_path)
 						panic("")
 					}
 					c.get = _template
-				case "post":
+				}
+			case "post":
+				if _template, err := create(view_path, full_file_name, file_type, true); err != nil {
+					return nil, err
+				} else {
 					if c.post != nil {
 						log.Error("You have two Post templates for %s, which is not allowed", view_path)
 						panic("")
 					}
 					c.post = _template
-				case "delete":
+				}
+			case "delete":
+				if _template, err := create(view_path, full_file_name, file_type, true); err != nil {
+					return nil, err
+				} else {
 					if c.delete != nil {
 						log.Error("You have two Delete templates for %s, which is not allowed", view_path)
 						panic("")
 					}
 					c.delete = _template
-				case "patch":
+				}
+			case "patch":
+				if _template, err := create(view_path, full_file_name, file_type, true); err != nil {
+					return nil, err
+				} else {
 					if c.patch != nil {
 						log.Error("You have two Patch templates for %s, which is not allowed", view_path)
 						panic("")
 					}
 					c.patch = _template
-				case "put":
+				}
+			case "put":
+				if _template, err := create(view_path, full_file_name, file_type, true); err != nil {
+					return nil, err
+				} else {
 					if c.put != nil {
 						log.Error("You have two PUT templates for %s, which is not allowed", view_path)
 						panic("")
 					}
 					c.put = _template
-				case "head":
+				}
+			case "head":
+				if _template, err := create(view_path, full_file_name, file_type, true); err != nil {
+					return nil, err
+				} else {
 					if c.head != nil {
 						log.Error("You have two Head templates for %s, which is not allowed", view_path)
 						panic("")
 					}
 					c.head = _template
-				case "options":
+				}
+			case "options":
+				if _template, err := create(view_path, full_file_name, file_type, true); err != nil {
+					return nil, err
+				} else {
 					if c.options != nil {
 						log.Error("You have two Options templates for %s, which is not allowed", view_path)
 						panic("")
 					}
 					c.options = _template
-				default:
+				}
+			default:
+				if _template, err := create(view_path, full_file_name, file_type, false); err != nil {
+					return nil, err
+				} else {
 					templateComponents[view_name+"."+file_name] = _template
 					gotDefaultView = true
 				}
-				_template = nil
 			}
 		}
 	}

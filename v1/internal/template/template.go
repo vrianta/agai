@@ -73,7 +73,7 @@ func create(file_path, file_name, file_type string, add_js bool) (*Context, erro
 
 	content := string(utils.ReadFromFile(full_path))
 
-	if !config.GetBuild() || add_js {
+	if !config.GetBuild() && add_js {
 		// Feature: Adding a javascript to impliment hot reload
 		content += `
 <script>

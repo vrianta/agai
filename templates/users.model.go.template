@@ -5,12 +5,12 @@ import (
 )
 
 var Users = model.New("Users", struct {
-	Id       model.Field
-	Name     model.Field
-	Email    model.Field
-	Password model.Field
+	Id       *model.Field
+	Name     *model.Field
+	Email    *model.Field
+	Password *model.Field
 }{
-	Id: model.Field{
+	Id: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.Int,
 		Length:   10,
@@ -19,12 +19,12 @@ var Users = model.New("Users", struct {
 			Index:      true,
 		},
 	},
-	Name: model.Field{
+	Name: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.String,
 		Length:   100,
 	},
-	Email: model.Field{
+	Email: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.String,
 		Length:   150,
@@ -32,7 +32,7 @@ var Users = model.New("Users", struct {
 			Unique: true,
 		},
 	},
-	Password: model.Field{
+	Password: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.String,
 		Length:   255,

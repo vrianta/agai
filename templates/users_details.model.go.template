@@ -5,14 +5,14 @@ import (
 )
 
 var UserDetails = model.New("UserDetails", struct {
-	Id        model.Field
-	UserId    model.Field
-	FirstName model.Field
-	LastName  model.Field
-	Phone     model.Field
-	Address   model.Field
+	Id        *model.Field
+	UserId    *model.Field
+	FirstName *model.Field
+	LastName  *model.Field
+	Phone     *model.Field
+	Address   *model.Field
 }{
-	Id: model.Field{
+	Id: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.Int,
 		Length:   10,
@@ -21,7 +21,7 @@ var UserDetails = model.New("UserDetails", struct {
 			Index:      true,
 		},
 	},
-	UserId: model.Field{
+	UserId: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.Int,
 		Length:   10,
@@ -29,22 +29,22 @@ var UserDetails = model.New("UserDetails", struct {
 			PrimaryKey: true,
 		},
 	},
-	FirstName: model.Field{
+	FirstName: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.String,
 		Length:   100,
 	},
-	LastName: model.Field{
+	LastName: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.String,
 		Length:   100,
 	},
-	Phone: model.Field{
+	Phone: &model.Field{
 		Nullable: true,
 		Type:     model.FieldTypes.String,
 		Length:   20,
 	},
-	Address: model.Field{
+	Address: &model.Field{
 		Nullable: true,
 		Type:     model.FieldTypes.Text,
 	},

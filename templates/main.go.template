@@ -12,6 +12,8 @@ and then mention the driver name in the config.web.json
 */
 
 func main() {
+	
+	app := agai.New() // creating new application
 
-	agai.New()
+	app.Start()
 }

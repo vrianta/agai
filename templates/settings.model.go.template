@@ -5,11 +5,11 @@ import (
 )
 
 var Settings = model.New("Settings", struct {
-	Id    model.Field
-	Key   model.Field
-	Value model.Field
+	Id    *model.Field
+	Key   *model.Field
+	Value *model.Field
 }{
-	Id: model.Field{
+	Id: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.Int,
 		Length:   10,
@@ -18,7 +18,7 @@ var Settings = model.New("Settings", struct {
 			Index:      true,
 		},
 	},
-	Key: model.Field{
+	Key: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.String,
 		Length:   100,
@@ -26,7 +26,7 @@ var Settings = model.New("Settings", struct {
 			Unique: true,
 		},
 	},
-	Value: model.Field{
+	Value: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.Text,
 	},

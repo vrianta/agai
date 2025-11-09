@@ -5,9 +5,9 @@ import (
 )
 
 var {{ .model_name }} = model.New("{{ .table_name }}", struct {
-	Id       model.Field
+	Id       *model.Field
 }{
-	Id: model.Field{
+	Id: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.Int,
 		Length:   10,

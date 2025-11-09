@@ -1,0 +1,7 @@
+{
+"Host": "smtp.example.com",
+"Port": 587,
+"Username": "user@example.com",
+"Password": "your-password",
+"UseTLS": false
+}

@@ -14,7 +14,7 @@ type (
 
 	Table[T any] struct {
 		meta
-		Definition T
+		Fields T
 	}
 
 	meta struct {
@@ -28,13 +28,27 @@ type (
 	}
 
 	Field struct {
+		// user do not have to pass the name of the field it will automatically populate the name
 		name          string
 		Type          fieldType
 		Length        int
 		Nullable      bool
+		Definition    []any // Used for ENUM types, e.g., []any{"value1", "value2"}
 		DefaultValue  string
 		AutoIncrement bool
 		Index         Index // Index type (e.g., "UNIQUE", "INDEX")
+
+		// table name
+		table_name string
+
+		fk *foreignKey // unexported foreign key metadata
+	}
+
+	foreignKey struct {
+		referenceTable  string
+		referenceColumn string
+		onDelete        string
+		onUpdate        string
 	}
 
 	Index struct {

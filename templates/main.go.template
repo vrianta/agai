@@ -1,0 +1,17 @@
+package main
+
+import (
+	_ "github.com/go-sql-driver/mysql"
+	agai "github.com/vrianta/agai/v1"
+)
+
+
+/*
+For set the SQL Driver you need to imoort that driver like I did in line number 4 
+and then mention the driver name in the config.web.json
+*/
+
+func main() {
+
+	agai.New()
+}

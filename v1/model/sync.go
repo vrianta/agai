@@ -6,12 +6,41 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vrianta/agai/v1/config"
 	DatabaseHandler "github.com/vrianta/agai/v1/database"
-	"github.com/vrianta/agai/v1/internal/config"
+	"github.com/vrianta/agai/v1/log"
 )
 
 // Function to get the table topology and compare with the latest FieldTypes and generate a new SQL queryBuilder to alter the table
 // This function will be used to update the table structure if there are any changes in the FieldTypes
+// syncTableSchema synchronizes the database table schema with the application's model schema.
+// It iterates through the fields defined in the application's model and compares them
+// against the existing schema in the database.  It performs the following actions:
+//
+//  1. Adds fields that exist in the model but not in the database.  This addition is
+//     conditional based on user confirmation in build mode.
+//
+//  2. Modifies fields where discrepancies are found between the model and the database,
+//     such as type mismatches, length differences, default value differences,
+//     nullable constraints, or auto-increment settings. Modifications are also
+//     conditional based on user confirmation in build mode.
+//
+//  3. Synchronizes index properties (UNIQUE, PRIMARY KEY, INDEX) between the model and
+//     the database.  Index synchronization is conditional based on user confirmation
+//     in build mode.
+//
+//  4. Removes fields that exist in the database but not in the model.  Removal is
+//     conditional based on user confirmation in build mode.
+//
+// The function uses a `bufio.Reader` to prompt the user for confirmation when running
+// in build mode (`config.GetBuild()`).  If not in build mode, it attempts to sync the
+// schema without prompting.
+//
+// The function utilizes helper methods on the `meta` struct (m) such as `addField`,
+// `modifyDBField`, `syncUniqueIndex`, `syncPrimaryKey`, `syncIndex`, and `removeDBField`
+// to perform the actual database schema modifications.
+//
+// The function uses FieldTypeset and schemaMap to improve the lookup performance.
 func (m *meta) syncTableSchema() {
 	schemaMap := make(map[string]schema, len(m.schemas))
 	for _, s := range m.schemas {
@@ -27,63 +56,84 @@ func (m *meta) syncTableSchema() {
 
 	reader := bufio.NewReader(os.Stdin)
 
+	/* --------------------------------------------------------------------------
+	   syncFields compares the model’s field definitions (`m.FieldTypes`)
+	   with the live database schema (`schemaMap`) and:
+
+	   • queues brand‑new columns for creation
+	   • interactively (in build mode) or automatically modifies mismatched
+	     columns and indexes so that DB and model stay in sync
+	   --------------------------------------------------------------------------*/
 	for _, field := range m.FieldTypes {
+
+		// Look up the column in the database schema.
 		schema, exists := schemaMap[field.name]
 		if !exists {
-			if config.GetBuild() {
-				fmt.Printf("Field '%s' not in DB. Add? (y/n): ", field.name)
+			// ────────────── Field not found in DB ──────────────
+			if config.GetBuild() { // interactive “build” mode?
+				fmt.Printf("Field '%s' not in DB. Add? (y/n): ", field.name) // ask user
 				if input, _ := reader.ReadString('\n'); strings.TrimSpace(input) != "y" {
-					fmt.Printf("[AddField] Skipped: %s\n", field.name)
+					fmt.Printf("[AddField] Skipped: %s\n", field.name) // user said “no”
 					continue
 				}
 			}
-			// m.addField(field)
+			// Defer actual DDL until later; collect it now.
 			pendingAddFields = append(pendingAddFields, field)
 			continue
 		}
 
-		filed_type, field_length := schema.parseSQLType()
+		// ────────────── Field exists – check for drift ──────────────
+		filed_type, field_length := schema.parseSQLType() // DB column type & length
 		shouldChange := false
-		reasons := []string{}
+		reasons := []string{} // track what’s different for user prompt
 
-		if !field.Compare(filed_type) {
+		if !field.Compare(filed_type) { // type mismatch?
 			reasons = append(reasons, fmt.Sprintf("type mismatch(old:%s,new:%s)", filed_type, field.Type.string()))
 			shouldChange = true
 		}
+		// Length mismatch (0 in model means “unspecified” so treat 1↔0 special).
 		if !(field_length == 1 && field.Length == 0) && field_length != field.Length {
 			reasons = append(reasons, fmt.Sprintf("length mismatch(old:%d:new:%d)", field_length, field.Length))
 			shouldChange = true
 		}
-		if schema.defaultVal.String != field.DefaultValue {
-			reasons = append(reasons, "default mismatch")
-			shouldChange = true
+		if schema.defaultVal.String != field.DefaultValue { // default value mismatch?
+			// some edge cases
+			if field.Type != FieldTypes.Timestamp {
+				reasons = append(reasons, "default mismatch")
+				shouldChange = true
+			}
 		}
-		if schema.nullable == "YES" && !field.Nullable {
+		// Nullable flag mismatches (DB says YES/NO vs model bool).
+		if schema.nullable == "YES" && !field.Nullable ||
+			schema.nullable == "NO" && field.Nullable {
 			reasons = append(reasons, "nullable mismatch")
 			shouldChange = true
 		}
-		if schema.nullable == "NO" && field.Nullable {
-			reasons = append(reasons, "nullable mismatch")
-			shouldChange = true
-		}
-		if schema.extra == "auto_increment" && !field.AutoIncrement {
+		// Auto‑increment mismatch.
+		// log.Info("incriment Settings: %s", schema.extra)
+		if (schema.extra == "auto_increment" && !field.AutoIncrement) || (schema.extra == "" && field.AutoIncrement) {
 			reasons = append(reasons, "auto_increment mismatch")
 			shouldChange = true
 		}
 
+		// If anything differs, optionally prompt user then patch DB.
 		if shouldChange {
-			if config.GetBuild() {
-				fmt.Printf("Field '%s' requires update (%s). Proceed? (y/n): ", field.name, strings.Join(reasons, ", "))
+			if config.GetBuild() { // interactive mode
+				fmt.Printf("Field '%s' requires update (%s). Proceed? (y/n): ",
+					field.name, strings.Join(reasons, ", "))
 				input, _ := reader.ReadString('\n')
 				if strings.TrimSpace(input) != "y" {
 					fmt.Printf("\n[Modify] Skipped update of: %s\n", field.name)
-					continue
+					goto indexCheck // skip to index comparison
 				}
 			}
-			m.modifyDBField(field)
+			log.Debug("[Modify] Updating field: %s (%s)", field.name, strings.Join(reasons, ", "))
+			m.modifyDBField(field) // apply column alterations
 		}
 
-		// Index differences
+	indexCheck:
+		// ────────────── Index consistency checks ──────────────
+		// UNIQUE
 		if schema.isunique != field.Index.Unique {
 			if config.GetBuild() {
 				fmt.Printf("UNIQUE index mismatch on '%s'. Sync? (y/n): ", field.name)
@@ -98,6 +148,7 @@ func (m *meta) syncTableSchema() {
 			}
 		}
 
+		// PRIMARY KEY
 		if schema.isprimary != field.Index.PrimaryKey {
 			if config.GetBuild() {
 				fmt.Printf("PRIMARY KEY mismatch on '%s'. Sync? (y/n): ", field.name)
@@ -112,6 +163,7 @@ func (m *meta) syncTableSchema() {
 			}
 		}
 
+		// Regular INDEX
 		if schema.isindex != field.Index.Index {
 			if config.GetBuild() {
 				fmt.Printf("INDEX mismatch on '%s'. Sync? (y/n): ", field.name)

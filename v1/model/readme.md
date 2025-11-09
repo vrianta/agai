@@ -10,7 +10,7 @@ ModelsHandler is a human-friendly, chainable queryBuilder builder for working wi
   - [Features](#features)
   - [1. Defining a Model](#1-defining-a-model)
   - [2. Building and Executing Queries](#2-building-and-executing-queries)
-    - [Creating Records (InsertRow)](#creating-records-inserrow)
+    - [Creating Records (InsertRow)](#creating-records-insertrow)
     - [Fetching Data (SELECT)](#fetching-data-select)
     - [Fetching a Single Row](#fetching-a-single-row)
     - [Updating Data (UPDATE)](#updating-data-update)
@@ -114,7 +114,7 @@ user, err := Users.Get().Where("userName").Is("Alice").First()
 
 ```go
 // Update the password of a user with userId = 'u123'
-err := Users.Get().Set("password").To("newpass").Where("userId").Is("u123").Exec()
+err := Users.Update().Set("password").To("newpass").Where("userId").Is("u123").Exec()
 ```
 
 ### Deleting Data (DELETE)

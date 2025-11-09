@@ -38,13 +38,22 @@ func (m *meta) validate() {
 			fieldNames[f.name] = struct{}{}
 			mu.Unlock()
 
-			// PRIMARY KEY and UNIQUE cannot both be true
-			if f.Index.PrimaryKey && f.Index.Unique {
-				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' cannot be both PRIMARY KEY and UNIQUE.", f.name, m.TableName))
-			}
+			if f.Type == FieldTypes.Enum && f.Definition == nil {
+				panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is of type ENUM but has no definition.", f.name, m.TableName))
+			} else if f.Definition != nil && len(f.Definition) == 0 {
+				panic(fmt.Sprintf("Field '%s' of type ENUM must have Definition values", f.name))
 
-			// PRIMARY KEY logic
+			}
+			// PRIMARY KEY and UNIQUE cannot both be true
 			if f.Index.PrimaryKey {
+				if f.Index.Unique {
+					panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' cannot be both PRIMARY KEY and UNIQUE.", f.name, m.TableName))
+				}
+				// for primry key the types allowed are varchat or int
+				if f.Type != FieldTypes.Int && f.Type != FieldTypes.VarChar {
+					panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' cannot be both PRIMARY KEY and UNIQUE.", f.name, m.TableName))
+				}
+
 				mu.Lock()
 				primaryKeyCount++
 				mu.Unlock()
@@ -55,6 +64,7 @@ func (m *meta) validate() {
 				if f.DefaultValue != "" {
 					panic(fmt.Sprintf("[Validation Error] Field '%s' in Table '%s' is PRIMARY KEY but has a default value.", f.name, m.TableName))
 				}
+
 			}
 
 			if f.AutoIncrement {

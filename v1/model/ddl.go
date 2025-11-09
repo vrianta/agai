@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	DatabaseHandler "github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/log"
 )
 
 // function to add the new field in the table
@@ -40,7 +41,7 @@ func (m *meta) modifyDBField(field *Field) {
 		if _, sql_err := databaseObj.Exec(response); sql_err != nil {
 			panic("Error While Changing the Table Field" + sql_err.Error() + "SQL queryBuilder: " + response)
 		} else {
-			fmt.Printf("[modifyDBField]   Table: %-20s | Field Updated: %-20s\n", m.TableName, field.name)
+			log.Info("[modifyDBField]   Table: %-20s | Field Updated: %-20s\n", m.TableName, field.name)
 		}
 	}
 }

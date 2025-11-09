@@ -2,12 +2,16 @@ package model
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 
+	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/database"
-	"github.com/vrianta/agai/v1/internal/config"
+	"github.com/vrianta/agai/v1/internal/flags"
+	"github.com/vrianta/agai/v1/log"
 )
 
 func Init() {
@@ -54,27 +58,33 @@ func Init() {
 	// }
 
 	for _, model := range ModelsRegistry {
+		model.CreateTableIfNotExists()
 
-		logSection("[Models] Initializing model and syncing database tables:")
-		if config.SyncDatabaseEnabled {
+		if flags.SyncDatabaseEnabled {
+			log.Info("[Models] Initializing model and syncing database tables for: %s", model.TableName)
 			model.SyncModelSchema()
-			model.CreateTableIfNotExists()
-			model.initialised = true
-			fmt.Println()
-		}
-		logSection("[Models] Model initialization complete.")
+			model.syncTableSchema()
 
-		logSection("[Components] Initializing Components and syncing database tables:")
-		model.loadComponentFromDisk()
-		if config.SyncComponentsEnabled {
-			model.syncComponentWithDB()
-			model.loadComponentFromDisk()
-		} else {
-			model.refreshComponentFromDB()
+			model.initialised = true
 		}
-		logSection("[Components] Component initialization complete.")
 	}
 
+	fmt.Println("---------------------------------------------------------")
+
+	for _, model := range ModelsRegistry {
+
+		_, err := os.Stat(filepath.Join(componentsDir, model.TableName+".component.json"))
+		if !os.IsNotExist(err) {
+			model.loadComponentFromDisk()
+			if flags.SyncComponentsEnabled {
+				model.syncComponentWithDB()
+				model.loadComponentFromDisk()
+			} else {
+				// means the file exists in the disk
+				model.refreshComponentFromDB()
+			}
+		}
+	}
 	initialsed = true
 }
 
@@ -86,6 +96,13 @@ func Init() {
  * It will provide the default functions to handle the model like Create, Read, Update, Delete
  */
 func newModel(tableName string, FieldTypes FieldTypeset) meta {
+
+	for _, field := range FieldTypes {
+		if field.fk == nil {
+			field.table_name = tableName // Set the table name for each field
+		}
+	}
+
 	_model := meta{
 		components: make(components),
 		TableName:  tableName,
@@ -116,23 +133,29 @@ func New[T any](tableName string, structure T) *Table[T] {
 	FieldTypeset := make(FieldTypeset, t.NumField())
 
 	for i := 0; i < t.NumField(); i++ {
-		structField := t.Field(i) // get metadata (e.g. "Element", "Value")
-		value := v.Field(i).Interface()
+		structField := t.Field(i)
+		valueField := v.Field(i)
 
-		field, ok := value.(Field)
+		// Handle pointer to Field
+		fieldPtr, ok := valueField.Interface().(*Field)
 		if !ok {
-			panic(fmt.Sprintf("[Model Error] Field '%s' is not of type model.Field", structField.Name))
+			panic(fmt.Sprintf("[Model Error] Field '%s' is not of type *model.Field of Model %s", structField.Name, tableName))
+		}
+		if fieldPtr == nil {
+			panic(fmt.Sprintf("[Validation Error] Field '%s' in Talble %s Body is not Defined", structField.Name, tableName))
+		}
+		// Update metadata
+		fieldPtr.name = structField.Name
+		if fieldPtr.fk == nil {
+			fieldPtr.table_name = tableName
 		}
 
-		// Always override the Name field based on struct variable name
-		field.name = structField.Name
-
-		FieldTypeset[structField.Name] = &field
+		FieldTypeset[structField.Name] = fieldPtr
 	}
 
 	response := &Table[T]{
-		meta:       newModel(tableName, FieldTypeset),
-		Definition: structure,
+		meta:   newModel(tableName, FieldTypeset),
+		Fields: structure,
 	}
 
 	ModelsRegistry[tableName] = &response.meta
@@ -140,23 +163,22 @@ func New[T any](tableName string, structure T) *Table[T] {
 }
 
 func (m *meta) CreateTableIfNotExists() {
-	if len(m.schemas) > 0 { // if the lenth is more that 0 that means talbe is already created and no need to create it again instead we should focus on updating it
-		// if !Config.GetBuild() { // table syncing will only work only if it is a build version
-		m.syncTableSchema()
-		// }
-		return
-	}
 	sql := "CREATE TABLE IF NOT EXISTS " + m.TableName + " (\n"
 	fieldDefs := []string{}
 
 	for _, field := range m.FieldTypes {
-		fieldDefs = append(fieldDefs, field.String())
+		fieldDefs = append(fieldDefs, field.columnDefinition())
+	}
+
+	for _, field := range m.FieldTypes {
+		indexStatements := field.addIndexStatement()
+		if indexStatements != "" {
+			fieldDefs = append(fieldDefs, indexStatements)
+		}
 	}
 
 	sql += strings.Join(fieldDefs, ",\n")
 	sql += "\n);"
-
-	fmt.Println("\n[SQL] Table Creation Statement:\n" + sql + "\n")
 
 	databaseObj, err := database.GetDatabase()
 	if err != nil {
@@ -164,11 +186,11 @@ func (m *meta) CreateTableIfNotExists() {
 	}
 
 	_, err = databaseObj.Exec(sql)
+	// log.Info("Creating Table Sql Executed : %s", sql)
 	if err != nil {
 		panic("Error creating table: " + err.Error() + "\nqueryBuilder:" + sql)
 	}
 
-	fmt.Printf("[Success] Table created or already exists: %s\n", m.TableName)
 }
 
 // Handles adding/dropping PRIMARY KEY

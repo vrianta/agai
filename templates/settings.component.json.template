@@ -1,0 +1,77 @@
+{
+  "1": {
+    "Id": "1",
+    "Key": "site_name",
+    "Value": "{{ .app_name }}"
+  },
+  "2": {
+    "Id": "2",
+    "Key": "site_description",
+    "Value": "A minimal web app built with AGAI"
+  },
+  "3": {
+    "Id": "3",
+    "Key": "admin_email",
+    "Value": "admin@example.com"
+  },
+  "4": {
+    "Id": "4",
+    "Key": "maintenance_mode",
+    "Value": "off"
+  },
+  "5": {
+    "Id": "5",
+    "Key": "default_language",
+    "Value": "en"
+  },
+  "6": {
+    "Id": "6",
+    "Key": "timezone",
+    "Value": "Asia/Kolkata"
+  },
+  "7": {
+    "Id": "7",
+    "Key": "enable_registration",
+    "Value": "true"
+  },
+  "8": {
+    "Id": "8",
+    "Key": "max_upload_size",
+    "Value": "5MB"
+  },
+  "9": {
+    "Id": "9",
+    "Key": "session_timeout_minutes",
+    "Value": "30"
+  },
+  "10": {
+    "Id": "10",
+    "Key": "theme",
+    "Value": "default"
+  },
+  "11": {
+    "Id": "11",
+    "Key": "theme_primary_color",
+    "Value": "#3498db"
+  },
+  "12": {
+    "Id": "12",
+    "Key": "theme_secondary_color",
+    "Value": "#2ecc71"
+  },
+  "13": {
+    "Id": "13",
+    "Key": "theme_background_color",
+    "Value": "#ffffff"
+  },
+  "14": {
+    "Id": "14",
+    "Key": "theme_font_family",
+    "Value": "Inter, sans-serif"
+  },
+  "15": {
+    "Id": "15",
+    "Key": "theme_layout",
+    "Value": "fluid"
+  }
+}

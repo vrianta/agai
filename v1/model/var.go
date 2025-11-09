@@ -149,7 +149,7 @@ var (
 
 	//
 	// jsonStoreMu      sync.RWMutex
-	componentsDir = "./components"
+	componentsDir string = "./components"
 	// warnedMissingDir = false
 	// wb               = sync.WaitGroup{}
 

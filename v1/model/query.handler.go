@@ -51,11 +51,17 @@ func (m *meta) Create() *InsertRowBuilder {
 	}
 }
 
-func (m *meta) Update() *queryBuilder {
-	return &queryBuilder{
+func (m *meta) Update(f *Field) *queryBuilder {
+	q := &queryBuilder{
 		model:     m,
 		operation: "update",
 	}
+
+	if f != nil {
+		q.Set(f)
+	}
+
+	return q
 }
 
 // =======================
@@ -81,8 +87,8 @@ func (m *meta) Delete() *queryBuilder {
 
 // Where begins a WHERE clause, specifying the column to filter on.
 // Example: .Where("age")
-func (q *queryBuilder) Where(column string) *queryBuilder {
-	q.lastColumn = column // Remember which column the next condition is for
+func (q *queryBuilder) Where(f *Field) *queryBuilder {
+	q.lastColumn = f.name // Remember which column the next condition is for
 	return q
 }
 
@@ -239,7 +245,18 @@ func (q *queryBuilder) IsNotNull() *queryBuilder {
 // Set marks the start of an UPDATE operation, specifying which field to update.
 // Call this before .To().
 // Example: .Set("name")
-func (q *queryBuilder) Set(field string) *queryBuilder {
+func (q *queryBuilder) Set(field *Field) *queryBuilder {
+	if field == nil {
+		panic("Field can not be nil or empty while setting it")
+	}
+	q.lastSet = field.name
+	if q.operation == "" {
+		q.operation = "update" // default fallback
+	}
+	return q
+}
+
+func (q *queryBuilder) SetWithFieldName(field string) *queryBuilder {
 	q.lastSet = field
 	if q.operation == "" {
 		q.operation = "update" // default fallback
@@ -262,8 +279,8 @@ func (q *queryBuilder) To(value any) *queryBuilder {
 }
 
 // Set marks the start of an InsertRow operation, specifying which field to InsertRow.
-func (q *InsertRowBuilder) Set(field string) *InsertRowBuilder {
-	q.lastSet = field
+func (q *InsertRowBuilder) Set(field *Field) *InsertRowBuilder {
+	q.lastSet = field.name
 	return q
 }
 
@@ -325,7 +342,17 @@ func (q *queryBuilder) Fetch() (Results, error) {
 	where := q.buildWhere()
 	limit := q.buildLimit()
 
-	queryBuilder := fmt.Sprintf("SELECT * FROM %s %s %s", q.model.TableName, where, limit)
+	order := ""
+	if q.orderBy != "" {
+		order = "ORDER BY " + q.orderBy
+	}
+	group := ""
+	if q.groupBy != "" {
+		group = "GROUP BY " + q.groupBy
+	}
+	queryBuilder := fmt.Sprintf("SELECT * FROM %s %s %s %s %s", q.model.TableName, where, group, order, limit)
+
+	// queryBuilder := fmt.Sprintf("SELECT * FROM %s %s %s", q.model.TableName, where, limit)
 	rows, err := db.Query(queryBuilder, q.whereArgs...)
 	if err != nil {
 		return nil, err

@@ -1,0 +1,41 @@
+package models
+
+import (
+	"github.com/vrianta/agai/v1/model"
+)
+
+var Users = model.New("Users", struct {
+	Id       model.Field
+	Name     model.Field
+	Email    model.Field
+	Password model.Field
+}{
+	Id: model.Field{
+		Nullable: false,
+		Type:     model.FieldTypes.Int,
+		Length:   10,
+		Index: model.Index{
+			PrimaryKey: true,
+			Index:      true,
+		},
+	},
+	Name: model.Field{
+		Nullable: false,
+		Type:     model.FieldTypes.String,
+		Length:   100,
+	},
+	Email: model.Field{
+		Nullable: false,
+		Type:     model.FieldTypes.String,
+		Length:   150,
+		Index: model.Index{
+			Unique: true,
+		},
+	},
+	Password: model.Field{
+		Nullable: false,
+		Type:     model.FieldTypes.String,
+		Length:   255,
+	},
+})
+

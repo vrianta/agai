@@ -3,15 +3,16 @@ package session
 import (
 	"container/heap"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"sync/atomic"
 	"time"
 
-	Cookies "github.com/vrianta/agai/v1/cookies"
-	Config "github.com/vrianta/agai/v1/internal/config"
-	Log "github.com/vrianta/agai/v1/log"
+	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/log"
+	"github.com/vrianta/agai/v1/utils"
 )
 
 /*
@@ -75,36 +76,65 @@ import (
  */
 
 func init() {
-	gob.Register(map[string]*Struct{})
-	gob.Register(&Struct{})
+	gob.Register(map[string]*Instance{})
+	gob.Register(&Instance{})
 	gob.Register(atomic.Int64{})
 	heap.Init(&sessionHeap)
 	// LoadAllSessionsFromDisk()
 
-	switch Config.GetWebConfig().SessionStoreType {
+	switch config.GetWebConfig().SessionStoreType {
 	case "disk", "storage":
 		loadAllSessionsFromDisk()
+		// case "db", "database":
+		// 	if config.GetDatabaseConfig().Host == "" || !database.Initialized {
+		// 		panic("You want to use DB as the Session Storage but the Database Is not Initialised please chcek you database connection or the database config")
+		// 	}
+	}
+
+}
+
+func New(w http.ResponseWriter, r *http.Request) (*Instance, error) {
+	if sessionID, err := utils.GenerateSessionID(); err != nil {
+		return nil, err
+	} else {
+		ins := &Instance{
+			ID:              sessionID,
+			IsAuthenticated: false,
+			ExpirationTime:  time.Now().Add(time.Second * 30),
+			Data: sessionData{
+				"uid": "Guest",
+			},
+		}
+		go Store(ins)
+
+		ins.setCookie(w, r)
+
+		switch config.GetWebConfig().SessionStoreType {
+		case session_store_type_database, session_store_type_db:
+			data_json, _ := json.Marshal(ins.Data)
+			if err := SessionModel.InsertRow(map[string]any{
+				"Id":   ins.ID,
+				"Data": string(data_json),
+			}); err != nil {
+				log.Error("Failed to Insert row in the session: %s", err)
+			}
+		}
+
+		// Wake up the session handler if needed
+		select {
+		case cleanupTriggerChan <- struct{}{}:
+		default:
+		}
+		return ins, nil
 	}
 }
 
-func New() *Struct {
-	return &Struct{
-		POST:     make(PostParams, 20),
-		GET:      make(GetParams, 20),
-		LoggedIn: false,
-		Expiry:   time.Now().Add(time.Second * 30),
-		Store: SessionVars{
-			"uid": "Guest",
-		},
-	}
-}
-
-func GetSessionID(r *http.Request) *string {
-	cookie := Cookies.GetCookie("sessionid", r)
+func GetSessionID(r *http.Request) (string, error) {
+	cookie, err := utils.GetCookie("sessionid", r)
 	if cookie != nil {
-		return &cookie.Value
+		return cookie.Value, nil
 	}
-	return nil
+	return "", err
 }
 
 // Function to Remove Session using Session ID in
@@ -115,85 +145,114 @@ func RemoveSession(sessionID *string) {
 	}
 
 	// Lock the mutex for writing
-	sessionMutex.Lock()
-	defer sessionMutex.Unlock()
+	sessionStoreMutex.Lock()
+	delete(instances, (*sessionID))
+	sessionStoreMutex.Unlock()
+
+	// delete session f
 
 	// Delete the session from the map
-	delete(all, (*sessionID))
 
-	switch Config.GetWebConfig().SessionStoreType {
-	case "disk", "storage":
+	switch config.GetWebConfig().SessionStoreType {
+	case session_store_type_disk, session_store_type_storage:
 		go saveAllSessionsToDisk()
+	case session_store_type_database, session_store_type_db:
+		// delete the sesssion from the database
+		go func(_sessionId string) {
+			if err := SessionModel.Delete().Where(SessionModel.Fields.Id).Is(_sessionId).Exec(); err != nil {
+				log.Error("Failed to Remove session ID from DB : %s", err.Error())
+			} else {
+				log.Debug("Successfully Deleted the Session")
+			}
+		}(*sessionID)
 	}
 }
 
 // Function to Get Session using Session ID in
 // the request, if it exists
-func Get(sessionID *string) (*Struct, bool) {
-	if sessionID == nil {
+func Get(sessionID string, w http.ResponseWriter, r *http.Request) (*Instance, bool) {
+	if sessionID == "" {
 		return nil, false
 	}
 
-	// for id, session := range all {
-	// 	fmt.Printf("Session ID: %s\n", id)
-	// 	fmt.Printf("  POST: %+v\n", session.POST)
-	// 	fmt.Printf("  GET: %+v\n", session.GET)
-	// 	fmt.Printf("  Store: %+v\n", session.Store)
-	// 	fmt.Printf("  isLoggedIn: %v\n", session.isLoggedIn)
-	// 	fmt.Printf("  Expiry: %s\n", session.Expiry)
-	// 	fmt.Println("------------------------")
-	// }
+	sessionStoreMutex.Lock()
+	session, exists := instances[sessionID]
+	sessionStoreMutex.Unlock()
 
-	sessionMutex.Lock()
-	session, exists := all[*sessionID]
 	if !exists {
-		sessionMutex.Unlock()
-		return nil, false
+		// check if the user chooses to use database for session storage
+		// if the session does not existst with the system then will check in the DB
+		// by this we can reduce the load on DB
+		// TODO : create a session instance and create the session cookies which is importanct becuase working on session storage in Database
+		switch config.GetWebConfig().SessionStoreType {
+		case session_store_type_db, session_store_type_database:
+			db_session, err := SessionModel.Get().Where(SessionModel.Fields.Id).Is(sessionID).First()
+			if err != nil {
+				log.Error("Failed to get the Session | %s ", err.Error())
+				return nil, false
+			}
+			if db_session != nil {
+				id := db_session["Id"]
+				data := db_session["Data"]
+				data_object := sessionData{}
+				json.Unmarshal([]byte(data.(string)), &data_object)
+				session = &Instance{
+					ID:   id.(string),
+					Data: sessionData(data_object),
+					// Controller:     make(map[string]ControllerInterface),
+					ExpirationTime: time.Now().Add(time.Second * 30),
+				}
+				log.Debug("Found Session in DB")
+				go Store(session)
+			} else {
+				return nil, false
+			}
+		}
+	} else {
+		log.Debug("Found session %s, in the Memory", sessionID)
 	}
-	sessionMutex.Unlock()
-
-	// session.lastUsed.Store(time.Now().UnixMicro())
 
 	go func(sessionID string) {
 		// Move to front in LRU
-		lruMutex.Lock()
-		if elem, ok := lruMap[sessionID]; ok {
-			lruList.MoveToFront(elem)
+		lruCacheMutex.Lock()
+		if elem, ok := lruElementMap[sessionID]; ok {
+			lruOrderList.MoveToFront(elem)
 		}
-		lruMutex.Unlock()
-	}(*sessionID)
+		lruCacheMutex.Unlock()
+	}(sessionID)
 
 	return session, true
 }
 
-func Store(sessionID *string, session *Struct) {
-	if sessionID == nil || session == nil {
+func Store(session *Instance) {
+	if session == nil {
 		return
 	}
 
-	sessionMutex.Lock()
-	if len(all) >= Config.GetWebConfig().MaxSessionCount {
-		evictLRUSession()
+	if len(instances) >= config.GetWebConfig().MaxSessionCount {
+		go evictLRUSession()
 	}
-	// session.lastUsed.Store(time.Now().UnixMicro())
-	all[*sessionID] = session
-	sessionMutex.Unlock()
 
-	heapMutex.Lock()
+	sessionStoreMutex.Lock()
+	instances[session.ID] = session
+	sessionStoreMutex.Unlock()
+
+	heapAccessMutex.Lock()
+	// Push to heap on every store
 	heap.Push(&sessionHeap, session)
-	heapMutex.Unlock()
+	heapAccessMutex.Unlock()
 
-	switch Config.GetWebConfig().SessionStoreType {
+	switch config.GetWebConfig().SessionStoreType {
 	case "disk", "storage":
 		go saveAllSessionsToDisk()
 	}
 
 	select {
-	case lruUpdateChan <- lruUpdate{SessionID: *sessionID, Op: "move"}:
+	case lruOperationChan <- lRUCacheOperation{ID: session.ID, OperationType: "move"}:
 	default:
 	}
 	select {
-	case sessionWakeupChan <- struct{}{}:
+	case cleanupTriggerChan <- struct{}{}:
 	default:
 	}
 }
@@ -216,212 +275,120 @@ func saveAllSessionsToDisk() error {
 	// Encode the sessions
 	enc := gob.NewEncoder(f)
 
-	sessionMutex.RLock()
-	defer sessionMutex.RUnlock()
+	sessionStoreMutex.RLock()
+	defer sessionStoreMutex.RUnlock()
 
-	if err := enc.Encode(all); err != nil {
-		panic(err.Error())
-		// fmt.Printf("failed to encode session map: %w", err)
-		// return err
+	if err := enc.Encode(instances); err != nil {
+		return fmt.Errorf("failed to encode sessions: %w", err)
 	}
-
-	// if fileExists {
-	// 	fmt.Println("[Sessions] sessions.data updated with latest sessions")
-	// } else {
-	// 	fmt.Println("[Sessions] sessions.data created and sessions saved")
-	// }
-
-	return nil
-}
-
-func loadAllSessionsFromDisk() error {
-	// Check if sessions.data exists
-	if _, err := os.Stat("sessions.data"); os.IsNotExist(err) {
-		fmt.Println("[Sessions] sessions.data not found — skipping load")
-		return nil
-	} else if err != nil {
-		// Some other filesystem error
-		return fmt.Errorf("error checking session file: %w", err)
-	}
-
-	// Open file and decode
-	f, err := os.Open("sessions.data")
-	if err != nil {
-		return fmt.Errorf("failed to open session store file: %w", err)
-	}
-	defer f.Close()
-
-	var loaded map[string]*Struct
-	dec := gob.NewDecoder(f)
-	if err := dec.Decode(&loaded); err != nil {
-		return fmt.Errorf("failed to decode session map: %w", err)
-	}
-
-	sessionMutex.Lock()
-	all = loaded
-	sessionMutex.Unlock()
-
-	fmt.Printf("[Sessions] Loaded %d sessions from sessions.data\n", len(all))
-	// for id, session := range all {
-	// 	fmt.Printf("Session ID: %s\n", id)
-	// 	fmt.Printf("  POST: %+v\n", session.POST)
-	// 	fmt.Printf("  GET: %+v\n", session.GET)
-	// 	fmt.Printf("  Store: %+v\n", session.Store)
-	// 	fmt.Printf("  isLoggedIn: %v\n", session.LoggedIn)
-	// 	fmt.Printf("  Expiry: %s\n", session.Expiry)
-	// 	fmt.Println("------------------------")
-	// }
 	return nil
 }
 
 func evictLRUSession() {
 	// Remove from the back of the list (least recently used)
-	elem := lruList.Back()
+
+	elem := lruOrderList.Back()
 	if elem == nil {
 		return
 	}
 	sessionID := elem.Value.(string)
-	delete(all, sessionID)
-	delete(lruMap, sessionID)
-	lruList.Remove(elem)
+
+	sessionStoreMutex.Lock()
+	defer delete(instances, sessionID)
+	sessionStoreMutex.Unlock()
+
+	delete(lruElementMap, sessionID)
+
+	switch config.GetWebConfig().SessionStoreType {
+	case session_store_type_database, session_store_type_db:
+		if err := SessionModel.Delete().Where(SessionModel.Fields.Id).Is(sessionID).Exec(); err != nil {
+			log.Error("Failed to delte LRU Session: %s", err.Error())
+		}
+	}
+
+	lruOrderList.Remove(elem)
 }
 
 // Function to keep checking the session expiry to remve them.
-// How the function will work is it will loop through all the current sessions and check when the expiry is time.Time
+// How the function will work is it will loop through instances the current sessions and check when the expiry is time.Time
 // Later it find the session which is expired and the one which has the least time to expire.
 // It will Expire the expired session and the go on sleep until the least time to expire is reached.
 // then it will again go on loop to to repeast the process.
 func StartSessionHandler() {
 	for {
-		heapMutex.Lock()
+		heapAccessMutex.Lock()
 		if sessionHeap.Len() == 0 {
-			heapMutex.Unlock()
+			heapAccessMutex.Unlock()
 			time.Sleep(30 * time.Minute)
 			continue
 		}
 
 		next := sessionHeap[0] // Peek the earliest
-		heapMutex.Unlock()
 
 		now := time.Now()
-		if next.Expiry.Before(now) {
+		if next.ExpirationTime.Before(now) {
 			RemoveSession(&next.ID)
-			Log.WriteLog("Session expired: " + next.ID)
+			sessionHeap.Pop()
+			heapAccessMutex.Unlock()
+			log.WriteLog("Session expired: " + next.ID)
 			continue
 		}
 
-		sleepDuration := time.Until(next.Expiry)
+		sleepDuration := time.Until(next.ExpirationTime)
 		if sleepDuration < 0 {
 			sleepDuration = 0
 		}
 
 		select {
 		case <-time.After(sleepDuration):
-		case <-sessionWakeupChan:
+		case <-cleanupTriggerChan:
 		}
 	}
 }
 
 // Function to handle LRU updates in a separate goroutine
-// This function listens for updates on the lruUpdateChan channel and processes them
+// This function listens for updates on the lruOperationChan channel and processes them
 // It handles two operations: "move" to move an existing session to the front of the LRU list
 // and "InsertRow" to add a new session to the LRU list if it doesn't already exist.
 func StartLRUHandler() {
-	for update := range lruUpdateChan {
-		sessionMutex.Lock()
-		switch update.Op {
+	for update := range lruOperationChan {
+		sessionStoreMutex.Lock()
+		switch update.OperationType {
 		case "move":
-			if elem, ok := lruMap[update.SessionID]; ok {
-				lruList.MoveToFront(elem)
+			if elem, ok := lruElementMap[update.ID]; ok {
+				lruOrderList.MoveToFront(elem)
 			}
 		case "InsertRow":
-			if _, ok := lruMap[update.SessionID]; !ok {
-				elem := lruList.PushFront(update.SessionID)
-				lruMap[update.SessionID] = elem
+			if _, ok := lruElementMap[update.ID]; !ok {
+				elem := lruOrderList.PushFront(update.ID)
+				lruElementMap[update.ID] = elem
 			}
 		}
-		sessionMutex.Unlock()
+		sessionStoreMutex.Unlock()
 	}
 }
 
-func (sh *Struct) Login(w http.ResponseWriter, r *http.Request) {
-	sh.LoggedIn = true
-	sh.SetSessionCookie(&sh.ID, w, r)
+func (sh *Instance) Login(w http.ResponseWriter, r *http.Request) {
+	sh.IsAuthenticated = true
+	sh.setCookie(w, r)
+	Store(sh)
 }
 
-/*
- * Checking if the user is logged in
- * @return false -> if the user is not logged in
- */
-func (s *Struct) IsLoggedIn() bool {
-	return s.LoggedIn
-}
-
-// StartSession attempts to retrieve or create a new session and returnt he created session ID
-func (s *Struct) StartSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
-
-	// if sessionID := GetSessionID(s.R); sessionID != nil && (*sessionID) != s.ID {
-	// 	// If the session ID doesn't match the current handler's ID, create a new session
-	// 	defer RemoveSession(sessionID) // Remove the old session
-	// }
-
-	// If no valid session ID is found, create a new session
-	return s.CreateNewSession(sessionID, w, r)
-}
-
-func (sh *Struct) Update(_w http.ResponseWriter, _r *http.Request) {
-	updateMutex.Lock()
-	defer updateMutex.Unlock()
-
-	// sh.lastUsed.Store(time.Now().UnixMicro())
-}
-
-// function to clear value of POST and GET from the Session
-// Make sure what ever in the store will stay for as long as the server is not stopped
-// or you remove the data intentionally
-func (sh *Struct) Clean() {
-	cleanMutex.Lock()
-	defer cleanMutex.Unlock()
-
-	sh.POST = make(PostParams, 20)
-	sh.GET = make(GetParams, 20)
-}
-
-// Creates a new session and sets cookies
-func (sh *Struct) CreateNewSession(sessionID *string, w http.ResponseWriter, r *http.Request) *string {
-	// Generate a session ID
-	if sessionID == nil {
-		return nil
-	}
-
-	sh.ID = *sessionID
-	sh.SetSessionCookie(sessionID, w, r)
-	// Wake up the session handler if needed
-	select {
-	case sessionWakeupChan <- struct{}{}:
-	default:
-	}
-	return sessionID
+func (sh *Instance) Logout(w http.ResponseWriter, r *http.Request) {
+	utils.RemoveCookie("sessionid", w, r)
 }
 
 // Sets the session cookie in the client's browser
-func (sh *Struct) SetSessionCookie(sessionID *string, w http.ResponseWriter, r *http.Request) {
+func (sh *Instance) setCookie(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
-	sh.Expiry = now.Add(30 * time.Minute).UTC()
+	sh.ExpirationTime = now.Add(30 * time.Minute).UTC()
 	// sh.lastUsed.Store(now.UnixMicro())
 	c := &http.Cookie{
 		Name:     "sessionid",
-		Value:    *sessionID,
-		HttpOnly: Config.GetWebConfig().Https,
-		Expires:  sh.Expiry,
+		Value:    sh.ID,
+		HttpOnly: config.GetWebConfig().Https,
+		Expires:  sh.ExpirationTime,
 	}
 
-	Cookies.AddCookie(c, w, r)
-}
-
-/*
- * Disable the Caching on Local Machine For certain pages to make
- */
-func (s *Struct) EnableCaching() {
-
+	utils.AddCookie(c, w, r)
 }

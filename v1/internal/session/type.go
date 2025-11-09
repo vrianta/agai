@@ -5,26 +5,48 @@ import (
 )
 
 type (
-	SessionHeap []*Struct
-	SessionVars map[string]any
-	PostParams  map[string]string
-	GetParams   map[string]string
+	// Collection represents a collection of sessions managed as a heap
+	collection []*Instance
 
-	Struct struct {
+	// SessionData stores arbitrary key-value data for a session
+	sessionData map[string]any
+
+	// HTTPPostParameters represents POST request parameters
+	// hTTPPostParameters map[string]string
+
+	// HTTPGetParameters represents GET request parameters
+	// hTTPGetParameters map[string]string
+
+	Instance struct {
 		ID string
 
-		POST  PostParams
-		GET   GetParams
-		Store SessionVars
+		// PostParameters HTTPPostParameters
+		// GetParameters  HTTPGetParameters
+		Data sessionData
 
-		LoggedIn bool
+		IsAuthenticated bool
 
-		Expiry time.Time // Expiry time for the session
+		ExpirationTime time.Time
 		// lastUsed atomic.Int64
+
+		// heapIndex int // Index in the session heap for efficient updates
 	}
 
-	lruUpdate struct {
-		SessionID string
-		Op        string // "move" or "InsertRow"
+	// LRUCacheOperation represents an operation to update the LRU cache
+	lRUCacheOperation struct {
+		ID            string
+		OperationType string // "move_to_front" or "insert" or "remove"
 	}
+)
+
+// Current: Push to heap on every store
+// heap.Push(&sessionHeap, session)
+
+// Improvement: Only update heap when expiration changes
+// if session.ExpirationTime != oldExpiration {
+//     heap.Fix(&sessionHeap, session.heapIndex)
+// }
+
+type (
+// viewT = func() view.Context
 )

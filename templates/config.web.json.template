@@ -1,0 +1,12 @@
+{
+"Port": "8080",
+"Host": "",
+"Https": false,
+"Build": false,
+"MaxSessionCount": 10000,
+"SessionStoreType": "disk",
+"StaticFolders": ["static"],
+"CssFolders": ["css"],
+"JsFolders": ["js"],
+"ViewFolder": "views"
+}

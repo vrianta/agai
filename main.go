@@ -69,8 +69,15 @@ func handle_args() {
 		return
 	}
 
-	for i := 0; i < len(args); i++ {
+	// Process all flags first
+	i := 0
+
+	for i < len(args) {
 		arg := args[i]
+
+		if !strings.HasPrefix(arg, "-") {
+			break // Stop processing flags when we hit a non-flag argument
+		}
 
 		switch arg {
 		// --- Create App
@@ -168,6 +175,21 @@ func handle_args() {
 			fmt.Printf("Unknown flag: %s\n", arg)
 			fmt.Println("Use --help to see available options")
 			os.Exit(1)
+		}
+
+		i++
+	}
+
+	// Check if there's a path argument at the end
+	if i < len(args) {
+		// The remaining argument is treated as the path
+		f.application_path = args[i]
+		if !strings.HasPrefix(f.application_path, "/") {
+			// Convert relative path to absolute
+			currentDir, err := os.Getwd()
+			if err == nil {
+				f.application_path = currentDir + "/" + f.application_path
+			}
 		}
 	}
 }

@@ -28,4 +28,7 @@ type flags struct {
 	// Migrate commands
 	migrate_model     bool
 	migrate_component bool
+
+	// Application path
+	application_path string
 }

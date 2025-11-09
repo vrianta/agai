@@ -428,23 +428,26 @@ func create_application() {
 		return
 	}
 
+	if f.application_path == "" {
+		f.application_path = f.app_name
+	}
 	app_name := f.app_name
 
 	// Check if directory already exists and is not empty
-	if entries, err := os.ReadDir(app_name); err == nil && len(entries) > 0 {
+	if entries, err := os.ReadDir(f.application_path); err == nil && len(entries) > 0 && f.application_path != "." {
 		log.Error("❌ Application '%s' already exists.", app_name)
 		return
 	}
 
 	// Create application directory
-	if err := os.Mkdir(app_name, os.ModePerm); err != nil {
+	if err := os.Mkdir(f.application_path, os.ModePerm); err != nil && f.application_path != "." {
 		log.Error("❌ Failed to create application '%s': %v", app_name, err)
 		return
 	}
 
 	// // Store current directory and switch to app directory
 	// root, _ := os.Getwd()
-	if err := os.Chdir(app_name); err != nil {
+	if err := os.Chdir(app_name); err != nil && f.application_path != "." {
 		log.Error("❌ Failed to enter application folder: %v", err)
 		return
 	}

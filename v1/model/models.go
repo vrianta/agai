@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -56,8 +57,7 @@ func Init() {
 	// 		model.refreshComponentFromDB()
 	// 	}
 	// }
-
-	for _, model := range ModelsRegistry {
+	create_model := func(model *meta) {
 		model.CreateTableIfNotExists()
 
 		if flags.SyncDatabaseEnabled {
@@ -67,11 +67,21 @@ func Init() {
 
 			model.initialised = true
 		}
+		delete(ModelsRegistry, model.TableName)
+	}
+
+	model_for_component := maps.Clone(ModelsRegistry)
+	for _, model := range ModelsRegistry {
+		for _, depends_on := range model.depends_on {
+			create_model(ModelsRegistry[depends_on])
+		}
+		create_model(model)
+		delete(ModelsRegistry, model.TableName)
 	}
 
 	fmt.Println("---------------------------------------------------------")
 
-	for _, model := range ModelsRegistry {
+	for _, model := range model_for_component {
 
 		_, err := os.Stat(filepath.Join(componentsDir, model.TableName+".component.json"))
 		if !os.IsNotExist(err) {
@@ -95,7 +105,7 @@ func Init() {
  * So Dynaimic Table Updation will be handled during development only
  * It will provide the default functions to handle the model like Create, Read, Update, Delete
  */
-func newModel(tableName string, FieldTypes FieldTypeset) meta {
+func newModel(tableName string, FieldTypes FieldTypeset, depends_on []string) meta {
 
 	for _, field := range FieldTypes {
 		if field.fk == nil {
@@ -115,6 +125,7 @@ func newModel(tableName string, FieldTypes FieldTypeset) meta {
 			}
 			return nil
 		}(FieldTypes),
+		depends_on: depends_on,
 	}
 
 	_model.validate()
@@ -131,7 +142,7 @@ func New[T any](tableName string, structure T) *Table[T] {
 	}
 
 	FieldTypeset := make(FieldTypeset, t.NumField())
-
+	depends_on := []string{}
 	for i := 0; i < t.NumField(); i++ {
 		structField := t.Field(i)
 		valueField := v.Field(i)
@@ -154,7 +165,7 @@ func New[T any](tableName string, structure T) *Table[T] {
 	}
 
 	response := &Table[T]{
-		meta:   newModel(tableName, FieldTypeset),
+		meta:   newModel(tableName, FieldTypeset, depends_on),
 		Fields: structure,
 	}
 

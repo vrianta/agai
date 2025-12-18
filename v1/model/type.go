@@ -24,6 +24,7 @@ type (
 		schemas     []schema
 		initialised bool   // Flag to check if the model is initialised
 		primary     *Field // name of the primary elemet
+		depends_on  []string
 		// indexes     map[string]indexInfo // columnName -> index info
 	}
 

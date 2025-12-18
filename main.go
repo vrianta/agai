@@ -10,7 +10,7 @@ import (
 	"github.com/vrianta/agai/v1/log"
 )
 
-var agai_version string = "v0.2.1"
+var agai_version string = "v0.2.2"
 
 /*
 This is a handler of my overall package

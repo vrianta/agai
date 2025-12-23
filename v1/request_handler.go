@@ -51,6 +51,23 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 
+	execute_template := func(view *view) {
+		__template, ok := template.GetTemplate(view.name)
+
+		if !ok {
+			log.Error("No Template Available as such name %s", view.name)
+			return
+		}
+
+		if !config.GetWebConfig().Build {
+			// log.WriteLogf("Updating the Template")
+			__template.Update()
+		}
+		if err := executeTemplate(w, __template, view.response); err != nil {
+			log.Error("Error rendering template: %T\n", err)
+			panic(err.Error())
+		}
+	}
 	switch r.Method {
 	case "GET":
 		if vfunc := c.GET(); vfunc != nil {
@@ -63,22 +80,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 				w.Write(view.ToJson())
 				return
 			}
-			__template, ok := template.GetTemplate(view.name)
-
-			if !ok {
-				log.Error("No Template Available as such name %s", view.name)
-				return
-			}
-
-			get_template := __template.GET()
-			if !config.GetWebConfig().Build {
-				// log.WriteLogf("Updating the Template")
-				get_template.Update()
-			}
-			if err := executeTemplate(w, get_template, view.response); err != nil {
-				log.Error("Error rendering template: %T\n", err)
-				panic(err.Error())
-			}
+			execute_template(view)
 		}
 
 	case "POST":
@@ -92,21 +94,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 				w.Write(view.ToJson())
 				return
 			}
-			__template, ok := template.GetTemplate(view.name)
-
-			if !ok {
-				log.Error("No Template Available as such name %s", view.name)
-				return
-			}
-
-			get_template := __template.POST()
-			if !config.GetWebConfig().Build {
-				get_template.Update()
-			}
-			if err := executeTemplate(w, get_template, view.response); err != nil {
-				log.Error("Error rendering template: %T", err)
-				panic(err)
-			}
+			execute_template(view)
 		}
 
 	case "DELETE":
@@ -120,21 +108,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 				w.Write(view.ToJson())
 				return
 			}
-			__template, ok := template.GetTemplate(view.name)
-
-			if !ok {
-				log.Error("No Template Available as such name %s", view.name)
-				return
-			}
-
-			get_template := __template.DELETE()
-			if !config.GetWebConfig().Build {
-				get_template.Update()
-			}
-			if err := executeTemplate(w, get_template, view.response); err != nil {
-				log.Error("Error rendering template: %T", err)
-				return
-			}
+			execute_template(view)
 		}
 
 	case "PATCH":
@@ -148,21 +122,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 				w.Write(view.ToJson())
 				return
 			}
-			__template, ok := template.GetTemplate(view.name)
-
-			if !ok {
-				log.Error("No Template Available as such name %s", view.name)
-				return
-			}
-
-			get_template := __template.PATCH()
-			if !config.GetWebConfig().Build {
-				get_template.Update()
-			}
-			if err := executeTemplate(w, get_template, view.response); err != nil {
-				log.Error("Error rendering template: %T", err)
-				panic(err)
-			}
+			execute_template(view)
 		}
 
 	case "PUT":
@@ -176,20 +136,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 				w.Write(view.ToJson())
 				return
 			}
-			__template, ok := template.GetTemplate(view.name)
-
-			if !ok {
-				log.Error("No Template Available as such name %s", view.name)
-				return
-			}
-
-			get_template := __template.PUT()
-			if !config.GetWebConfig().Build {
-				get_template.Update()
-			}
-			if err := executeTemplate(w, get_template, view.response); err != nil {
-				panic(err)
-			}
+			execute_template(view)
 		}
 
 	case "HEAD":
@@ -204,21 +151,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 				w.Write(view.ToJson())
 				return
 			}
-			__template, ok := template.GetTemplate(view.name)
-
-			if !ok {
-				log.Error("No Template Available as such name %s", view.name)
-				return
-			}
-
-			get_template := __template.HEAD()
-			if !config.GetWebConfig().Build {
-				get_template.Update()
-			}
-			if err := executeTemplate(w, get_template, view.response); err != nil {
-				log.Error("Error rendering template: %T", err)
-				panic(err)
-			}
+			execute_template(view)
 		}
 	case "OPTIONS":
 		if vfunc := c.OPTIONS(); vfunc != nil {
@@ -231,21 +164,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 				w.Write(view.ToJson())
 				return
 			}
-			__template, ok := template.GetTemplate(view.name)
-
-			if !ok {
-				log.Error("No Template Available as such name %s", view.name)
-				return
-			}
-
-			get_template := __template.OPTIONS()
-			if !config.GetWebConfig().Build {
-				get_template.Update()
-			}
-			if err := executeTemplate(w, get_template, view.response); err != nil {
-				log.Error("Error rendering template: %T", err)
-				panic(err)
-			}
+			execute_template(view)
 		}
 	default:
 		log.WriteLogf("Getting Default Method")
@@ -259,21 +178,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 				w.Write(view.ToJson())
 				return
 			}
-			__template, ok := template.GetTemplate(view.name)
-
-			if !ok {
-				log.Error("No Template Available as such name %s", view.name)
-				return
-			}
-
-			get_template := __template.INDEX()
-			if !config.GetWebConfig().Build {
-				get_template.Update()
-			}
-			if err := executeTemplate(w, get_template, view.response); err != nil {
-				log.Error("Error rendering template: %T", err)
-				panic(err)
-			}
+			execute_template(view)
 		}
 
 	}

@@ -22,6 +22,15 @@ var ReponseFuncMaps = template.FuncMap{
 			return 0
 		}
 	},
+	"count": func(v any) int {
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Array, reflect.Slice, reflect.Map, reflect.Chan, reflect.String:
+			return rv.Len()
+		default:
+			return 0
+		}
+	},
 	"print": func(data any) string {
 		return fmt.Sprintln(data)
 	},

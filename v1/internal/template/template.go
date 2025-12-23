@@ -49,9 +49,9 @@ var (
 
 	templateRecordsMutex = &sync.RWMutex{}
 
-	templateRegistry   map[string]*Contexts = make(map[string]*Contexts) // holding all the templates in the solution
-	templateComponents                      = make(map[string]*Context)  // chunk of template pices which can be imported in the other views
-	template_bufPool                        = sync.Pool{
+	templateRegistry   map[string]*Context = make(map[string]*Context) // holding all the templates in the solution
+	templateComponents                     = make(map[string]*Context) // chunk of template pices which can be imported in the other views
+	template_bufPool                       = sync.Pool{
 		New: func() any { return new(bytes.Buffer) },
 	}
 )
@@ -238,71 +238,8 @@ func (t *Context) Execute(response any) ([]byte, error) {
 }
 
 // Returning the Templte Contexts which have all the Method Related Templates
-func GetTemplate(name string) (*Contexts, bool) {
+func GetTemplate(name string) (*Context, bool) {
 	c, ok := templateRegistry[name]
 
 	return c, ok
 }
-
-// INDEX returns the index Context handler.
-func (c *Contexts) INDEX() *Context {
-	return c.index
-}
-
-// GET returns the GET Context handler, or falls back to INDEX if nil.
-func (c *Contexts) GET() *Context {
-	if c.get == nil {
-		return c.index
-	}
-	return c.get
-}
-
-// POST returns the POST Context handler, or falls back to INDEX if nil.
-func (c *Contexts) POST() *Context {
-	if c.post == nil {
-		return c.index
-	}
-	return c.post
-}
-
-// PUT returns the PUT Context handler, or falls back to INDEX if nil.
-func (c *Contexts) PUT() *Context {
-	if c.put == nil {
-		return c.index
-	}
-	return c.put
-}
-
-// PATCH returns the PATCH Context handler, or falls back to INDEX if nil.
-func (c *Contexts) PATCH() *Context {
-	if c.patch == nil {
-		return c.index
-	}
-	return c.patch
-}
-
-// DELETE returns the DELETE Context handler, or falls back to INDEX if nil.
-func (c *Contexts) DELETE() *Context {
-	if c.delete == nil {
-		return c.index
-	}
-	return c.delete
-}
-
-// HEAD returns the HEAD Context handler, or falls back to INDEX if nil.
-func (c *Contexts) HEAD() *Context {
-	if c.head == nil {
-		return c.index
-	}
-	return c.head
-}
-
-// OPTIONS returns the OPTIONS Context handler, or falls back to INDEX if nil.
-func (c *Contexts) OPTIONS() *Context {
-	if c.options == nil {
-		return c.index
-	}
-	return c.options
-}
-
-// // TRACE returns the TRACE Context handler, or falls back to INDEX if nil.

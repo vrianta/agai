@@ -245,6 +245,35 @@ func Store(session *Instance) {
 	switch config.GetWebConfig().SessionStoreType {
 	case "disk", "storage":
 		go saveAllSessionsToDisk()
+	case "db", "database":
+		data_json, _ := json.Marshal(session.Data)
+		go func(s *Instance, data string) {
+			exists, err := SessionModel.Get().Where(SessionModel.Fields.Id).Is(s.ID).First()
+			if err != nil {
+				log.Error("Failed to check existing session in DB : %s", err.Error())
+				return
+			}
+			if exists == nil {
+				data_json, _ := json.Marshal(session.Data)
+				if err := SessionModel.InsertRow(map[string]any{
+					"Id":   session.ID,
+					"Data": string(data_json),
+				}); err != nil {
+					log.Error("Failed to Insert row in the session: %s", err)
+				}
+			} else {
+				if json_data, err := json.Marshal(session.Data); err == nil {
+					data = string(json_data)
+					// Update existing row
+					if err := SessionModel.Update(SessionModel.Fields.Data).Where(SessionModel.Fields.Id).Is(session.ID).To(data).Exec(); err != nil {
+						log.Error("Failed to Update row in the session: %s", err)
+					}
+				} else {
+					log.Error("Failed to Marshal session data for update: %s", err)
+				}
+
+			}
+		}(session, string(data_json))
 	}
 
 	select {

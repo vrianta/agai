@@ -40,6 +40,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/vrianta/agai/v1/internal/session"
 	"github.com/vrianta/agai/v1/log"
@@ -154,7 +155,7 @@ func (_c *Controller) parseRequest() {
 		}
 	}
 
-	contentType := _c.R.Header.Get("Content-Type")
+	contentType := strings.Split(_c.R.Header.Get("Content-Type"), ";")[0]
 	switch contentType {
 	case "application/json":
 		if p, err := io.ReadAll(_c.R.Body); err != nil {

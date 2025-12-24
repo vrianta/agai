@@ -64,14 +64,13 @@ func create(file_path, file_name, file_type string, add_js bool) (*Context, erro
 		return nil, nil
 	}
 
-	var full_path = file_path + "/" + file_name
-
-	info, err := os.Stat(full_path)
+	info, err := os.Stat(file_path)
 	if err != nil {
 		return nil, err
 	}
 
-	content := string(utils.ReadFromFile(full_path))
+	content := string(utils.ReadFromFile(file_path))
+	// fmt.Printf("---- %s ---- \n %s \n", file_path, content)
 
 	if !config.GetBuild() && add_js {
 		// Feature: Adding a javascript to impliment hot reload
@@ -116,7 +115,7 @@ source.onerror = function(err) {
 	case "php", "gophp":
 		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(PHPToGoTemplate(content)); err == nil {
 			return &Context{
-				uri:          full_path,
+				uri:          file_path,
 				name:         file_name,
 				lastModified: info.ModTime(),
 				Php:          _html_template,
@@ -130,7 +129,7 @@ source.onerror = function(err) {
 	case "html", "gohtml":
 		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(content); err == nil {
 			return &Context{
-				uri:          full_path,
+				uri:          file_path,
 				name:         file_name,
 				lastModified: info.ModTime(),
 				Html:         _html_template,
@@ -142,7 +141,7 @@ source.onerror = function(err) {
 	default:
 		if _html_template, err := htmltemplate.New(file_name).Funcs(ReponseFuncMaps).Parse(content); err == nil {
 			return &Context{
-				uri:          full_path,
+				uri:          file_path,
 				name:         file_name,
 				lastModified: info.ModTime(),
 				Html:         _html_template,

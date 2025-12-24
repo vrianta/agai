@@ -38,8 +38,12 @@ See Also:
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/vrianta/agai/v1/internal/session"
@@ -114,6 +118,13 @@ func (_c *Controller) StoreData(index string, _d any) {
 func (_c *Controller) GetStoredData(index string) (any, bool) {
 	data, ok := _c.session.Data[index]
 	return data, ok
+}
+
+/*
+ * Get Data From Session Store
+ */
+func (_c *Controller) GetStoredDatas() map[string]any {
+	return _c.session.Data
 }
 
 // Return all Inputs at once
@@ -218,4 +229,71 @@ func (_c *Controller) processPostParams(key string, values []string) {
 	} else {
 		_c.userInputs[key] = values[0] // Store single value as a string
 	}
+}
+
+// File returns the uploaded file header for the given field name.
+// If multiple files were uploaded under the same field, File returns the first one.
+func (_c *Controller) File(name string) (*multipart.FileHeader, bool) {
+	if _c.userInputs == nil {
+		_c.parseRequest()
+	}
+	if v, ok := _c.userInputs[name]; ok {
+		switch t := v.(type) {
+		case *multipart.FileHeader:
+			return t, true
+		case []*multipart.FileHeader:
+			if len(t) > 0 {
+				return t[0], true
+			}
+		}
+	}
+	return nil, false
+}
+
+// SaveFile saves the provided *multipart.FileHeader (as returned by File)
+// to destPath. If destPath is a directory (ends with separator or is an
+// existing directory) the original filename will be used.
+func (_c *Controller) SaveFile(fh *multipart.FileHeader, destPath string) (string, error) {
+	if fh == nil {
+		return "", fmt.Errorf("nil FileHeader provided")
+	}
+
+	src, err := fh.Open()
+	if err != nil {
+		return "", err
+	}
+	defer src.Close()
+
+	// determine if destPath is a directory
+	isDir := strings.HasSuffix(destPath, string(os.PathSeparator))
+	if !isDir {
+		if fi, err := os.Stat(destPath); err == nil && fi.IsDir() {
+			isDir = true
+		}
+	}
+
+	var outPath string
+	if isDir {
+		if err := os.MkdirAll(destPath, 0o755); err != nil {
+			return "", err
+		}
+		outPath = filepath.Join(destPath, fh.Filename)
+	} else {
+		if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
+			return "", err
+		}
+		outPath = destPath
+	}
+
+	dst, err := os.Create(outPath)
+	if err != nil {
+		return "", err
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		return "", err
+	}
+
+	return outPath, nil
 }

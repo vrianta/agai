@@ -237,17 +237,15 @@ func (_c *Controller) File(name string) (*multipart.FileHeader, bool) {
 	if _c.userInputs == nil {
 		_c.parseRequest()
 	}
-	if v, ok := _c.userInputs[name]; ok {
-		switch t := v.(type) {
-		case *multipart.FileHeader:
-			return t, true
-		case []*multipart.FileHeader:
-			if len(t) > 0 {
-				return t[0], true
-			}
-		}
+
+	// FormFile returns (*multipart.FileHeader, error)
+	_, fh, err := _c.R.FormFile(name)
+	if err != nil {
+		log.Error("File not found for field '%s': %v", name, err)
+		return nil, false
 	}
-	return nil, false
+
+	return fh, true
 }
 
 // SaveFile saves the provided *multipart.FileHeader (as returned by File)

@@ -193,6 +193,17 @@ func (_c *Controller) parseRequest() {
 			log.WriteLogf("Error parsing multipart form data | Error - %s\n", err.Error())
 			return
 		}
+
+		// Store uploaded files (keep FileHeader objects so callers can open them)
+		if _c.R.MultipartForm != nil {
+			for key, fhs := range _c.R.MultipartForm.File {
+				if len(fhs) > 1 {
+					_c.userInputs[key] = fhs // [](*multipart.FileHeader)
+				} else if len(fhs) == 1 {
+					_c.userInputs[key] = fhs[0] // *multipart.FileHeader
+				}
+			}
+		}
 		for key, values := range _c.R.PostForm {
 			_c.processPostParams(key, values)
 		}

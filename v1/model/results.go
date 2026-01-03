@@ -11,3 +11,13 @@ func (r *Result) IsValid() bool {
 func (r *Results) IsEmpty() bool {
 	return r != nil && len(*r) > 0
 }
+
+// Get the value of the field
+func (r *Result) Get(field *Field) (any, bool) {
+	if !r.IsValid() {
+		return nil, false
+	}
+
+	res, ok := (*r)[field.name]
+	return res, ok
+}

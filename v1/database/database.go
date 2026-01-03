@@ -52,3 +52,7 @@ func GetDatabase() (*sql.DB, error) {
 	}
 	return database, nil
 }
+
+type DatabaseConnction struct {
+	sql.DB
+}

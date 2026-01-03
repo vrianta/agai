@@ -30,20 +30,16 @@ type (
 	routes map[string]func() controllerInterface
 )
 
-var routeTable routes = make(routes)
 var template_bufPool = sync.Pool{
 	New: func() any { return new(bytes.Buffer) },
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 
-	if _c, found := routeTable[r.URL.Path]; found {
-
-		// log.WriteLogf("url you Hit, %s\n", r.URL.Path)
+	if _c, found := agai.routeTable[r.URL.Path]; found {
 		tempController := _c()
 		tempController.init(w, r)
 		runRequest(w, r, tempController)
-
 	} else {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
 	}

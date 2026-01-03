@@ -1,5 +1,7 @@
 package agai
 
+import "net/http"
+
 // func New(root string) *context {
 // 	return &context{
 // 		root: root,
@@ -23,9 +25,9 @@ func CreateRoute[T any, PT interface {
 	controllerInterface
 }](route string) {
 
-	routeTable[route] = func() controllerInterface {
-		var c PT = new(T)
-		return c
-	}
-	// requestHandler.RouteTable[route] = controller
+	http.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
+		var tempController PT = new(T)
+		tempController.init(w, r)
+		runRequest(w, r, tempController)
+	})
 }

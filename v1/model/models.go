@@ -30,33 +30,6 @@ func Init() {
 		fmt.Println("[Warning] - Models are already initialsed Skipping it")
 	}
 
-	// if config.SyncDatabaseEnabled {
-	// 	fmt.Print("---------------------------------------------------------\n")
-	// 	fmt.Print("[Models] Initializing model and syncing database tables:\n")
-	// 	fmt.Print("---------------------------------------------------------\n")
-	// 	for _, model := range ModelsRegistry {
-	// 		model.SyncModelSchema()
-	// 		model.CreateTableIfNotExists() // creating table if not existed
-
-	// 		model.initialised = true
-	// 	}
-	// 	fmt.Print("---------------------------------------------------------\n")
-	// 	fmt.Print("[Models] Model initialization complete.\n")
-	// 	fmt.Print("---------------------------------------------------------\n\n")
-	// }
-
-	// if config.SyncComponentsEnabled {
-	// 	for _, model := range ModelsRegistry {
-	// 		model.loadComponentFromDisk()
-	// 		model.syncComponentWithDB()
-	// 		model.loadComponentFromDisk()
-	// 	}
-	// } else {
-	// 	for _, model := range ModelsRegistry {
-	// 		model.loadComponentFromDisk()
-	// 		model.refreshComponentFromDB()
-	// 	}
-	// }
 	create_model := func(model *meta) {
 		model.CreateTableIfNotExists()
 

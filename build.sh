@@ -23,7 +23,7 @@ find . \
     name=$(basename "$cpp" .cpp)
     echo "Building $name.so"
 
-    $CXX $CXXFLAGS "$cpp" $LDFLAGS -o "$LIB_DIR/lib$name.so"
+    $CXX $CXXFLAGS "$cpp" $LDFLAGS -o "$LIB_DIR/lib$name.so" -Wl,-undefined,dynamic_lookup
 done
 
 echo "Copying headers..."

@@ -1,0 +1,173 @@
+#ifndef NOTFOUND_CPP
+#define NOTFOUND_CPP
+
+static constexpr const char * _404 = R"HTML(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>404 | Page Not Found</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg-1: #0f2027;
+      --bg-2: #203a43;
+      --bg-3: #2c5364;
+      --accent: #4fd1c5;
+      --text-main: #ffffff;
+      --text-muted: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Ubuntu, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(120deg, var(--bg-1), var(--bg-2), var(--bg-3));
+      background-size: 300% 300%;
+      animation: gradientShift 10s ease infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      max-width: 520px;
+      padding: 3rem 2.5rem;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    .error-code {
+      font-size: 6rem;
+      font-weight: 800;
+      letter-spacing: 6px;
+      background: linear-gradient(90deg, #81e6d9, #63b3ed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .message {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+      min-height: 3em;
+    }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.75rem 1.6rem;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #062c2a;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(79, 209, 197, 0.45);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    @media (max-width: 480px) {
+      .error-code {
+        font-size: 4.5rem;
+      }
+
+      .container {
+        padding: 2.2rem 1.8rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container" role="main">
+    <div class="error-code">404</div>
+    <h1 class="title">Page Not Found</h1>
+    <p class="message" id="message"></p>
+
+    <div class="actions">
+      <a href="/" class="btn btn-primary">Go Home</a>
+      <button class="btn btn-secondary" onclick="history.back()">Go Back</button>
+    </div>
+
+    <footer>
+      <span>Lost in the void — but youll find your way back.</span>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      const messages = [
+        "The page you’re looking for doesn’t exist or was moved.",
+        "This page vanished into the digital void.",
+        "Looks like you followed a broken link.",
+        "Nothing to see here… except this nice 404 page.",
+        "Well, this is awkward. That page is gone."
+      ];
+
+      const messageEl = document.getElementById("message");
+      const randomIndex = Math.floor(Math.random() * messages.length);
+      messageEl.textContent = messages[randomIndex];
+    })();
+  </script>
+</body>
+</html>
+)HTML";
+
+#endif

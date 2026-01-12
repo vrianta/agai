@@ -1,6 +1,7 @@
 #ifndef HEADER_AGAI_H
 #define HEADER_AGAI_H
 
+#include "response.h"
 #include <functional>
 #include <string>
 #include <string_view>
@@ -20,7 +21,7 @@ enum class HttpMethod {
   GET,
   POST,
   PUT,
-  DELETE_,
+  DELETE,
   PATCH,
   OPTIONS,
   HEAD,
@@ -38,10 +39,10 @@ struct HttpRequest {
 };
 // React-like API
 bool Get(const std::string &,
-         std::function<const std::string &(const HttpRequest &)>);
+         std::function<Agai::Response(const HttpRequest &)>);
 
 // it will check get the template with view index and return it
-const std::string View(std::string_view view);
+Agai::Response View(const std::string& view);
 
 // Function to setup the
 }; // namespace Agai

@@ -86,7 +86,7 @@ static Agai::HttpMethod parse_method(std::string_view m) {
   if (m == "GET")     return Agai::HttpMethod::GET;
   if (m == "POST")    return Agai::HttpMethod::POST;
   if (m == "PUT")     return Agai::HttpMethod::PUT;
-  if (m == "DELETE")  return Agai::HttpMethod::DELETE_;
+  if (m == "DELETE")  return Agai::HttpMethod::DELETE;
   if (m == "PATCH")   return Agai::HttpMethod::PATCH;
   if (m == "OPTIONS") return Agai::HttpMethod::OPTIONS;
   if (m == "HEAD")    return Agai::HttpMethod::HEAD;

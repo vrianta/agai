@@ -12,14 +12,15 @@
 
 
 #include "agai.h"
+#include "response.h"
 #include "utils.cpp"
-#include "server.cpp"
+#include "server/server.cpp"
 
 void RegisterTemplates();
 
 int main() {
-  RegisterTemplates();
   Agai::ConfigSetup(appSettings);
+  RegisterTemplates();
   serve("0.0.0.0", 8080);
 }
 
@@ -34,15 +35,28 @@ int main() {
 namespace fs = std::filesystem;
 
 void RegisterTemplates() {
+  Agai::Utils::logf("RegisterTemplates: start");
+
   const fs::path root = "Views";
+  Agai::Utils::logf("RegisterTemplates: root path = %s", root.string().c_str());
 
   templates.clear();
+  Agai::Utils::logf("RegisterTemplates: templates map cleared");
 
   for (const auto &entry : fs::recursive_directory_iterator(root)) {
-    if (!entry.is_regular_file())
+    if (!entry.is_regular_file()) {
+      Agai::Utils::logf(
+        "RegisterTemplates: skipped non-regular entry: %s",
+        entry.path().string().c_str()
+      );
       continue;
+    }
 
     const fs::path &path = entry.path();
+    Agai::Utils::logf(
+      "RegisterTemplates: processing file: %s",
+      path.string().c_str()
+    );
 
     // build key
     fs::path rel = fs::relative(path, root);
@@ -58,11 +72,42 @@ void RegisterTemplates() {
         key += ".";
     }
 
+    Agai::Utils::logf(
+      "RegisterTemplates: generated key = %s",
+      key.c_str()
+    );
+
     // read file
     std::ifstream file(path, std::ios::binary);
+    if (!file) {
+      Agai::Utils::logf(
+        "RegisterTemplates: ERROR failed to open file: %s",
+        path.string().c_str()
+      );
+      continue;
+    }
+
     std::ostringstream ss;
     ss << file.rdbuf();
+    const std::string content = ss.str();
 
-    templates.emplace(std::move(key), ss.str());
+    Agai::Utils::logf(
+      "RegisterTemplates: read %zu bytes from %s",
+      content.size(),
+      path.string().c_str()
+    );
+
+    templates.emplace(key, Agai::Response(content.c_str()));
+
+    Agai::Utils::logf(
+      "RegisterTemplates: template registered: key=%s",
+      key.c_str()
+    );
   }
+
+  Agai::Utils::logf(
+    "RegisterTemplates: completed, total templates=%zu",
+    templates.size()
+  );
 }
+

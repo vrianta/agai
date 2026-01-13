@@ -4,9 +4,6 @@
 // routes.cpp
 #include "routing.h"
 #include "../../404.cpp"
-#include "../../agai.h"
-#include "../../response/response.h"
-#include "../redirects/redirects.cpp"
 
 namespace Agai {
 

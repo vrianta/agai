@@ -3,7 +3,9 @@
 #include <unordered_map>
 #include <string>
 #include <functional>
-#include "../../components.cpp"
+#include "../../agai.h"
+#include "../../response/response.h"
+#include "../redirects/redirects.h"
 
 namespace Agai {
 using Handler = std::function<Response(const HttpRequest &)>;

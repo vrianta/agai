@@ -26,13 +26,18 @@ find . \
     $CXX $CXXFLAGS "$cpp" $LDFLAGS -o "$LIB_DIR/lib$name.so" -Wl,-undefined,dynamic_lookup
 done
 
-echo "Copying headers..."
+echo "Copying headers (preserving structure)..."
 
 find . \
   -type f \
   \( -name "*.h" -o -name "*.hpp" \) \
   ! -path "./example/*" \
   -print0 | while IFS= read -r -d '' header; do
-    cp "$header" "$INC_DIR/"
-  done
+
+    rel_path="${header#./}"
+    dest="$INC_DIR/$(dirname "$rel_path")"
+
+    mkdir -p "$dest"
+    cp "$header" "$dest/"
+done
 

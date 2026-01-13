@@ -13,7 +13,6 @@
 
 #include "config/config.h"
 #include "response/response.h"
-#include "utils/utils.cpp"
 #include "server/server.cpp"
 
 void RegisterTemplates();

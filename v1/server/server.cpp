@@ -150,19 +150,17 @@ static int serve(const char *host, int port) {
     Agai::Utils::logf("[conn] received %zd bytes", total_read);
 
     auto req = parse_request((char*)buffer.c_str(), buffer.size());
-    Agai::Utils::logf("[http] %s %s",
-                      HttpMethodString[int(req.method)], // assume helper
-                      req.path.data());
+    // Agai::Utils::logf("[http] Method:%s Path: %.*s\n",
+    //                   HttpMethodString[int(req.method)], // assume helper
+    //                   (int)req.path.size(), req.path.data());
 
     Agai::Response res;
     switch (req.method) {
     case Agai::HttpMethod::GET: {
       auto it = get_routes_.find(std::string(req.path));
       if (it != get_routes_.end()) {
-        Agai::Utils::logf("[router] matched GET %s\n", req.path);
         res = it->second(req);
       } else {
-        Agai::Utils::logf("[router] no route for GET %s\n", req.path);
         res = Agai::Redirect("/404");
       }
       break;
@@ -176,6 +174,7 @@ static int serve(const char *host, int port) {
       break;
     }
     auto content = res.Serialize();
+    Agai::Utils::log(content.c_str());
     ssize_t written = write(c, content.c_str(), content.size());
 
     close(c);

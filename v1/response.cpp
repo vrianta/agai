@@ -30,7 +30,6 @@ std::string Agai::Response::Serialize() const {
   res.append(status);
   res.append("\r\nContent-Type: ");
   res.append(ContentTypes[type]);
-  res.append("\r\nContent-Length: ");
   res.append(std::to_string(body.size()));
   res.append("\r\n");
   res.append(headers);

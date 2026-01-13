@@ -9,15 +9,17 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "../agai.h"
 
 namespace Agai::Utils {
 
 static std::vector<std::string> split(const std::string &s, char delim);
 static std::string trim(std::string s);
-void log(const char *msg);
-void logf(const char *msg, ...);
-template<typename... Args>
-void Logln(Args&&... args);
+
+// File operations
+bool saveFile(const UploadedFile &file, const std::string &directory = "");
+bool saveFileToPath(const UploadedFile &file, const std::string &fullPath);
+bool saveFiles(const std::vector<UploadedFile> &files, const std::string &directory = "");
 
 } // namespace Utils
 

@@ -1,18 +1,21 @@
 
 #include "response.h"
-#include "utils.h"
 #include <cstdlib>
 #include <cstring>
 
-const char *Agai::Response::GetType() const {
+#include "../utils/logs/logs.h"
+
+namespace Agai {
+
+const char *Response::GetType() const {
   return this->ContentTypes[this->type];
 }
 
-void Agai::Response::AsJson() { this->type = Types::json; }
+void Response::AsJson() { this->type = Types::json; }
 
 const char *Agai::Response::GetContent() const { return this->body.data(); }
 
-Agai::Response::Response(std::string content) {
+Response::Response(std::string content) {
   if (content.size() > 8192) {
     Agai::Utils::log("Response content exceeds max size (8192 bytes)");
     throw std::length_error("Response too large");
@@ -20,9 +23,9 @@ Agai::Response::Response(std::string content) {
   body = std::move(content);
 }
 
-void Agai::Response::SetStatus(std::string s) { this->status = s; }
+void Response::SetStatus(std::string s) { this->status = s; }
 
-std::string Agai::Response::Serialize() const {
+std::string Response::Serialize() const {
   std::string res;
   res.reserve(128 + body.size());
 
@@ -39,9 +42,10 @@ std::string Agai::Response::Serialize() const {
   return res;
 }
 
-void Agai::Response::AddHeader(std::string_view key, std::string_view value) {
+void Response::AddHeader(std::string_view key, std::string_view value) {
   headers.append(key);
   headers.append(": ");
   headers.append(value);
   headers.append("\r\n");
 }
+} // namespace Agai

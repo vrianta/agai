@@ -1,5 +1,4 @@
-#include "../response.h"
-#include <memory>
+#include "../../response/response.h"
 #include <string_view>
 
 namespace Agai {
@@ -14,7 +13,7 @@ struct RedirectStatus {
   static constexpr const char *PermanentRedirect = "308 Permanent Redirect";
 };
 
-Agai::Response Redirect(std::string_view path) {
+Response Redirect(std::string_view path) {
   Response r("");
   r.SetStatus(RedirectStatus::MovedPermanently);
   r.AddHeader("Location", path);

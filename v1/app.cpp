@@ -11,15 +11,15 @@
 #include <sstream>
 
 
-#include "agai.h"
-#include "response.h"
-#include "utils.cpp"
+#include "config/config.h"
+#include "response/response.h"
+#include "utils/utils.cpp"
 #include "server/server.cpp"
 
 void RegisterTemplates();
 
 int main() {
-  Agai::ConfigSetup(appSettings);
+  Agai::InitConfig();
   RegisterTemplates();
   serve("0.0.0.0", 8080);
 }

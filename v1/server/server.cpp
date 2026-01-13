@@ -7,13 +7,10 @@
 
 #include <cstring>
 #include <string>
-#include <unordered_map>
-
-#include "../components.cpp"
-#include "../persing.cpp"
+#include "persing/persing.cpp"
 #include "../agai.h"
-#include "../utils.h"
-#include "redirects.cpp"
+#include "../utils/logs/logs.h"
+#include "routing/routing.h"
 
 std::string not_found = "Not Found";
 static const char *HttpMethodString[] = {"Get",   "Post",    "Put",  "Delete",
@@ -153,27 +150,8 @@ static int serve(const char *host, int port) {
     // Agai::Utils::logf("[http] Method:%s Path: %.*s\n",
     //                   HttpMethodString[int(req.method)], // assume helper
     //                   (int)req.path.size(), req.path.data());
-
-    Agai::Response res;
-    switch (req.method) {
-    case Agai::HttpMethod::GET: {
-      auto it = get_routes_.find(std::string(req.path));
-      if (it != get_routes_.end()) {
-        res = it->second(req);
-      } else {
-        res = Agai::Redirect("/404");
-      }
-      break;
-    }
-
-    default:
-      Agai::Utils::logf("[http] %s %s",
-                        HttpMethodString[int(req.method)], // assume helper
-                        req.path);
-      res = Agai::Redirect("/404");
-      break;
-    }
-    auto content = res.Serialize();
+    
+    std::string content = Agai::RunRequest(req).Serialize();
     Agai::Utils::log(content.c_str());
     ssize_t written = write(c, content.c_str(), content.size());
 

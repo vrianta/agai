@@ -36,7 +36,7 @@ namespace fs = std::filesystem;
 void RegisterTemplates() {
   Agai::Utils::logf("RegisterTemplates: start");
 
-  const fs::path root = "Views";
+  const fs::path root = Agai::GetConfig().ViewDirectory;
   Agai::Utils::logf("RegisterTemplates: root path = %s", root.string().c_str());
 
   templates.clear();

@@ -7,7 +7,6 @@ namespace Agai {
 struct AppSettings {
   bool EnableLog = false;
   std::string StaticFilesDir = "public";
-  std::string ViewDirectory = "./src/views";
   int Port = 8080;
 };
 

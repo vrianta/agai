@@ -147,12 +147,8 @@ static int serve(const char *host, int port) {
     Agai::Utils::logf("[conn] received %zd bytes", total_read);
 
     auto req = parse_request((char*)buffer.c_str(), buffer.size());
-    // Agai::Utils::logf("[http] Method:%s Path: %.*s\n",
-    //                   HttpMethodString[int(req.method)], // assume helper
-    //                   (int)req.path.size(), req.path.data());
     
     std::string content = Agai::RunRequest(req).Serialize();
-    Agai::Utils::log(content.c_str());
     ssize_t written = write(c, content.c_str(), content.size());
 
     close(c);

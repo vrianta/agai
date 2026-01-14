@@ -7,16 +7,14 @@
 
 #include <cstring>
 #include <string>
-#include "persing/persing.cpp"
-#include "../agai.h"
-#include "../utils/logs/logs.h"
+
 #include "routing/routing.h"
+#include "../utils/logs/logs.h"
+#include "persing/persing.cpp"
 
 std::string not_found = "Not Found";
 static const char *HttpMethodString[] = {"Get",   "Post",    "Put",  "Delete",
                                          "Patch", "Options", "Head", "Unknown"};
-
-static Agai::HttpRequest parse_request(char *buf, size_t len);
 
 static int serve(const char *host, int port) {
   Agai::Utils::logf("[server] starting (host=%s port=%d)", host, port);

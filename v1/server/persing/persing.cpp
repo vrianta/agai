@@ -3,6 +3,8 @@
 
 #include "../../agai.h"
 #include "../../agai.cpp"
+#include "../server.h"
+#include "../uploads.h"
 #include <string_view>
 #include <unordered_map>
 #include <cctype>

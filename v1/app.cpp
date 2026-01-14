@@ -1,25 +1,32 @@
 // file: http_server.cpp
 
 #include <arpa/inet.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <cstring>
-#include <string>
-#include <unordered_map>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-
+#include <string>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <unordered_map>
 
 #include "config/config.h"
 #include "response/response.h"
 #include "server/server.cpp"
 
-void RegisterTemplates();
+namespace Agai {
+
+using views_map = std::map<std::string, std::vector<unsigned char>>;
+
+extern views_map register_embedded_views();
+
+} // namespace Agai
+
+void RegisterTemplates(Agai::views_map views);
 
 int main() {
   Agai::InitConfig();
-  RegisterTemplates();
+  RegisterTemplates(Agai::register_embedded_views());
   serve("0.0.0.0", 8080);
 }
 
@@ -31,82 +38,33 @@ int main() {
  * folder_name.folder_name.file_name
  */
 
-namespace fs = std::filesystem;
-
-void RegisterTemplates() {
-  Agai::Utils::logf("RegisterTemplates: start");
-
-  const fs::path root = Agai::GetConfig().ViewDirectory;
-  Agai::Utils::logf("RegisterTemplates: root path = %s", root.string().c_str());
-
+void RegisterTemplates(const Agai::views_map& views) {
   templates.clear();
-  Agai::Utils::logf("RegisterTemplates: templates map cleared");
 
-  for (const auto &entry : fs::recursive_directory_iterator(root)) {
-    if (!entry.is_regular_file()) {
-      Agai::Utils::logf(
-        "RegisterTemplates: skipped non-regular entry: %s",
-        entry.path().string().c_str()
-      );
-      continue;
-    }
+  Agai::Utils::logf("[Templates] registering %zu templates", views.size());
 
-    const fs::path &path = entry.path();
+  for (const auto& view : views) {
+    const auto& name = view.first;
+    const auto& data = view.second;
+
     Agai::Utils::logf(
-      "RegisterTemplates: processing file: %s",
-      path.string().c_str()
+      "  - %s (%zu bytes)",
+      name.c_str(),
+      data.size()
     );
 
-    // build key
-    fs::path rel = fs::relative(path, root);
-    std::string key;
-
-    for (auto it = rel.begin(); it != rel.end(); ++it) {
-      if (it->has_extension()) {
-        key += it->stem().string();
-      } else {
-        key += it->string();
-      }
-      if (std::next(it) != rel.end())
-        key += ".";
-    }
-
-    Agai::Utils::logf(
-      "RegisterTemplates: generated key = %s",
-      key.c_str()
-    );
-
-    // read file
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-      Agai::Utils::logf(
-        "RegisterTemplates: ERROR failed to open file: %s",
-        path.string().c_str()
-      );
-      continue;
-    }
-
-    std::ostringstream ss;
-    ss << file.rdbuf();
-    const std::string content = ss.str();
-
-    Agai::Utils::logf(
-      "RegisterTemplates: read %zu bytes from %s",
-      content.size(),
-      path.string().c_str()
-    );
-
-    templates.emplace(key, Agai::Response(content.c_str()));
-
-    Agai::Utils::logf(
-      "RegisterTemplates: template registered: key=%s",
-      key.c_str()
+    templates.emplace(
+      name,
+      Agai::Response(std::string(
+        reinterpret_cast<const char*>(data.data()),
+        data.size()
+      ))
     );
   }
 
-  Agai::Utils::logf(
-    "RegisterTemplates: completed, total templates=%zu",
-    templates.size()
-  );
+  Agai::Utils::logf("[Templates] registered templates:");
+  for (const auto& t : templates) {
+    Agai::Utils::logf("  * %s", t.first.c_str());
+  }
 }
 

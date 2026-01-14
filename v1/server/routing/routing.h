@@ -3,7 +3,8 @@
 #include <unordered_map>
 #include <string>
 #include <functional>
-#include "../../agai.h"
+
+#include "../server.h"
 #include "../../response/response.h"
 #include "../redirects/redirects.h"
 

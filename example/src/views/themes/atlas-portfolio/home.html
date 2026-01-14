@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PrimeBuild | Painting & Construction</title>
+
+  <style>
+    /* =====================
+       GLOBAL STYLES
+    ====================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+    }
+
+    body {
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    section {
+      padding: 80px 10%;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 50px;
+      font-size: 2.4rem;
+      color: #222;
+    }
+
+    /* =====================
+       NAVBAR
+    ====================== */
+    header {
+      background: #1e1e1e;
+      padding: 20px 10%;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 1000;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #fff;
+    }
+
+    nav h1 {
+      font-size: 1.8rem;
+      color: #f4b400;
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 25px;
+    }
+
+    nav ul li a:hover {
+      color: #f4b400;
+    }
+
+    /* =====================
+       HERO SECTION
+    ====================== */
+    .hero {
+      height: 100vh;
+      background: linear-gradient(
+          rgba(0,0,0,0.65),
+          rgba(0,0,0,0.65)
+        ),
+        url("https://images.unsplash.com/photo-1503387762-592deb58ef4e") center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+    }
+
+    .hero h2 {
+      font-size: 3.2rem;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      max-width: 700px;
+    }
+
+    .btn {
+      padding: 14px 32px;
+      background: #f4b400;
+      color: #000;
+      font-weight: bold;
+      border-radius: 4px;
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      background: #e0a800;
+    }
+
+    /* =====================
+       SERVICES
+    ====================== */
+    .services {
+      background: #fff;
+    }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+    }
+
+    .service-card {
+      background: #f9f9f9;
+      padding: 30px;
+      border-radius: 8px;
+      text-align: center;
+      transition: 0.3s;
+    }
+
+    .service-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .service-card h3 {
+      margin-bottom: 15px;
+      color: #f4b400;
+    }
+
+    /* =====================
+       PORTFOLIO
+    ====================== */
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+    }
+
+    .portfolio-item {
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+
+    .portfolio-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: 0.4s;
+    }
+
+    .portfolio-item:hover img {
+      transform: scale(1.1);
+    }
+
+    .portfolio-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: 0.3s;
+      font-size: 1.2rem;
+    }
+
+    .portfolio-item:hover .portfolio-overlay {
+      opacity: 1;
+    }
+
+    /* =====================
+       ABOUT
+    ====================== */
+    .about {
+      background: #1e1e1e;
+      color: #fff;
+      text-align: center;
+    }
+
+    .about p {
+      max-width: 800px;
+      margin: auto;
+      font-size: 1.1rem;
+    }
+
+    /* =====================
+       CONTACT
+    ====================== */
+    .contact form {
+      max-width: 600px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .contact input,
+    .contact textarea {
+      padding: 14px;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .contact button {
+      border: none;
+      cursor: pointer;
+    }
+
+    /* =====================
+       FOOTER
+    ====================== */
+    footer {
+      background: #111;
+      color: #aaa;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* =====================
+       RESPONSIVE
+    ====================== */
+    @media(max-width: 768px) {
+      nav ul {
+        display: none;
+      }
+
+      .hero h2 {
+        font-size: 2.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header>
+    <nav>
+      <h1>PrimeBuild</h1>
+      <ul>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#portfolio">Projects</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <h2>Painting & Construction Experts</h2>
+      <p>
+        Residential and commercial painting, renovations, and construction
+        delivered with precision, durability, and style.
+      </p>
+      <a href="#contact" class="btn">Get a Free Quote</a>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services" class="services">
+    <h2>Our Services</h2>
+    <div class="service-grid">
+      <div class="service-card">
+        <h3>Interior Painting</h3>
+        <p>High-quality finishes that transform your indoor spaces.</p>
+      </div>
+      <div class="service-card">
+        <h3>Exterior Painting</h3>
+        <p>Durable coatings designed to withstand the elements.</p>
+      </div>
+      <div class="service-card">
+        <h3>Renovations</h3>
+        <p>From kitchens to full remodels, we build it right.</p>
+      </div>
+      <div class="service-card">
+        <h3>New Construction</h3>
+        <p>Residential and commercial projects from ground up.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PORTFOLIO -->
+  <section id="portfolio">
+    <h2>Recent Projects</h2>
+    <div class="portfolio-grid">
+      <div class="portfolio-item">
+        <img src="https://images.unsplash.com/photo-1562259949-e8e7689d7828" />
+        <div class="portfolio-overlay">Modern Home Exterior</div>
+      </div>
+      <div class="portfolio-item">
+        <img src="https://images.unsplash.com/photo-1581091870627-3b0c6c9b20a0" />
+        <div class="portfolio-overlay">Commercial Renovation</div>
+      </div>
+      <div class="portfolio-item">
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c" />
+        <div class="portfolio-overlay">Interior Painting</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="about">
+    <h2>Why Choose Us</h2>
+    <p>
+      With over 10 years of experience, PrimeBuild delivers professional
+      craftsmanship, honest pricing, and on-time project completion.
+      Your vision is our blueprint.
+    </p>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="contact">
+    <h2>Contact Us</h2>
+    <form id="contactForm">
+      <input type="text" placeholder="Your Name" required />
+      <input type="email" placeholder="Your Email" required />
+      <textarea rows="5" placeholder="Project Details" required></textarea>
+      <button class="btn" type="submit">Send Message</button>
+    </form>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    © 2026 PrimeBuild Painting & Construction. All Rights Reserved.
+  </footer>
+
+  <script>
+    document.getElementById("contactForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      alert("Thank you! Your message has been sent.");
+      this.reset();
+    });
+  </script>
+
+</body>
+</html>

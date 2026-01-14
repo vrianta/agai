@@ -2,9 +2,6 @@
 
 #include <arpa/inet.h>
 #include <cstring>
-#include <filesystem>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -13,6 +10,7 @@
 #include "config/config.h"
 #include "response/response.h"
 #include "server/server.cpp"
+#include "components.cpp"
 
 namespace Agai {
 
@@ -22,7 +20,7 @@ extern views_map register_embedded_views();
 
 } // namespace Agai
 
-void RegisterTemplates(Agai::views_map views);
+void RegisterTemplates(const Agai::views_map& views);
 
 int main() {
   Agai::InitConfig();

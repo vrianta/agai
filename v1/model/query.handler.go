@@ -225,7 +225,7 @@ func (q *queryBuilder) Between(min, max any) *queryBuilder {
 // IsNull adds an IS NULL condition to the WHERE clause.
 // Usage: .Where("deleted_at").IsNull()
 func (q *queryBuilder) IsNull() *queryBuilder {
-	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IS NULL", q.lastColumn))
+	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IS NULL ", q.lastColumn))
 	q.lastColumn = ""
 	return q
 }
@@ -233,7 +233,7 @@ func (q *queryBuilder) IsNull() *queryBuilder {
 // IsNotNull adds an IS NOT NULL condition to the WHERE clause.
 // Usage: .Where("deleted_at").IsNotNull()
 func (q *queryBuilder) IsNotNull() *queryBuilder {
-	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IS NOT NULL", q.lastColumn))
+	q.whereClauses = append(q.whereClauses, fmt.Sprintf("`%s` IS NOT NULL ", q.lastColumn))
 	q.lastColumn = ""
 	return q
 }

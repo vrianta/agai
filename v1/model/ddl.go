@@ -7,7 +7,6 @@ import (
 	"github.com/vrianta/agai/v1/log"
 )
 
-// function to add the new field in the table
 func (m *meta) addField(field *Field) {
 	/*
 		ALTER TABLE `users`
@@ -15,14 +14,14 @@ func (m *meta) addField(field *Field) {
 		ADD INDEX (`newel`);
 	*/
 
-	response := "ALTER TABLE `" + m.TableName + "`\n"
-	response += "ADD " + field.columnDefinition() + field.addIndexStatement() + ";"
+	query := "ALTER TABLE `" + m.TableName + "`\n"
+	query += "ADD " + field.columnDefinition() + ", ADD CONSTRAINT " + field.addIndexStatement() + ";"
 
 	if databaseObj, err := DatabaseHandler.GetDatabase(); err != nil {
 		panic("Error While Adding new Field to the table" + err.Error())
 	} else {
-		if _, sql_err := databaseObj.Exec(response); sql_err != nil {
-			panic("Error While Updating the Table Field" + sql_err.Error())
+		if _, sql_err := databaseObj.Exec(query); sql_err != nil {
+			panic("Error While Updating the Table Field" + sql_err.Error() + "\nWith Query : " + query)
 		} else {
 			fmt.Printf("[AddField]      Table: %-20s | Field Added: %-20s\n", m.TableName, field.name)
 		}

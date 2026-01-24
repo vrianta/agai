@@ -5,29 +5,24 @@ import (
 	"github.com/vrianta/agai/v1/model"
 )
 
-var Settings = model.New("Settings", struct {
-	Id    *model.Field
-	Name  *model.Field
-	Value *model.Field
+var Settings = model.New("settings", struct {
+	Element *model.Field
+	Value   *model.Field
 }{
-	Id: &model.Field{
+	Element: &model.Field{
 		Nullable: false,
-		Type:     model.FieldTypes.Int,
-		Length:   10,
+		Type:     model.FieldTypes.VarChar,
+		Length:   20,
 		Index: model.Index{
 			PrimaryKey: true,
-		},
-	},
-	Name: &model.Field{
-		Nullable: false,
-		Type:     model.FieldTypes.String,
-		Length:   100,
-		Index: model.Index{
-			Unique: true,
+			Index:      true,
+			Unique:     false,
 		},
 	},
 	Value: &model.Field{
 		Nullable: false,
-		Type:     model.FieldTypes.Text,
+		Type:     model.FieldTypes.VarChar,
+		Length:   20,
 	},
 })
+

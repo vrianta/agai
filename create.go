@@ -486,17 +486,17 @@ func create_application() {
 	}
 
 	// Create default Settings Component
-	if settings_component, err := templates.ReadFile("templates/settings.component.json.template"); err != nil {
-		log.Error("❌ Failed to read settings.component.json.template: %v", err)
+	if settings_component, err := templates.ReadFile("templates/Settings.component.json.template"); err != nil {
+		log.Error("❌ Failed to read Settings.component.json.template: %v", err)
 	} else {
-		if tpl, tpl_err := template.New("settings.component.json").Parse(string(settings_component)); tpl_err != nil {
-			log.Error("Failed to create template of %s due to - %T", "templates/settings.component.json.template", tpl_err)
+		if tpl, tpl_err := template.New("Settings.component.json").Parse(string(settings_component)); tpl_err != nil {
+			log.Error("Failed to create template of %s due to - %T", "templates/Settings.component.json.template", tpl_err)
 		} else {
 			buf := bytes.Buffer{}
 			tpl.Execute(&buf, map[string]string{
 				"app_name": app_name,
 			})
-			if err := os.WriteFile("components/settings.component.json", buf.Bytes(), 0644); err != nil {
+			if err := os.WriteFile("components/Settings.component.json", buf.Bytes(), 0644); err != nil {
 				log.Error("❌ Failed to write user model file: %v", err)
 			}
 		}

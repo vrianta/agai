@@ -31,17 +31,15 @@ func init() {
 
 				if file_name == "404" {
 					http.HandleFunc("/404", func(w http.ResponseWriter, r *http.Request) {
-						if t, ok := templateComponents[file_name]; !ok {
-							w.Write(_404__)
-						} else {
-							if !config.GetWebConfig().Build {
-								// log.WriteLogf("Updating the Template")
-								t.Update()
-							}
-
-							buf, _ := t.Execute("")
-							w.Write(buf)
+						t, _ := templateComponents[file_name]
+						if !config.GetWebConfig().Build {
+							// log.WriteLogf("Updating the Template")
+							t.Update()
 						}
+
+						buf, _ := t.Execute("")
+						w.Write(buf)
+
 					})
 				}
 			} else { // register themes
@@ -75,18 +73,17 @@ func RegisterTheme(theme_folder string) {
 				templateComponents[theme_folder+"."+file_name] = createTemplateContext(file_full_path, full_file_name, file_type)
 
 				if file_name == "404" {
-					http.HandleFunc(utils.JoinPath(theme_folder, file_name), func(w http.ResponseWriter, r *http.Request) {
-						if t, ok := templateComponents[file_name]; !ok {
-							w.Write(_404__)
-						} else {
-							if !config.GetWebConfig().Build {
-								// log.WriteLogf("Updating the Template")
-								t.Update()
-							}
+					http.HandleFunc("/"+utils.JoinPath(theme_folder, file_name), func(w http.ResponseWriter, r *http.Request) {
+						t, _ := templateComponents[file_name]
 
-							buf, _ := t.Execute("")
-							w.Write(buf)
+						if !config.GetWebConfig().Build {
+							// log.WriteLogf("Updating the Template")
+							t.Update()
 						}
+
+						buf, _ := t.Execute("")
+						w.Write(buf)
+
 					})
 				}
 

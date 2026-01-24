@@ -1,4 +1,4 @@
-package template
+package agai
 
 var _404__ []byte = []byte(`
 <!DOCTYPE html>

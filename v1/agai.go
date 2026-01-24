@@ -11,6 +11,7 @@ import (
 	"github.com/vrianta/agai/v1/database"
 	"github.com/vrianta/agai/v1/internal/flags"
 	"github.com/vrianta/agai/v1/internal/session"
+	"github.com/vrianta/agai/v1/internal/template"
 	"github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/model"
 )
@@ -119,6 +120,20 @@ func (s *app) Start() {
 	// Wait for port to be free before starting
 	if err := waitForPort(addr, 20*time.Second); err != nil {
 		panic("[Server] " + err.Error())
+	}
+
+	if _, ok := template.GetTemplate("404"); !ok {
+		http.HandleFunc("/404", func(w http.ResponseWriter, r *http.Request) {
+			w.Write(_404__)
+
+		})
+	}
+
+	// creating default route /
+	if !RootRegistered {
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/404", int(HttpStatus.SeeOther))
+		})
 	}
 
 	if flags.StartServer {

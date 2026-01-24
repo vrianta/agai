@@ -54,9 +54,7 @@ func CreateRoute[T any, PT interface {
 		})
 
 		http.HandleFunc(rootPath, func(w http.ResponseWriter, r *http.Request) {
-			var tempController PT = new(T)
-			tempController.init(w, r)
-			runRequest(w, r, tempController)
+			http.Redirect(w, r, rootPath+"/", int(HttpStatus.SeeOther))
 		})
 		return
 	}
@@ -68,8 +66,6 @@ func CreateRoute[T any, PT interface {
 	})
 
 	http.HandleFunc(rootPath+"/"+strings.Join(route, "/"), func(w http.ResponseWriter, r *http.Request) {
-		var tempController PT = new(T)
-		tempController.init(w, r)
-		runRequest(w, r, tempController)
+		http.Redirect(w, r, rootPath+"/"+strings.Join(route, "/")+"/", int(HttpStatus.SeeOther))
 	})
 }

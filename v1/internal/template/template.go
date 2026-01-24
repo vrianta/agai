@@ -238,7 +238,7 @@ func (t *Context) Execute(response any) ([]byte, error) {
 
 // Returning the Templte Contexts which have all the Method Related Templates
 func GetTemplate(name string) (*Context, bool) {
-	c, ok := templateRegistry[name]
+	c, ok := templateComponents[name]
 
 	return c, ok
 }

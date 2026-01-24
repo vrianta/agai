@@ -371,7 +371,7 @@ func create_configs() {
 
 // create_web_config reads /templates/config.web.json.template and writes it as config.web.json in the current directory.
 func create_web_config() {
-	writeFromEmbed("templates/config.web.json.template", "config.web.json")
+	writeFromEmbed("templates/appsettings.json.template", "appsettings.json")
 }
 
 // create_database_web_config reads /templates/config.database.json.template and writes it as config.database.json in the current directory.

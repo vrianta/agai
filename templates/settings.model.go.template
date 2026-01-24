@@ -1,12 +1,13 @@
 package models
 
 import (
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/vrianta/agai/v1/model"
 )
 
 var Settings = model.New("Settings", struct {
 	Id    *model.Field
-	Key   *model.Field
+	Name  *model.Field
 	Value *model.Field
 }{
 	Id: &model.Field{
@@ -15,10 +16,9 @@ var Settings = model.New("Settings", struct {
 		Length:   10,
 		Index: model.Index{
 			PrimaryKey: true,
-			Index:      true,
 		},
 	},
-	Key: &model.Field{
+	Name: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.String,
 		Length:   100,

@@ -49,9 +49,8 @@ var (
 
 	templateRecordsMutex = &sync.RWMutex{}
 
-	templateRegistry   map[string]*Context = make(map[string]*Context) // holding all the templates in the solution
-	templateComponents                     = make(map[string]*Context) // chunk of template pices which can be imported in the other views
-	template_bufPool                       = sync.Pool{
+	templateComponents = make(map[string]*Context) // chunk of template pices which can be imported in the other views
+	template_bufPool   = sync.Pool{
 		New: func() any { return new(bytes.Buffer) },
 	}
 )

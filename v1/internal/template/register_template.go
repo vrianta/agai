@@ -1,6 +1,7 @@
 package template
 
 import (
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,22 +26,27 @@ func init() {
 				file_type := strings.TrimPrefix(filepath.Ext(full_file_name), ".") // File extension/type
 				file_name := full_file_name[:len(full_file_name)-len(file_type)-1] // Name without extension
 				folder_path := utils.JoinPath(view_folder, full_file_name)
-				//
-				// c, err := registerTemplate(folder_path, folder_name)
-				// if err != nil {
-				// 	log.Error("Failed to Register Tempalte: %s - %s", folder_name, err)
-				// 	panic("")
-				// }
-				templateRegistry[file_name] = createTemplateContext(folder_path, full_file_name, file_type)
+
+				templateComponents[file_name] = createTemplateContext(folder_path, full_file_name, file_type)
+
+				if file_name == "404" {
+					http.HandleFunc("/404", func(w http.ResponseWriter, r *http.Request) {
+						if t, ok := templateComponents[file_name]; !ok {
+							w.Write(_404__)
+						} else {
+							if !config.GetWebConfig().Build {
+								// log.WriteLogf("Updating the Template")
+								t.Update()
+							}
+
+							buf, _ := t.Execute("")
+							w.Write(buf)
+						}
+					})
+				}
 			} else { // register themes
 				folder_name := object.Name()
 				RegisterTheme(folder_name)
-				// c, err := RegisterTheme(folder_path, folder_name)
-				// if err != nil {
-				// 	log.Error("Failed to Register Tempalte: %s - %s", folder_name, err)
-				// 	panic("")
-				// }
-				// templateRegistry[folder_name] = c.index
 			}
 
 		}
@@ -65,8 +71,25 @@ func RegisterTheme(theme_folder string) {
 
 				file_full_path := utils.JoinPath(full_theme_path, full_file_name)
 
-				templateRegistry[utils.JoinPath(theme_folder, file_name)] = createTemplateContext(file_full_path, full_file_name, file_type)
+				// templateRegistry[utils.JoinPath(theme_folder, file_name)] = createTemplateContext(file_full_path, full_file_name, file_type)
 				templateComponents[theme_folder+"."+file_name] = createTemplateContext(file_full_path, full_file_name, file_type)
+
+				if file_name == "404" {
+					http.HandleFunc(utils.JoinPath(theme_folder, file_name), func(w http.ResponseWriter, r *http.Request) {
+						if t, ok := templateComponents[file_name]; !ok {
+							w.Write(_404__)
+						} else {
+							if !config.GetWebConfig().Build {
+								// log.WriteLogf("Updating the Template")
+								t.Update()
+							}
+
+							buf, _ := t.Execute("")
+							w.Write(buf)
+						}
+					})
+				}
+
 			}
 		}
 	}

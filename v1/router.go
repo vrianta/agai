@@ -32,11 +32,22 @@ func CreateRoute[T any, PT interface {
 	controllerInterface
 }](route ...string) {
 
-	if route[0] == "/" && (rootPath == "" || rootPath == "/") {
-		RootRegistered = true
+	if route[0] == "" {
+		panic("Empty Route not allowed")
+	}
+
+	if len(route) > 1 && route[0] == "/" {
+		panic("Multiple Route Registration with / not allowed")
+	}
+
+	if route[0] == "/" && rootPath == "" { // for the inital route because we can not have more than one /
+		if route[0] == "/" && rootPath == "" {
+			RootRegistered = true
+		}
+
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/" {
-				http.Redirect(w, r, "/404", int(HttpStatus.SeeOther))
+				http.Redirect(w, r, "/404/", int(HttpStatus.SeeOther))
 				return
 			}
 			var tempController PT = new(T)
@@ -46,8 +57,13 @@ func CreateRoute[T any, PT interface {
 		return
 	}
 
-	if (route[0] == "" || route[0] == "/") && rootPath != "" {
-		http.HandleFunc(rootPath+"/", func(w http.ResponseWriter, r *http.Request) {
+	if (route[0] == "/") && rootPath != "" {
+		fr := rootPath + "/" // final route
+		http.HandleFunc(fr, func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != fr {
+				http.Redirect(w, r, "/404/", int(HttpStatus.SeeOther))
+				return
+			}
 			var tempController PT = new(T)
 			tempController.init(w, r)
 			runRequest(w, r, tempController)

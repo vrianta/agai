@@ -127,8 +127,12 @@ func (s *app) Start() {
 	}
 
 	if _, ok := template.GetTemplate("404"); !ok {
-		http.HandleFunc("/404", func(w http.ResponseWriter, r *http.Request) {
+		http.HandleFunc("/404/", func(w http.ResponseWriter, r *http.Request) {
 			w.Write(_404__)
+
+		})
+		http.HandleFunc("/404", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/404/", int(HttpStatus.SeeOther))
 
 		})
 	}
@@ -136,7 +140,7 @@ func (s *app) Start() {
 	// creating default route /
 	if !RootRegistered {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/404", int(HttpStatus.SeeOther))
+			http.Redirect(w, r, "/404/", int(HttpStatus.SeeOther))
 		})
 	}
 

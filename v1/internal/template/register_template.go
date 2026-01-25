@@ -30,7 +30,7 @@ func init() {
 				templateComponents[file_name] = createTemplateContext(folder_path, full_file_name, file_type)
 
 				if file_name == "404" {
-					http.HandleFunc("/404", func(w http.ResponseWriter, r *http.Request) {
+					http.HandleFunc("/404/", func(w http.ResponseWriter, r *http.Request) {
 						t, _ := templateComponents[file_name]
 						if !config.GetWebConfig().Build {
 							// log.WriteLogf("Updating the Template")
@@ -53,6 +53,7 @@ func init() {
 
 func RegisterTheme(theme_folder string) {
 
+	var found_404 bool = false // to see if the 404 page is present in the current theme or directory
 	full_theme_path := utils.JoinPath(view_folder, theme_folder)
 
 	if objects, err := os.ReadDir(full_theme_path); err != nil {
@@ -73,6 +74,7 @@ func RegisterTheme(theme_folder string) {
 				templateComponents[theme_folder+"."+file_name] = createTemplateContext(file_full_path, full_file_name, file_type)
 
 				if file_name == "404" {
+					found_404 = true
 					http.HandleFunc("/"+utils.JoinPath(theme_folder, file_name), func(w http.ResponseWriter, r *http.Request) {
 						t, _ := templateComponents[file_name]
 
@@ -89,6 +91,12 @@ func RegisterTheme(theme_folder string) {
 
 			}
 		}
+	}
+
+	if !found_404 {
+		http.HandleFunc("/"+theme_folder+"/404/", func(w http.ResponseWriter, r *http.Request) {
+			w.Write(_404__)
+		})
 	}
 }
 

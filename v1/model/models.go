@@ -52,7 +52,7 @@ func Init() {
 		for _, depends_on := range model.depends_on {
 			create_model(ModelsRegistry[depends_on])
 		}
-		model.depends_on = []string{} // clear depends_on after processing
+		model.depends_on = nil // clear depends_on after processing
 		create_model(model)
 		delete(ModelsRegistry, model.TableName)
 	}

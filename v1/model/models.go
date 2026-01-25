@@ -31,6 +31,10 @@ func Init() {
 	}
 
 	create_model := func(model *meta) {
+		if model == nil {
+			// means the table is already deleted
+			return
+		}
 		model.CreateTableIfNotExists()
 
 		if flags.SyncDatabaseEnabled {
@@ -81,7 +85,9 @@ func Init() {
 func newModel(tableName string, FieldTypes FieldTypeset, depends_on []string) meta {
 
 	for _, field := range FieldTypes {
-		// if field.fk == nil {
+		if field.fk != nil {
+			depends_on = append(depends_on, field.fk.referenceTable)
+		}
 		field.table_name = tableName // Set the table name for each field
 		// }
 	}

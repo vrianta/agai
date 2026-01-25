@@ -171,35 +171,39 @@ func (f *Field) createIndexStatement() string {
 		responseArray = append(responseArray, f.foreignKeyConstraint())
 	}
 
-	return strings.Join(responseArray, ",\n")
+	if len(responseArray) > 0 {
+		return strings.Join(responseArray, ",\n")
+	}
+
+	return ""
 }
 
 // Return -> Index Statements suitable for altering the table
 func (f *Field) addIndexStatement() string {
 	responseArray := []string{}
 	if f.Index.PrimaryKey {
-		responseArray = append(responseArray, "ADD PRIMARY KEY pk_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
+		responseArray = append(responseArray, "PRIMARY KEY pk_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
 	}
 	if f.Index.Index {
-		responseArray = append(responseArray, "ADD INDEX idx_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
+		responseArray = append(responseArray, "INDEX idx_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
 	}
 	if f.Index.FullText {
-		responseArray = append(responseArray, "ADD FULLTEXT ftxt_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
+		responseArray = append(responseArray, "FULLTEXT ftxt_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
 
 	}
 	if f.Index.Spatial {
-		responseArray = append(responseArray, "ADD SPATIAL sp_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
+		responseArray = append(responseArray, "SPATIAL sp_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
 	}
 	if f.Index.Unique {
-		responseArray = append(responseArray, "ADD UNIQUE unq_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
+		responseArray = append(responseArray, "UNIQUE unq_"+f.table_name+"_"+string(f.name)+" ("+string(f.name)+")")
 	}
 
 	if f.fk != nil {
-		responseArray = append(responseArray, "ADD " + f.foreignKeyConstraint())
+		responseArray = append(responseArray, f.foreignKeyConstraint())
 	}
 
 	if len(responseArray) > 0 {
-		return ", " + strings.Join(responseArray, ",\n")
+		return ", ADD " + strings.Join(responseArray, ", ADD \n")
 	}
 
 	return ""

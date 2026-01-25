@@ -128,11 +128,11 @@ func (_c *Controller) GetStoredDatas() map[string]any {
 }
 
 // Return all Inputs at once
-func (_c *Controller) GetInputs() *map[string]any {
+func (_c *Controller) GetInputs() map[string]any {
 	if _c.userInputs == nil {
 		_c.parseRequest()
 	}
-	return &_c.userInputs
+	return _c.userInputs
 }
 
 // Return specific input

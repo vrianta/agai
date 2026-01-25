@@ -216,7 +216,7 @@ func (m *meta) syncUniqueIndex(field *Field, schema *schema) {
 		fmt.Println("Error updating unique index:", err)
 		return
 	}
-	indexName := fmt.Sprintf("unq_%s", field.name)
+	indexName := fmt.Sprintf("unq_%s_%s", field.table_name, field.name)
 	if schema.isunique && !field.Index.Unique {
 		// Drop unique index
 		queryBuilder := fmt.Sprintf("ALTER TABLE `%s` DROP INDEX `%s`;", m.TableName, indexName)

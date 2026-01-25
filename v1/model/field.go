@@ -198,7 +198,11 @@ func (f *Field) addIndexStatement() string {
 		responseArray = append(responseArray, f.foreignKeyConstraint())
 	}
 
-	return strings.Join(responseArray, ",\n")
+	if len(responseArray) > 0 {
+		return ", " + strings.Join(responseArray, ",\n")
+	}
+
+	return ""
 }
 
 func (f *Field) Name() string {

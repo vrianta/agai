@@ -11,6 +11,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var PasswordCost = 10
+
 // GenerateRandomToken generates a random token for the user
 func GenerateRandomToken(userID string) (string, error) {
 	// It's better to load the secret key from a secure place rather than hardcoding it
@@ -67,7 +69,7 @@ func JsonToString(data []string) (string, error) {
 
 // HashPassword hashes a password using bcrypt
 func HashPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), PasswordCost)
 	if err != nil {
 		return "", err
 	}

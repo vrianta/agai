@@ -6,7 +6,7 @@ var (
 	webConfigFile = "appsettings.json"
 	dBConfigFile  = "config.database.json"
 
-	webConfig = webConfigStruct{
+	webConfig = applicationConfig{
 		Port: "1080", // Default port for the server
 		Host: "",     // Default host for the server
 

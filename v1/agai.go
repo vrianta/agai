@@ -14,6 +14,7 @@ import (
 	"github.com/vrianta/agai/v1/internal/template"
 	"github.com/vrianta/agai/v1/log"
 	"github.com/vrianta/agai/v1/model"
+	"github.com/vrianta/agai/v1/utils"
 )
 
 // Global instance of the server
@@ -116,6 +117,9 @@ func (s *app) Start() {
 	s.Server = &http.Server{
 		Addr: addr,
 	}
+
+	// Settings Password Cost in Utils Package
+	utils.PasswordCost = config.GetWebConfig().PassordCost
 
 	// Wait for port to be free before starting
 	if err := waitForPort(addr, 20*time.Second); err != nil {

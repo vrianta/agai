@@ -9,4 +9,5 @@
 "CssFolders": ["css"],
 "JsFolders": ["js"],
 "ViewFolder": "views"
+"PassordCost": 10
 }

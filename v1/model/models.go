@@ -81,9 +81,9 @@ func Init() {
 func newModel(tableName string, FieldTypes FieldTypeset, depends_on []string) meta {
 
 	for _, field := range FieldTypes {
-		if field.fk == nil {
-			field.table_name = tableName // Set the table name for each field
-		}
+		// if field.fk == nil {
+		field.table_name = tableName // Set the table name for each field
+		// }
 	}
 
 	_model := meta{

@@ -39,6 +39,10 @@ func (r *Response) Get() any {
 	return r
 }
 
+func (r Response) Set(key string, val any) {
+	r[key] = val
+}
+
 func (c *Controller) EmptyResponse() *Response {
 	return &Response{}
 }

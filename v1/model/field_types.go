@@ -18,6 +18,8 @@ func (f fieldType) string() string {
 		return "DECIMAL(10,2)"
 	case FieldTypes.Bool:
 		return "BOOLEAN"
+	case FieldTypes.BigInt:
+		return "BIGINT"
 	case FieldTypes.TinyInt:
 		return "TINYINT"
 	case FieldTypes.Date:
@@ -43,6 +45,7 @@ func (ft fieldType) IsNumeric() bool {
 	switch ft {
 	case FieldTypes.Bool,
 		FieldTypes.Int,
+		FieldTypes.BigInt,
 		FieldTypes.TinyInt,
 		FieldTypes.Float,
 		FieldTypes.Decimal:

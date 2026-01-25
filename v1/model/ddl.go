@@ -15,7 +15,7 @@ func (m *meta) addField(field *Field) {
 	*/
 
 	query := "ALTER TABLE `" + m.TableName + "`\n"
-	query += "ADD " + field.columnDefinition() + ", ADD CONSTRAINT " + field.addIndexStatement() + ";"
+	query += "ADD " + field.columnDefinition() + ", " + field.addIndexStatement() + ";"
 
 	if databaseObj, err := DatabaseHandler.GetDatabase(); err != nil {
 		panic("Error While Adding new Field to the table" + err.Error())

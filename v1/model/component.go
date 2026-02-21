@@ -218,6 +218,15 @@ func (c component) FieldValue(field string) (any, bool) {
 	return val, ok
 }
 
-func (c component) UpdateFieldValue(field string, value any) {
-
+/*
+ * Converting the any datatype to result of possible
+ **/
+func MakeResult(data any) (Result, error) {
+	if res, ok := data.(Result); ok {
+		return res, nil
+	} else if res, ok := data.(map[string]interface{}); ok {
+		return Result(res), nil
+	} else {
+		return nil, fmt.Errorf("cannot convert to Result")
+	}
 }

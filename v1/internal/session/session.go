@@ -417,6 +417,7 @@ func (sh *Instance) setCookie(w http.ResponseWriter, r *http.Request) {
 		Value:    sh.ID,
 		HttpOnly: config.GetWebConfig().Https,
 		Expires:  sh.ExpirationTime,
+		Path:     "/",
 	}
 
 	utils.AddCookie(c, w, r)

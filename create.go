@@ -99,11 +99,91 @@ func create_controller() {
 
 /*
 Create View :
-it will creat the folder views if that does not exists
-then it will create a subfolder with the view name but if the folder exists int will log.Error that the view is already exists and return the function
-inside that it will create a file called index.php
+check if the file present with the view name
+if not it will create a view.php file
 */
 func create_view() {
+	if len(f.view_names_to_create) == 0 {
+		return
+	}
+
+	log.Write("---------------------------------")
+	log.Write("Creating Views: ")
+	log.Write("---------------------------------")
+
+	for _, view_name := range f.view_names_to_create {
+		// Normalize view name and allow nested paths like "admin/dashboard"
+		viewNameClean := strings.TrimSpace(view_name)
+		viewNameClean = strings.Trim(viewNameClean, "/")
+
+		viewRoot := config.GetWebConfig().ViewFolder
+		viewDir := filepath.Join(viewRoot, filepath.FromSlash(viewNameClean))
+
+		// Check if view already exists
+		if fileInfo, err := os.Stat(viewDir); err == nil {
+			if fileInfo.IsDir() {
+				log.Warn("⚠️  Skipped: View '%s' already exists at %s", view_name, viewDir)
+				continue
+			}
+			log.Warn("⚠️  Skipped: Path exists and is not a directory: %s", viewDir)
+			continue
+		} else if err != nil && !os.IsNotExist(err) {
+			log.Error("❌ Error checking view directory %s: %v", viewDir, err)
+			continue
+		}
+
+		log.Info("🧩 Creating view: %s", view_name)
+
+		viewFile := viewDir + ".php"
+
+		// Read the view template from embedded FS
+		viewTemplate, err := templates.ReadFile("templates/view.php.template")
+		if err != nil {
+			log.Error("❌ Error: Failed to read view template: %v", err)
+			return
+		}
+
+		// Create the view directory (including parents)
+		log.Info("📁 Creating directory: %s", viewDir)
+		if err := os.MkdirAll(viewDir, os.ModePerm); err != nil {
+			log.Error("❌ Error: Could not create view directory %s: %v", viewDir, err)
+			return
+		}
+
+		// Parse and render the template
+		tmpl, err := template.New(view_name).Parse(string(viewTemplate))
+		if err != nil {
+			log.Error("❌ Error: Template parse failed for %s: %v", "index.php.template", err)
+			return
+		}
+
+		var buf bytes.Buffer
+		err = tmpl.Execute(&buf, map[string]string{
+			"view_name": capitalize(filepath.Base(viewNameClean)),
+		})
+		if err != nil {
+			log.Error("❌ Error: Template execution failed for %s: %v", "index.php.template", err)
+			return
+		}
+
+		// Write index.php to view folder
+		if err := os.WriteFile(viewFile, buf.Bytes(), 0644); err != nil {
+			log.Error("❌ Error: Could not write view file to %s: %v", viewFile, err)
+			return
+		}
+
+		log.Info("✅ View '%s' created at %s", view_name, viewFile)
+	}
+	log.Write("---------------------------------")
+}
+
+/*
+- create_theme is same as create_view but it will create the view in the theme folder instead of views folder and it will not log the warning to update the routes because theme views are not directly linked to routes
+- it will creat the folder theme if that does not exists
+- then it will create a subfolder with the view name but if the folder exists int will log.Error that the view is already exists and return the function
+- inside that it will create a file called index.php
+*/
+func create_theme() {
 
 	if len(f.view_names_to_create) > 0 {
 		log.Write("---------------------------------")

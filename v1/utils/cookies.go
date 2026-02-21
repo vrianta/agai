@@ -17,10 +17,11 @@ func GetCookie(cookie_name string, r *http.Request) (*http.Cookie, error) {
 
 // Return true if it created te cookie else false means cookie is already present in the session
 func AddCookie(cookie_config *http.Cookie, w http.ResponseWriter, r *http.Request) {
-	cookie_header := formHeader(cookie_config)
-	w.Header().Add("Set-Cookie", cookie_header)
-	w.Header().Add("X-Custom-Header", "MyHeaderValue")
-	w.Header().Set("Set-Cookie", cookie_header)
+	http.SetCookie(w, cookie_config)
+	// cookie_header := formHeader(cookie_config)
+	// w.Header().Add("Set-Cookie", cookie_header)
+	// w.Header().Add("X-Custom-Header", "MyHeaderValue")
+	// w.Header().Set("Set-Cookie", cookie_header)
 }
 
 func RemoveCookie(cookie_name string, w http.ResponseWriter, r *http.Request) {

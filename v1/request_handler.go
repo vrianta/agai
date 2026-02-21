@@ -26,6 +26,7 @@ type (
 		HEAD() View
 		OPTIONS() View
 		init(w http.ResponseWriter, r *http.Request)
+		IsLoggedIn() bool
 	}
 	routes map[string]func() controllerInterface
 )
@@ -64,9 +65,11 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 			panic(err.Error())
 		}
 	}
+	c.IsLoggedIn()
 	switch r.Method {
 	case "GET":
 		if vfunc := c.GET(); vfunc != nil {
+
 			view := vfunc() // GET method of controller returns a view
 			if view == nil {
 				return
@@ -137,7 +140,6 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 
 	case "HEAD":
 		if vfunc := c.HEAD(); vfunc != nil {
-
 			view := vfunc() // GET method of controller returns a view
 			if view == nil {
 				return

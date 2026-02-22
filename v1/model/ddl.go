@@ -33,8 +33,10 @@ func (m *meta) modifyDBField(field *Field) {
 	// ALTER TABLE `users` CHANGE `userId` `userId` INT(30) NOT NULL AUTO_INCREMENT;
 	response := "ALTER TABLE `" + m.TableName + "`"
 	//DROP FOREIGN KEY IF EXISTS `fk_Users_Id`;
-	response += " DROP FOREIGN KEY IF EXISTS `fk_" + field.table_name + "_" + field.name + "`,\n"
-	response += " CHANGE `" + field.name + "` " + field.columnDefinition() + ";"
+	if field.fk != nil {
+		response += " DROP FOREIGN KEY IF EXISTS `fk_" + field.table_name + "_" + field.name + "`,\n"
+		response += " CHANGE `" + field.name + "` " + field.columnDefinition() + ";"
+	}
 
 	if databaseObj, err := DatabaseHandler.GetDatabase(); err != nil {
 		panic("\nError While Changing Field" + err.Error())

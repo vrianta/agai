@@ -18,7 +18,7 @@ import (
 	"github.com/vrianta/agai/v1/log"
 )
 
-var clientChan chan string = make(chan string)
+// var clientChan chan string = make(chan string)
 var mu sync.Mutex
 var clients = make(map[chan string]bool)
 var run_app *exec.Cmd

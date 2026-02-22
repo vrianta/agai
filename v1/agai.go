@@ -145,7 +145,12 @@ func (s *app) Start() {
 	}
 
 	if flags.StartServer {
-		log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
+		if config.GetWebConfig().Host == "" {
+			log.WriteLogf("[Server] Started at : http://localhost:%s\n", config.GetWebConfig().Port)
+		} else {
+			log.WriteLogf("[Server] Started at : http://%s\n", addr)
+		}
+
 		fmt.Print("---------------------------------------------------------\n\n")
 
 		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {

@@ -33,6 +33,21 @@ import (
 //
 // If you are not a Go developer, don't worry! The comments explain the logic in plain English.
 
+// Returning all results matching the queryBuilder as a map of primary key values to row data (as Result).
+func (m *meta) All() (Results, error) {
+	return m.Get().Fetch()
+}
+
+// Get upto Certain index of results matching the queryBuilder as a map of primary key values to row data (as Result).
+func (m *meta) GetUpto(limit int) (Results, error) {
+	return m.Get().Limit(limit).Fetch()
+}
+
+// Get Between certain index of results matching the queryBuilder as a map of primary key values to row data (as Result).
+func (m *meta) GetBetween(offset, limit int) (Results, error) {
+	return m.Get().Offset(offset).Limit(limit).Fetch()
+}
+
 // Entry point: create a new queryBuilder for the given model struct.
 // This function starts a new queryBuilder chain. By default, it prepares for a SELECT operation.
 // Example: UserModel.Get() returns a queryBuilder object you can chain more methods onto.

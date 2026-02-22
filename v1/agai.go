@@ -138,7 +138,7 @@ func (s *app) Start() {
 	}
 
 	// creating default route /
-	if !RootRegistered {
+	if !rootRegistered {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/404/", int(HttpStatus.SeeOther))
 		})

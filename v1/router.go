@@ -3,10 +3,12 @@ package agai
 import (
 	"net/http"
 	"strings"
+
+	"github.com/vrianta/agai/v1/log"
 )
 
 // it will keep a record if the user has registered / root path or not
-var RootRegistered bool = false
+var rootRegistered bool = false
 var rootPath string = ""
 
 /*
@@ -40,9 +42,10 @@ func CreateRoute[T any, PT interface {
 		panic("Multiple Route Registration with / not allowed")
 	}
 
+	// for root route registration
 	if route[0] == "/" && rootPath == "" { // for the inital route because we can not have more than one /
 		if route[0] == "/" && rootPath == "" {
-			RootRegistered = true
+			rootRegistered = true
 		}
 
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +60,7 @@ func CreateRoute[T any, PT interface {
 		return
 	}
 
+	// eg: root path set as /admin and you creating a route for / then it will create a route for /admin/ and /admin
 	if (route[0] == "/") && rootPath != "" {
 		fr := rootPath + "/" // final route
 		http.HandleFunc(fr, func(w http.ResponseWriter, r *http.Request) {
@@ -70,18 +74,25 @@ func CreateRoute[T any, PT interface {
 		})
 
 		http.HandleFunc(rootPath, func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, rootPath+"/", int(HttpStatus.SeeOther))
+			http.Redirect(w, r, fr, int(HttpStatus.SeeOther))
 		})
 		return
+	} else {
+
+		redirected_route := rootPath + "/" + strings.Join(route, "/")
+		actual_route := rootPath + "/" + strings.Join(route, "/") + "/"
+		http.HandleFunc(actual_route, func(w http.ResponseWriter, r *http.Request) {
+			var tempController PT = new(T)
+			tempController.init(w, r)
+			runRequest(w, r, tempController)
+		})
+
+		http.HandleFunc(redirected_route, func(w http.ResponseWriter, r *http.Request) {
+			log.Info("Redirecting to: %s\n", actual_route)
+			http.Redirect(w, r, actual_route, int(HttpStatus.SeeOther))
+		})
+
+		log.Info("[Route] \nRegistered route: %s\nRedirected Route: %s", redirected_route, actual_route)
 	}
 
-	http.HandleFunc(rootPath+"/"+strings.Join(route, "/")+"/", func(w http.ResponseWriter, r *http.Request) {
-		var tempController PT = new(T)
-		tempController.init(w, r)
-		runRequest(w, r, tempController)
-	})
-
-	http.HandleFunc(rootPath+"/"+strings.Join(route, "/"), func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, rootPath+"/"+strings.Join(route, "/")+"/", int(HttpStatus.SeeOther))
-	})
 }

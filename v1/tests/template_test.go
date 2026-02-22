@@ -481,4 +481,122 @@ func TestPHPToGoTemplate(t *testing.T) {
 	}
 }
 
+// TestComplexArrayAccess tests the new complex array access feature
+// Example: $$event_themes[$enquiry->Aesthetic]->ThemeName
+func TestComplexArrayAccess(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "complex array index with property access - short echo",
+			input:    `<?= $$event_themes[$enquiry->Aesthetic]->ThemeName ?>`,
+			expected: `{{ (index .event_themes .enquiry.Aesthetic).ThemeName }}`,
+		},
+		{
+			name:     "complex array index with property access - php echo",
+			input:    `<?php echo $$event_themes[$enquiry->Aesthetic]->ThemeName; ?>`,
+			expected: `{{ (index .event_themes .enquiry.Aesthetic).ThemeName }}`,
+		},
+		{
+			name:     "complex array index in HTML context",
+			input:    `<span><?= $$event_themes[$enquiry->Aesthetic]->ThemeName ?></span>`,
+			expected: `<span>{{ (index .event_themes .enquiry.Aesthetic).ThemeName }}</span>`,
+		},
+		{
+			name:     "complex array with multiple property chains",
+			input:    `<?= $$data[$config->Theme]->Settings ?>`,
+			expected: `{{ (index .data .config.Theme).Settings }}`,
+		},
+		{
+			name:     "simple variable index still works",
+			input:    `<?= $$items[$index] ?>`,
+			expected: `{{ index .items $index }}`,
+		},
+		{
+			name:     "string key array access still works",
+			input:    `<?= $$themes['default']->Name ?>`,
+			expected: `{{ .themes.default.Name }}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := strings.TrimSpace(template.PHPToGoTemplate(tt.input))
+			want := strings.TrimSpace(tt.expected)
+
+			if got != want {
+				t.Errorf("\nTest: %s\nInput: %s\n\nExpected:\n%s\n\nGot:\n%s", tt.name, tt.input, want, got)
+			}
+		})
+	}
+}
+
+func TestAssignmentConversion(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "double dollar assignment",
+			input:    "<?php $email = $$settings->Email ?>",
+			expected: "{{ $email := .settings.Email }}",
+		},
+		{
+			name:     "double dollar with trailing semicolon",
+			input:    "<?php $email = $$settings->Email; ?>",
+			expected: "{{ $email := .settings.Email }}",
+		},
+		{
+			name:     "single dollar assignment",
+			input:    "<?php $name = $user->Name ?>",
+			expected: "{{ $name := $user.Name }}",
+		},
+		{
+			name:     "array access assignment",
+			input:    "<?php $key = $data['key'] ?>",
+			expected: "{{ $key := .data.key }}",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := template.PHPToGoTemplate(tt.input)
+			if result != tt.expected {
+				t.Errorf("got %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestConvertPHPBlockAssignment(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "simple assignment",
+			input:    "$email = $$settings->Email",
+			expected: "{{ $email := .settings.Email }}",
+		},
+		{
+			name:     "assignment with semicolon",
+			input:    "$email = $$settings->Email;",
+			expected: "{{ $email := .settings.Email }}",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := template.ConvertPHPBlockToGo(tt.input)
+			if result != tt.expected {
+				t.Errorf("got %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
 // <?= $CallToAction->Href ?>

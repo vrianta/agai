@@ -37,6 +37,9 @@ var endifPattern = regexp.MustCompile(`(?m)\bendif\b\s*[:;]?`)
 
 var forPattern = regexp.MustCompile(`(?m)for\s*\(\s*([^;]+)\s*;\s*([^;]+)\s*;\s*([^)]+)\)\s*:?`)
 
+// Assignment pattern: $var = expr; or $$var = expr;
+var assignmentPattern = regexp.MustCompile(`(\${1,2}[A-Za-z_]\w*)\s*=\s*([^;]+)(?:;)?`)
+
 // PHPToGoTemplate converts PHP template code to Go html/template syntax
 func PHPToGoTemplate(phpTemplate string) string {
 
@@ -198,6 +201,30 @@ func ConvertPHPBlockToGo(code string) string {
 			expr := convertPHPExprToGo(matches[1])
 			return fmt.Sprintf("{{ %s }}", expr)
 		}
+	}
+
+	// Handle variable assignments: $var = expr; (after control structures)
+	// Only apply if the code doesn't contain already-converted template syntax
+	if !strings.Contains(code, "{{") && !strings.Contains(code, "}}") {
+		code = assignmentPattern.ReplaceAllStringFunc(code, func(match string) string {
+			m := assignmentPattern.FindStringSubmatch(match)
+			if len(m) < 3 {
+				return match
+			}
+
+			varName := strings.TrimSpace(m[1])
+			expr := strings.TrimSpace(m[2])
+
+			// Convert the expression
+			convertedExpr := convertPHPExprToGo(expr)
+
+			// Convert variable name: $var becomes $var, $$var becomes $var
+			if strings.HasPrefix(varName, "$$") {
+				varName = "$" + varName[2:]
+			}
+
+			return fmt.Sprintf("{{ %s := %s }}", varName, convertedExpr)
+		})
 	}
 
 	return code
@@ -431,9 +458,55 @@ func stripOuterParens(s string) string {
 func convertPHPVarsToGo(expr string) string {
 	expr = strings.TrimSpace(expr)
 
-	// 1) Arrays: $a['k'] or $$a['k'] -> .a.k
-	reArrStr := regexp.MustCompile(`\${1,2}(\w+)\[\s*['"](\w+)['"]\s*\]`)
-	expr = reArrStr.ReplaceAllString(expr, `.$1.$2`)
+	// 0) COMPLEX ARRAY ACCESS: $$var[$complex->expr]->prop
+	// Handles: $$event_themes[$enquiry->Aesthetic]->ThemeName
+	// Only matches if there's a property access (->)  inside the brackets
+	// Converts to: (index .event_themes .enquiry.Aesthetic).ThemeName
+	complexArrChainPattern := regexp.MustCompile(`\${1,2}(\w+)\[(\$\w+(?:->[A-Za-z_]\w*)+)\](->[A-Za-z_]\w*)?`)
+	expr = complexArrChainPattern.ReplaceAllStringFunc(expr, func(match string) string {
+		m := complexArrChainPattern.FindStringSubmatch(match)
+		varName := m[1]    // event_themes
+		indexExpr := m[2]  // $enquiry->Aesthetic
+		propAccess := m[3] // ->ThemeName or empty
+
+		// Convert the index expression: $enquiry->Aesthetic becomes .enquiry.Aesthetic
+		// First replace -> with .
+		convertedIndex := strings.ReplaceAll(indexExpr, "->", ".")
+
+		// Then convert leading $ or $$ to .
+		// Remove leading $$ or $ and replace with .
+		if strings.HasPrefix(convertedIndex, "$$") {
+			convertedIndex = "." + convertedIndex[2:]
+		} else if strings.HasPrefix(convertedIndex, "$") {
+			convertedIndex = "." + convertedIndex[1:]
+		}
+
+		// Build the index expression: (index .varname .index_var)
+		result := fmt.Sprintf("(index .%s %s)", varName, convertedIndex)
+
+		// If there's property access after array, append it: .ThemeName
+		if propAccess != "" {
+			prop := strings.TrimPrefix(propAccess, "->")
+			result = fmt.Sprintf("%s.%s", result, prop)
+		}
+
+		return result
+	})
+
+	// 1) Arrays: $a['k'] or $$a['k'] -> .a.k (also handles trailing ->property)
+	reArrStr := regexp.MustCompile(`\${1,2}(\w+)\[\s*['"](\w+)['"]\s*\](?:->([\w]+))?`)
+	expr = reArrStr.ReplaceAllStringFunc(expr, func(match string) string {
+		m := reArrStr.FindStringSubmatch(match)
+		varName := m[1] // themes
+		key := m[2]     // default
+		prop := m[3]    // Name or empty
+
+		result := "." + varName + "." + key
+		if prop != "" {
+			result = result + "." + prop
+		}
+		return result
+	})
 
 	// Numeric: $a[0] or $$a[0] -> index .a 0
 	reArrNum := regexp.MustCompile(`\${1,2}(\w+)\[\s*(\d+)\s*\]`)
@@ -449,18 +522,17 @@ func convertPHPVarsToGo(expr string) string {
 	expr = varOrChain.ReplaceAllStringFunc(expr, func(s string) string {
 		// detect $$ vs $
 		double := len(s) >= 2 && s[1] == '$'
-		fmt.Println("len: ", len(s), "s: ", s, " ", s[1])
 
 		// object chain?
 		if strings.Contains(s, "->") {
-			// both $obj->x and $$obj->x become .obj.x  (matches your prior behavior)
+			// Replace -> with .
 			s = strings.ReplaceAll(s, "->", ".")
 		}
 
 		if double {
-			return "." + s[2:]
+			return "." + s[2:] // $$var -> .var (access from context data)
 		} else {
-			return s
+			return s // $var stays as $var (template variable)
 		}
 	})
 

@@ -39,12 +39,12 @@ func (m *meta) All() (Results, error) {
 }
 
 // Get upto Certain index of results matching the queryBuilder as a map of primary key values to row data (as Result).
-func (m *meta) GetUpto(limit int) (Results, error) {
+func (m *meta) GetUpto(limit int64) (Results, error) {
 	return m.Get().Limit(limit).Fetch()
 }
 
 // Get Between certain index of results matching the queryBuilder as a map of primary key values to row data (as Result).
-func (m *meta) GetBetween(offset, limit int) (Results, error) {
+func (m *meta) GetBetween(offset, limit int64) (Results, error) {
 	return m.Get().Offset(offset).Limit(limit).Fetch()
 }
 
@@ -315,7 +315,7 @@ func (q *InsertRowBuilder) To(value any) *InsertRowBuilder {
 
 // Limit restricts the number of results returned by the queryBuilder.
 // Example: .Limit(10)
-func (q *queryBuilder) Limit(n int) *queryBuilder {
+func (q *queryBuilder) Limit(n int64) *queryBuilder {
 	q.limit = n // Store the limit for later
 	return q
 }
@@ -623,14 +623,14 @@ func (q *queryBuilder) GroupBy(clause string) *queryBuilder {
 
 // Offset sets the OFFSET for skipping a number of rows (for pagination).
 // Usage: .Offset(20)
-func (q *queryBuilder) Offset(n int) *queryBuilder {
+func (q *queryBuilder) Offset(n int64) *queryBuilder {
 	q.offset = n
 	return q
 }
 
 // Page sets both LIMIT and OFFSET for paginated queries.
 // Usage: .Page(2, 10) // page 2, 10 results per page
-func (q *queryBuilder) Page(page int, pageSize int) *queryBuilder {
+func (q *queryBuilder) Page(page int64, pageSize int64) *queryBuilder {
 	if page < 1 {
 		page = 1
 	}

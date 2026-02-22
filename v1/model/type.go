@@ -90,8 +90,8 @@ type (
 		groupBy    string
 
 		// Other options
-		limit   int
-		offset  int
+		limit   int64
+		offset  int64
 		orderBy string
 
 		operation           string // "select", "delete", "update"

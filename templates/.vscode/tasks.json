@@ -1,0 +1,53 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build: prepare and compile",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "set -e && mkdir -p build && \n[ -d views ] && cp -R views build/ || true && \n[ -d css ] && cp -R css build/ || true && \n[ -d js ] && cp -R js build/ || true && \n[ -d static ] && cp -R static build/ || true && \n[ -d public ] && cp -R public build/ || true && \n# build the Go binary into build/ using workspace folder basename as name\ngo build -o build/${workspaceFolderBasename} ."
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+        ,
+        {
+            "label": "run: execute built binary",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "set -e", 
+                "&& mkdir -p build",
+                "&& \n[ -d views ]",
+                "&& cp -R views build/ || true",
+                "&& \n[ -d css ]",
+                "&& cp -R css build/ || true",
+                "&& \n[ -d js ] && cp -R js build/ || true && \n[ -d static ] && cp -R static build/ || true && \n[ -d public ] && cp -R public build/ || true && \n# build the Go binary into build/ using workspace folder basename as name\ngo build -o build/${workspaceFolderBasename} .",
+                "&& \n# run the built binary\n./build/${workspaceFolderBasename}"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "none",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}

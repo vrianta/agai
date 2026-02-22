@@ -1,0 +1,58 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": ["-ss"]
+        },
+        {
+            "name": "Build",
+            "type": "go",
+            "request": "launch",
+            "preLaunchTask": "build: prepare and compile",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": ["-mm", "-mc"]
+        },
+        {
+            "name": "Build & Run",
+            "type": "go",
+            "request": "launch",
+            "preLaunchTask": "build: prepare and compile",
+            "mode": "auto",
+            "program": "${workspaceFolder}/build/${workspaceFolderBasename}",
+            "args": []
+        },
+        {
+            "name": "Migrate Models",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": ["-mm"]
+        },
+        {
+            "name": "Migrate Components",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": ["-mc"]
+        },
+        {
+            "name": "Migrate Models && Components",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": ["-mm", "-mc"]
+        }
+    ]
+}

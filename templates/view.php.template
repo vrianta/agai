@@ -5,7 +5,7 @@
   <title>Welcome - <?= $$controller_name ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link 
-    href="/css/bootstrap/bootstrap.min.css" 
+    href="./css/bootstrap/bootstrap.min.css" 
     rel="stylesheet" 
     >
 </head>
@@ -36,6 +36,6 @@
   </div>
 
   <script 
-    src="/js/bootstrap/bootstrap.bundle.min.js"></script>
+    src="./js/bootstrap/bootstrap.bundle.min.js"></script>
 </body>
 </html>

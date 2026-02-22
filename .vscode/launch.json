@@ -2,17 +2,29 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Go Program",
-      "type": "go",
+      "name": "build Mac",
+      "type": "bash",
       "request": "launch",
       "mode": "auto",
-      "program": "${fileDirname}",
+      "program": "bash",
+      "args": ["-c", "sudo bash ${fileDirname}/install_mac.sh"],
       "showLog": true
     },
     {
-      "name": "Test Go",
-      "type": "go",
-      "mode": "test"
-    }
+      "name": "build Linux",
+      "type": "bash",
+      "request": "launch",
+      "mode": "auto",
+      "program": "bash",
+      "args": ["-c", "sudo bash ${fileDirname}/install_linux.sh"],
+      "showLog": true
+    },
+    {
+      "name": "build Windows",
+      "type": "PowerShell",
+      "request": "launch",
+      "program": "${fileDirname}/install_windows.ps1",
+      "showLog": true
+    },
   ]
 }

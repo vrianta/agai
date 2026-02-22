@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install Software (Mac)",
+      "type": "shell",
+      "command": "sudo bash ${fileDirname}/install_mac.sh",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Install Software (Linux)",
+      "type": "shell",
+      "command": "sudo bash ${fileDirname}/install_linux.sh",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Install Software (Windows)",
+      "type": "shell",
+      "command": "powershell.exe -ExecutionPolicy Bypass -File ${fileDirname}/install_windows.ps1",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}

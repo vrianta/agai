@@ -10,7 +10,6 @@ import (
 	"go/token"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -100,11 +99,91 @@ func create_controller() {
 
 /*
 Create View :
-it will creat the folder views if that does not exists
-then it will create a subfolder with the view name but if the folder exists int will log.Error that the view is already exists and return the function
-inside that it will create a file called index.php
+check if the file present with the view name
+if not it will create a view.php file
 */
 func create_view() {
+	if len(f.view_names_to_create) == 0 {
+		return
+	}
+
+	log.Write("---------------------------------")
+	log.Write("Creating Views: ")
+	log.Write("---------------------------------")
+
+	for _, view_name := range f.view_names_to_create {
+		// Normalize view name and allow nested paths like "admin/dashboard"
+		viewNameClean := strings.TrimSpace(view_name)
+		viewNameClean = strings.Trim(viewNameClean, "/")
+
+		viewRoot := config.GetWebConfig().ViewFolder
+		viewDir := filepath.Join(viewRoot, filepath.FromSlash(viewNameClean))
+
+		// Check if view already exists
+		if fileInfo, err := os.Stat(viewDir); err == nil {
+			if fileInfo.IsDir() {
+				log.Warn("⚠️  Skipped: View '%s' already exists at %s", view_name, viewDir)
+				continue
+			}
+			log.Warn("⚠️  Skipped: Path exists and is not a directory: %s", viewDir)
+			continue
+		} else if err != nil && !os.IsNotExist(err) {
+			log.Error("❌ Error checking view directory %s: %v", viewDir, err)
+			continue
+		}
+
+		log.Info("🧩 Creating view: %s", view_name)
+
+		viewFile := viewDir + ".php"
+
+		// Read the view template from embedded FS
+		viewTemplate, err := templates.ReadFile("templates/view.php.template")
+		if err != nil {
+			log.Error("❌ Error: Failed to read view template: %v", err)
+			return
+		}
+
+		// Create the view directory (including parents)
+		log.Info("📁 Creating directory: %s", viewDir)
+		if err := os.MkdirAll(viewDir, os.ModePerm); err != nil {
+			log.Error("❌ Error: Could not create view directory %s: %v", viewDir, err)
+			return
+		}
+
+		// Parse and render the template
+		tmpl, err := template.New(view_name).Parse(string(viewTemplate))
+		if err != nil {
+			log.Error("❌ Error: Template parse failed for %s: %v", "index.php.template", err)
+			return
+		}
+
+		var buf bytes.Buffer
+		err = tmpl.Execute(&buf, map[string]string{
+			"view_name": capitalize(filepath.Base(viewNameClean)),
+		})
+		if err != nil {
+			log.Error("❌ Error: Template execution failed for %s: %v", "index.php.template", err)
+			return
+		}
+
+		// Write index.php to view folder
+		if err := os.WriteFile(viewFile, buf.Bytes(), 0644); err != nil {
+			log.Error("❌ Error: Could not write view file to %s: %v", viewFile, err)
+			return
+		}
+
+		log.Info("✅ View '%s' created at %s", view_name, viewFile)
+	}
+	log.Write("---------------------------------")
+}
+
+/*
+- create_theme is same as create_view but it will create the view in the theme folder instead of views folder and it will not log the warning to update the routes because theme views are not directly linked to routes
+- it will creat the folder theme if that does not exists
+- then it will create a subfolder with the view name but if the folder exists int will log.Error that the view is already exists and return the function
+- inside that it will create a file called index.php
+*/
+func create_theme() {
 
 	if len(f.view_names_to_create) > 0 {
 		log.Write("---------------------------------")
@@ -415,162 +494,6 @@ func capitalize(s string) string {
 }
 
 /*
-function to create application
-first it will createa folder of the app name if that folder does not exists -> if exists then it will say application already exists and return
-change the location to the app_name directory then create controllers models create default configs
-create folder css, js, static
-copy bootstrap css and js to the desired location
-copy a readme.template with basic details
-return change directoy to the previous location
-*/
-func create_application() {
-	if !f.create_app {
-		return
-	}
-
-	if f.application_path == "" {
-		f.application_path = f.app_name
-	}
-	app_name := f.app_name
-
-	// Check if directory already exists and is not empty
-	if entries, err := os.ReadDir(f.application_path); err == nil && len(entries) > 0 && f.application_path != "." {
-		log.Error("❌ Application '%s' already exists.", app_name)
-		return
-	}
-
-	// Create application directory
-	if err := os.Mkdir(f.application_path, os.ModePerm); err != nil && f.application_path != "." {
-		log.Error("❌ Failed to create application '%s': %v", app_name, err)
-		return
-	}
-
-	// // Store current directory and switch to app directory
-	// root, _ := os.Getwd()
-	if err := os.Chdir(app_name); err != nil && f.application_path != "." {
-		log.Error("❌ Failed to enter application folder: %v", err)
-		return
-	}
-
-	// Create necessary folders
-	create_desired_folders()
-
-	// Create default user model
-	if user_model, err := templates.ReadFile("templates/users.model.go.template"); err != nil {
-		log.Error("❌ Failed to read users.model.go.template: %v", err)
-	} else {
-		err = os.WriteFile("models/user.model.go", user_model, 0644)
-		if err != nil {
-			log.Error("❌ Failed to write user model file: %v", err)
-		}
-	}
-
-	// Create default user_details model
-	if user_details_model, err := templates.ReadFile("templates/users_details.model.go.template"); err != nil {
-		log.Error("❌ Failed to read users.model.go.template: %v", err)
-	} else {
-		err = os.WriteFile("models/user_details.model.go", user_details_model, 0644)
-		if err != nil {
-			log.Error("❌ Failed to write user model file: %v", err)
-		}
-	}
-
-	// Create default Settings model
-	if settings_model, err := templates.ReadFile("templates/settings.model.go.template"); err != nil {
-		log.Error("❌ Failed to read settings.model.go.template: %v", err)
-	} else {
-		err = os.WriteFile("models/settings.model.go", settings_model, 0644)
-		if err != nil {
-			log.Error("❌ Failed to write user model file: %v", err)
-		}
-	}
-
-	// Create default Settings Component
-	if settings_component, err := templates.ReadFile("templates/Settings.component.json.template"); err != nil {
-		log.Error("❌ Failed to read Settings.component.json.template: %v", err)
-	} else {
-		if tpl, tpl_err := template.New("Settings.component.json").Parse(string(settings_component)); tpl_err != nil {
-			log.Error("Failed to create template of %s due to - %T", "templates/Settings.component.json.template", tpl_err)
-		} else {
-			buf := bytes.Buffer{}
-			tpl.Execute(&buf, map[string]string{
-				"app_name": app_name,
-			})
-			if err := os.WriteFile("components/Settings.component.json", buf.Bytes(), 0644); err != nil {
-				log.Error("❌ Failed to write user model file: %v", err)
-			}
-		}
-
-	}
-
-	// // Copy README template
-	// readme, err := templates.ReadFile("templates/readme.template")
-	// if err == nil {
-	// 	os.WriteFile("README.md", readme, 0644)
-	// }
-
-	// Copy embedded folders to actual css/ and js/
-	copyDirFromEmbed(templates, "templates/css/bootstrap", "css/bootstrap")
-	copyDirFromEmbed(templates, "templates/css/bootstrap-Icons", "css/bootstrap-icons")
-	copyDirFromEmbed(templates, "templates/js/bootstrap", "js/bootstrap")
-
-	// Default home component to create
-	f.controller_names_to_create = append(f.controller_names_to_create, "home")
-	f.create_view = true
-	f.view_names_to_create = append(f.view_names_to_create, "home")
-
-	// create main.go
-	if main_go, err := templates.ReadFile("templates/main.go.template"); err != nil {
-		log.Error("❌ Failed to read main.go.template: %v", err)
-	} else {
-		if err := os.WriteFile("main.go", main_go, 0644); err != nil {
-			log.Error("❌ Failed to write user model file: %v", err)
-		}
-	}
-
-	// create routes.go
-	if routes, err := templates.ReadFile("templates/routes.go.template"); err != nil {
-		log.Error("❌ Failed to read routes.go.template: %v", err)
-	} else {
-		if tpl, tpl_err := template.New("routes.go.template").Parse(string(routes)); tpl_err != nil {
-			log.Error("Failed to create template of %s due to - %v", "templates/routes.go.template", tpl_err)
-		} else {
-			buf := bytes.Buffer{}
-			tpl.Execute(&buf, map[string]string{
-				"app_name": app_name,
-			})
-			if err := os.WriteFile("routes.go", buf.Bytes(), 0644); err != nil {
-				log.Error("❌ Failed to write user model file: %v", err)
-			}
-		}
-
-	}
-
-	create_configs() // create different configs
-
-	if err := exec.Command("go", "mod", "init", app_name).Run(); err != nil {
-		log.Error("Failed to initialize go module: %v", err)
-	}
-
-	if err := exec.Command("go", "get", "github.com/go-sql-driver/mysql").Run(); err != nil {
-		log.Error("Failed to install package github.com/go-sql-driver/mysql: %v", err)
-	}
-
-	if err := exec.Command("go", "get", "github.com/vrianta/agai@"+agai_version).Run(); err != nil {
-		log.Error("Failed to install package github.com/vrianta/agai: %v", err)
-	}
-
-	if err := exec.Command("go", "mod", "tidy").Run(); err != nil {
-		log.Error("Failed to tidy go module: %v", err)
-	}
-
-	if err := exec.Command("go", "run", ".", "-mm", "-mc").Run(); err != nil {
-		log.Error("Failed to run agai CLI setup: %v", err)
-	}
-
-}
-
-/*
 Create required folders needed for create app folder
 folders are models, controllers, components, css, js, static
 */
@@ -583,6 +506,7 @@ func create_desired_folders() {
 		"js",
 		"static",
 		"views",
+		".vscode",
 	}
 
 	for _, dir := range dirs {

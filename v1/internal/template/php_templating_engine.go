@@ -262,10 +262,6 @@ func convertPHPExprToGo(expr string) string {
 			return fmt.Sprintf("Upper %s", args)
 		case "strtolower":
 			return fmt.Sprintf("lower %s", args)
-		case "strlen":
-			return fmt.Sprintf("(Strlen %s)", args)
-		case "count":
-			return fmt.Sprintf("(Len %s)", args)
 		case "htmlspecialchars":
 			return fmt.Sprintf("Html %s", args)
 		case "isset":
@@ -274,8 +270,8 @@ func convertPHPExprToGo(expr string) string {
 		case "empty":
 			// empty(x) -> eq x ""
 			return fmt.Sprintf("eq %s \"\"", args)
-		case "print":
-			return fmt.Sprintf("print %s", args)
+		case "print", "date", "len", "upper", "lower", "strlen", "count":
+			return fmt.Sprintf("%s %s", funcName, args)
 		case "array_values":
 			return fmt.Sprintf("values %s", args)
 		case "array_keys":

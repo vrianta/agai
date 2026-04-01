@@ -9,5 +9,6 @@ var (
 	f = flags{
 		controllers_root: "controllers",
 		view_root:        "views",
+		initiateAdmin:    false,
 	}
 )

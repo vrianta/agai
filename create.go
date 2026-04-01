@@ -127,7 +127,7 @@ func create_view() {
 			}
 			log.Warn("⚠️  Skipped: Path exists and is not a directory: %s", viewDir)
 			continue
-		} else if err != nil && !os.IsNotExist(err) {
+		} else if !os.IsNotExist(err) {
 			log.Error("❌ Error checking view directory %s: %v", viewDir, err)
 			continue
 		}

@@ -139,6 +139,7 @@ func create_application() {
 	}
 
 	create_configs() // create different configs
+	first_setup()    // update user.component.json from user input
 
 	if err := exec.Command("go", "mod", "init", app_name).Run(); err != nil {
 		log.Error("Failed to initialize go module: %v", err)

@@ -1,7 +1,7 @@
 {
   "admin": {
     "Id": "admin",
-    "Name": "Administrator",
-    "Password": "admin123"  
+    "Name": "{{username}}",
+    "Password": "{{password}}"  
   }
 }

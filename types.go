@@ -29,6 +29,8 @@ type flags struct {
 	migrate_model     bool
 	migrate_component bool
 
+	initiateAdmin bool
+
 	// Application path
 	application_path string
 }

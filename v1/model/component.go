@@ -63,9 +63,10 @@ func (m *meta) saveComponentToDisk() error {
  * 2. Fetch current components from the database.
  * 3. If the database is empty, insert all local components into it.
  * 4. Add any local components missing from the database.
- * 5. Remove any database components that don't exist locally.
- * 6. Replace the local components list with the latest data from the database.
- * 7. Save the updated components list to disk.
+ * 5. Update any existing components that have different data between local and DB.
+ * 6. Remove any database components that don't exist locally.
+ * 7. Replace the local components list with the latest data from the database.
+ * 8. Save the updated components list to disk.
  *
  * The database is treated as the final source of truth after syncing.
  */
@@ -112,6 +113,39 @@ func (m *meta) syncComponentWithDB() error {
 					panic("Failed to update the Component :" + err.Error())
 				}
 				dbResults[k] = Result(v)
+			}
+		}
+	}
+
+	// Update existing components if they differ
+	for k, localComponent := range m.components {
+		if m.primary.Type == FieldTypes.Int {
+			if int_k, err := strconv.Atoi(k); err != nil {
+				return err
+			} else {
+				if dbComponent, ok := dbResults[int64(int_k)]; ok {
+					if !componentsEqual(localComponent, component(dbComponent)) {
+						log.Info("[component] Updating component %s in table %s (data differs)", k, m.TableName)
+						if err := m.UpdateComponent(k, localComponent); err != nil {
+							log.Error("[component] Failed to update component %s: %v", k, err)
+							return err
+						}
+						// Update the dbResults with the new data
+						dbResults[int64(int_k)] = Result(localComponent)
+					}
+				}
+			}
+		} else {
+			if dbComponent, ok := dbResults[k]; ok {
+				if !componentsEqual(localComponent, component(dbComponent)) {
+					log.Info("[component] Updating component '%s' in table %s (data differs)", k, m.TableName)
+					if err := m.UpdateComponent(k, localComponent); err != nil {
+						log.Error("[component] Failed to update component %s: %v", k, err)
+						return err
+					}
+					// Update the dbResults with the new data
+					dbResults[k] = Result(localComponent)
+				}
 			}
 		}
 	}
@@ -229,4 +263,25 @@ func MakeResult(data any) (Result, error) {
 	} else {
 		return nil, fmt.Errorf("cannot convert to Result")
 	}
+}
+
+// componentsEqual compares two components to check if they have the same data
+func componentsEqual(c1, c2 component) bool {
+	if len(c1) != len(c2) {
+		return false
+	}
+
+	for key, val1 := range c1 {
+		val2, exists := c2[key]
+		if !exists {
+			return false
+		}
+
+		// Compare values (basic comparison, can be enhanced for complex types)
+		if val1 != val2 {
+			return false
+		}
+	}
+
+	return true
 }

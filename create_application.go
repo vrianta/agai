@@ -50,59 +50,53 @@ func create_application() {
 	// Create necessary folders
 	create_desired_folders()
 
-	// Create default user model
-	if user_model, err := templates.ReadFile("templates/users.model.go.template"); err != nil {
-		log.Error("❌ Failed to read users.model.go.template: %v", err)
-	} else {
-		err = os.WriteFile("models/user.model.go", user_model, 0644)
-		if err != nil {
-			log.Error("❌ Failed to write user model file: %v", err)
-		}
+	models_to_create := []string{
+		"users",
+		"user_details",
+		"settings",
+		"roles",
+		"user_roles",
 	}
 
-	// Create default user_details model
-	if user_details_model, err := templates.ReadFile("templates/users_details.model.go.template"); err != nil {
-		log.Error("❌ Failed to read users.model.go.template: %v", err)
-	} else {
-		err = os.WriteFile("models/user_details.model.go", user_details_model, 0644)
-		if err != nil {
-			log.Error("❌ Failed to write user model file: %v", err)
-		}
-	}
-
-	// Create default Settings model
-	if settings_model, err := templates.ReadFile("templates/settings.model.go.template"); err != nil {
-		log.Error("❌ Failed to read settings.model.go.template: %v", err)
-	} else {
-		err = os.WriteFile("models/settings.model.go", settings_model, 0644)
-		if err != nil {
-			log.Error("❌ Failed to write user model file: %v", err)
-		}
-	}
-
-	// Create default Settings Component
-	if settings_component, err := templates.ReadFile("templates/Settings.component.json.template"); err != nil {
-		log.Error("❌ Failed to read Settings.component.json.template: %v", err)
-	} else {
-		if tpl, tpl_err := template.New("Settings.component.json").Parse(string(settings_component)); tpl_err != nil {
-			log.Error("Failed to create template of %s due to - %T", "templates/Settings.component.json.template", tpl_err)
+	for _, model_name := range models_to_create {
+		// Create default user model
+		if model, err := templates.ReadFile("templates/models/" + model_name); err != nil {
+			log.Error("❌ Failed to read "+model_name+".model.go.template: %v", err)
 		} else {
-			buf := bytes.Buffer{}
-			tpl.Execute(&buf, map[string]string{
-				"app_name": app_name,
-			})
-			if err := os.WriteFile("components/Settings.component.json", buf.Bytes(), 0644); err != nil {
+			err = os.WriteFile("models/"+model_name+".model.go", model, 0644)
+			if err != nil {
 				log.Error("❌ Failed to write user model file: %v", err)
 			}
 		}
-
 	}
 
-	// // Copy README template
-	// readme, err := templates.ReadFile("templates/readme.template")
-	// if err == nil {
-	// 	os.WriteFile("README.md", readme, 0644)
-	// }
+	components_to_create := []string{
+		"settings",
+		"roles",
+		"users",
+		"user_details",
+		"user_roles",
+	}
+
+	for _, component_name := range components_to_create {
+		// Create default Settings Component
+		if component, err := templates.ReadFile("templates/components/" + component_name); err != nil {
+			log.Error("❌ Failed to read "+component_name+".component.json.template: %v", err)
+		} else {
+			if tpl, tpl_err := template.New(component_name + ".component.json").Parse(string(component)); tpl_err != nil {
+				log.Error("Failed to create template of %s due to - %T", "templates.components."+component_name, tpl_err)
+			} else {
+				buf := bytes.Buffer{}
+				tpl.Execute(&buf, map[string]string{
+					"app_name": app_name,
+				})
+				if err := os.WriteFile("components/"+component_name+".component.json", buf.Bytes(), 0644); err != nil {
+					log.Error("❌ Failed to write user model file: %v", err)
+				}
+			}
+
+		}
+	}
 
 	// Copy embedded folders to actual css/ and js/
 	copyDirFromEmbed(templates, "templates/css/bootstrap", "css/bootstrap")

@@ -12,7 +12,7 @@ var Settings = model.New("settings", struct {
 	Element: &model.Field{
 		Nullable: false,
 		Type:     model.FieldTypes.VarChar,
-		Length:   20,
+		Length:   100,
 		Index: model.Index{
 			PrimaryKey: true,
 			Index:      true,
@@ -21,8 +21,7 @@ var Settings = model.New("settings", struct {
 	},
 	Value: &model.Field{
 		Nullable: false,
-		Type:     model.FieldTypes.VarChar,
-		Length:   20,
+		Type:     model.FieldTypes.Text,
 	},
 })
 

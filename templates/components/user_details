@@ -1,0 +1,12 @@
+{
+  "admin": {
+    "Id": "admin",
+    "Phone": "+1234567890",
+    "Email": "admin@example.com",
+    "FirstName": "Admin",
+    "LastName": "User",
+    "PrimarySkill": "Leadership",
+    "Experience": "10+ years",
+    "Address": "123 Admin Blvd, HQ City"
+  }
+}

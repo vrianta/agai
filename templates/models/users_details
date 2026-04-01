@@ -5,17 +5,19 @@ import (
 	"github.com/vrianta/agai/v1/model"
 )
 
-var UserDetails = model.New("UserDetails", struct {
-	Id        *model.Field
-	Phone     *model.Field
-	Email     *model.Field
-	FirstName *model.Field
-	LastName  *model.Field
-	Address   *model.Field
+var UserDetails = model.New("user_details", struct {
+	Id           *model.Field
+	Phone        *model.Field
+	Email        *model.Field
+	FirstName    *model.Field
+	LastName     *model.Field
+	PrimarySkill *model.Field
+	Experience   *model.Field
+	Address      *model.Field
 }{
 	Id: Users.Fields.Id.ToForeignKey("cascade", "cascade", true, false, false),
 	Phone: &model.Field{
-		Nullable: true,
+		Nullable: false,
 		Type:     model.FieldTypes.String,
 		Length:   20,
 		Index: model.Index{
@@ -24,7 +26,7 @@ var UserDetails = model.New("UserDetails", struct {
 		},
 	},
 	Email: &model.Field{
-		Nullable: false,
+		Nullable: true,
 		Type:     model.FieldTypes.String,
 		Length:   150,
 		Index: model.Index{
@@ -32,16 +34,22 @@ var UserDetails = model.New("UserDetails", struct {
 		},
 	},
 	FirstName: &model.Field{
-		Nullable: false,
-		Type:     model.FieldTypes.String,
-		Length:   100,
+		Type:   model.FieldTypes.String,
+		Length: 100,
 	},
 	LastName: &model.Field{
-		Nullable: false,
+		Nullable: true,
 		Type:     model.FieldTypes.String,
 		Length:   100,
 	},
-
+	PrimarySkill: &model.Field{
+		Type:   model.FieldTypes.String,
+		Length: 15,
+	},
+	Experience: &model.Field{
+		Type:   model.FieldTypes.String,
+		Length: 15,
+	},
 	Address: &model.Field{
 		Nullable: true,
 		Type:     model.FieldTypes.Text,

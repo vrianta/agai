@@ -1,0 +1,7 @@
+{
+  "admin": {
+    "Id": "admin",
+    "Name": "Administrator",
+    "Password": "admin123"  
+  }
+}

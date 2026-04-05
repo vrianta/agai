@@ -31,7 +31,7 @@ func create_controller() {
 	for _, controller_name := range f.controller_names_to_create {
 
 		// Set output location: controller/controller_name/controller_name.controller.go
-		controller_output_location := fmt.Sprintf("%s/%s/%s.controller.go", f.controllers_root, controller_name, controller_name)
+		controller_output_location := fmt.Sprintf("%s/%s.controller.go", f.controllers_root, controller_name)
 
 		if file_info, err := os.Stat(controller_output_location); file_info != nil && err == nil {
 			log.Warn("⚠️  Skipped: Controller '%s' already exists at %s", controller_name, controller_output_location)

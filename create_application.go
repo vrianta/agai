@@ -115,9 +115,18 @@ func create_application() {
 	if main_go, err := templates.ReadFile("templates/main.go.template"); err != nil {
 		log.Error("❌ Failed to read main.go.template: %v", err)
 	} else {
-		if err := os.WriteFile("main.go", main_go, 0644); err != nil {
-			log.Error("❌ Failed to write user model file: %v", err)
+		if tmpl, err := template.New("main").Parse(string(main_go)); err != nil {
+			log.Error("Main to Load Main File Template %v", err)
+		} else {
+			var buff bytes.Buffer
+			tmpl.Execute(&buff, map[string]string{
+				"controller_name": app_name,
+			})
+			if err := os.WriteFile("main.go", buff.Bytes(), 0644); err != nil {
+				log.Error("❌ Failed to write user model file: %v", err)
+			}
 		}
+
 	}
 
 	// create routes.go
@@ -141,16 +150,15 @@ func create_application() {
 	create_configs() // create different configs
 	first_setup()    // update user.component.json from user input
 
-	if err := exec.Command("go", "mod", "init", app_name).Run(); err != nil {
-		log.Error("Failed to initialize go module: %v", err)
-	}
-
 	if err := exec.Command("go", "get", "github.com/go-sql-driver/mysql").Run(); err != nil {
 		log.Error("Failed to install package github.com/go-sql-driver/mysql: %v", err)
 	}
 
 	if err := exec.Command("go", "get", "github.com/vrianta/agai@"+agai_version).Run(); err != nil {
 		log.Error("Failed to install package github.com/vrianta/agai: %v", err)
+	}
+	if err := exec.Command("go", "mod", "init", app_name).Run(); err != nil {
+		log.Error("Failed to initialize go module: %v", err)
 	}
 
 	if err := exec.Command("go", "mod", "tidy").Run(); err != nil {

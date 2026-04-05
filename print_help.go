@@ -29,6 +29,7 @@ func print_help() {
 	fmt.Printf("  %-32s %s\n", "--migrate-model, -mm", "Run model migrations")
 	fmt.Printf("  %-32s %s\n", "--migrate-component, -mc", "Sync components with the database")
 	fmt.Printf("  %-32s %s\n", "--initiate-admin, -ia", "Initiate admin account setup (update username/password)")
+	fmt.Printf("  %-32s %s\n", "--version, -v", "Show the Version of the agai is installed")
 	fmt.Printf("  %-32s %s\n", "--help, -h", "Show this help message")
 	fmt.Printf("  %-32s %s\n", "--help-web-config, -hwc", "Show help for web config structure")
 	fmt.Printf("  %-32s %s\n", "--help-database-config, -hdc", "Show help for database config structure")

@@ -5,7 +5,7 @@ import (
 	"github.com/vrianta/agai/v1/model"
 )
 
-var UserDetails = model.New("user_details", struct {
+var UserDetails = model.New("users_details", struct {
 	Id           *model.Field
 	Phone        *model.Field
 	Email        *model.Field

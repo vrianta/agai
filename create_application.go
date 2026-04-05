@@ -52,10 +52,10 @@ func create_application() {
 
 	models_to_create := []string{
 		"users",
-		"user_details",
+		"users_details",
 		"settings",
 		"roles",
-		"user_roles",
+		"users_roles",
 	}
 
 	for _, model_name := range models_to_create {
@@ -84,7 +84,7 @@ func create_application() {
 			log.Error("❌ Failed to read "+component_name+".component.json.template: %v", err)
 		} else {
 			if tpl, tpl_err := template.New(component_name + ".component.json").Parse(string(component)); tpl_err != nil {
-				log.Error("Failed to create template of %s due to - %T", "templates.components."+component_name, tpl_err)
+				log.Error("Failed to create template of %s due to - %v", "templates.components."+component_name, tpl_err)
 			} else {
 				buf := bytes.Buffer{}
 				tpl.Execute(&buf, map[string]string{
@@ -120,7 +120,7 @@ func create_application() {
 		} else {
 			var buff bytes.Buffer
 			tmpl.Execute(&buff, map[string]string{
-				"controller_name": app_name,
+				"app_name": app_name,
 			})
 			if err := os.WriteFile("main.go", buff.Bytes(), 0644); err != nil {
 				log.Error("❌ Failed to write user model file: %v", err)

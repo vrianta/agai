@@ -2,7 +2,7 @@ package models
 
 import "github.com/vrianta/agai/v1/model"
 
-var UserRoles = model.New("user_roles", struct {
+var UserRoles = model.New("users_roles", struct {
 	ID     *model.Field
 	UserId *model.Field
 	RoleId *model.Field

@@ -149,6 +149,9 @@ func handle_args() {
 		case "--initiate-admin", "-ia":
 			f.initiateAdmin = true
 
+		case "--version", "-v":
+			fmt.Println(agai_version)
+
 		// --- Help
 		case "--help", "-h":
 			print_help()

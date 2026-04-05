@@ -99,9 +99,9 @@ func create_application() {
 	}
 
 	// Copy embedded folders to actual css/ and js/
-	copyDirFromEmbed(templates, "templates/css/bootstrap", "css/bootstrap")
-	copyDirFromEmbed(templates, "templates/css/bootstrap-Icons", "css/bootstrap-icons")
-	copyDirFromEmbed(templates, "templates/js/bootstrap", "js/bootstrap")
+	copyDirFromEmbed(templates, "templates/css", "css")
+	// copyDirFromEmbed(templates, "templates/css/bootstrap-Icons", "css/bootstrap-icons")
+	copyDirFromEmbed(templates, "templates/js", "js")
 
 	// Copy embedded .vscode folder to actual .vscode/
 	copyDirFromEmbed(templates, "templates/.vscode", ".vscode")

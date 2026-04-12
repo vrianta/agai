@@ -21,9 +21,9 @@ import (
 func create_controller() {
 
 	if len(f.controller_names_to_create) > 0 {
-		log.Write("---------------------------------")
-		log.Write("Creating Controllers: ")
-		log.Write("---------------------------------")
+		log.Write("---------------------------------\n")
+		log.Write("Creating Controllers:\n")
+		log.Write("---------------------------------\n")
 	} else {
 		return
 	}
@@ -31,7 +31,7 @@ func create_controller() {
 	for _, controller_name := range f.controller_names_to_create {
 
 		// Set output location: controller/controller_name/controller_name.controller.go
-		controller_output_location := fmt.Sprintf("%s/%s.controller.go", f.controllers_root, controller_name)
+		controller_output_location := fmt.Sprintf("./%s/%s.controller.go", f.controllers_root, controller_name)
 
 		if file_info, err := os.Stat(controller_output_location); file_info != nil && err == nil {
 			log.Warn("⚠️  Skipped: Controller '%s' already exists at %s", controller_name, controller_output_location)
@@ -40,7 +40,13 @@ func create_controller() {
 
 		log.Info("🔧 Creating controller: %s", controller_name)
 
-		package_name := strings.ToLower(controller_name)
+		var controller_nameSplit = strings.Split(controller_output_location, "/")
+		var controller_nameSplit_lenth = len(controller_nameSplit)
+		var package_name = "controllers"
+
+		if controller_nameSplit_lenth < 1 {
+			package_name = controller_nameSplit[(controller_nameSplit_lenth - 2)]
+		}
 		view_name := ""
 		if f.create_view {
 			view_name = package_name
@@ -54,14 +60,14 @@ func create_controller() {
 			return
 		}
 
-		targetDir := filepath.Join(f.controllers_root, controller_name)
+		// targetDir := filepath.Join(f.controllers_root, controller_name)
 
-		// Create controller directory
-		log.Info("📁 Creating directory: %s", targetDir)
-		if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
-			log.Error("❌ Error: Could not create directory %s: %v", targetDir, err)
-			return
-		}
+		// // Create controller directory
+		// log.Info("📁 Creating directory: %s", targetDir)
+		// if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
+		// 	log.Error("❌ Error: Could not create directory %s: %v", targetDir, err)
+		// 	return
+		// }
 
 		// Parse and render the template
 		tmpl, err := template.New(controller_name).Parse(string(controller_template))
@@ -73,7 +79,7 @@ func create_controller() {
 		var buf bytes.Buffer
 		err = tmpl.Execute(&buf, map[string]string{
 			"package_name":    package_name,
-			"controller_name": capitalize(controller_name),
+			"controller_name": capitalize(controller_nameSplit[(controller_nameSplit_lenth - 1)]),
 			"view_name":       view_name,
 		})
 		if err != nil {
@@ -82,7 +88,7 @@ func create_controller() {
 		}
 
 		// Write the final file
-		err = os.WriteFile(controller_output_location, buf.Bytes(), 0644)
+		err = os.WriteFile(controller_output_location, buf.Bytes(), os.ModePerm)
 		if err != nil {
 			log.Error("❌ Error: Could not write controller file to %s: %v", controller_output_location, err)
 			return

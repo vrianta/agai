@@ -1,4 +1,4 @@
-package controllers
+package {{ .package_name }}
 
 import (
 	"github.com/vrianta/agai/v1"

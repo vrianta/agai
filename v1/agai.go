@@ -19,6 +19,9 @@ import (
 
 // Global instance of the server
 type Mod struct{}
+type modInterface interface {
+	Run(*Controller)
+}
 
 func (m *Mod) Run(*Controller) {
 	log.Error("Mod is not settedup properly, it is still calling the default Run Function.")
@@ -28,7 +31,7 @@ func (m *Mod) Run(*Controller) {
 var (
 	routerHandler   = Handler
 	middlewareFuncs []func()
-	modsStorage     []Mod
+	modsStorage     []modInterface
 )
 
 type app struct {
@@ -201,6 +204,6 @@ func (a *app) Use(middleware func()) {
 }
 
 // function to register mods - make sure the mod will run before any middle wares and before the request is handled by the controller
-func (a *app) RegisterMod(mod Mod) {
+func (a *app) RegisterMod(mod modInterface) {
 	modsStorage = append(modsStorage, mod)
 }

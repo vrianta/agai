@@ -48,6 +48,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 
+	// lamda to run templates
 	execute_template := func(view *view) {
 		__template, ok := template.GetTemplate(view.name)
 
@@ -65,7 +66,15 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 			panic(err.Error())
 		}
 	}
-	c.IsLoggedIn()
+	c.IsLoggedIn() // also initializes the session for the user
+	// First run all mods before handling the request
+	for _, mod := range modsStorage {
+		mod.Run(c.(*Controller))
+	}
+	// Running the middlewares
+	for _, middleware := range middlewareFuncs {
+		middleware()
+	}
 	switch r.Method {
 	case "GET":
 		if vfunc := c.GET(); vfunc != nil {

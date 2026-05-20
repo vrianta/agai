@@ -18,8 +18,14 @@ import (
 )
 
 // Global instance of the server
+type Mod interface {
+	Run(*Controller)
+}
+
 var (
-	routerHandler = Handler
+	routerHandler   = Handler
+	middlewareFuncs []func()
+	modsStorage     []Mod
 )
 
 type app struct {
@@ -183,4 +189,15 @@ func (s *app) setup_js_folder() {
 	for _, folder := range config.GetWebConfig().JsFolders {
 		http.HandleFunc("/"+folder+"/", staticFileHandler("application/javascript; charset=utf-8"))
 	}
+}
+
+// function to add middleware for the application to run on each request
+// Function calling will be sequencial
+func (a *app) Use(middleware func()) {
+	middlewareFuncs = append(middlewareFuncs, middleware)
+}
+
+// function to register mods - make sure the mod will run before any middle wares and before the request is handled by the controller
+func (a *app) RegisterMod(mod Mod) {
+	modsStorage = append(modsStorage, mod)
 }

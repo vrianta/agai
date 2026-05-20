@@ -1,0 +1,42 @@
+{
+  "1": {
+    "RolesId": 1,
+    "Name": "admin"
+  },
+  "2": {
+    "RolesId": 2,
+    "Name": "manager"
+  },
+  "3": {
+    "RolesId": 3,
+    "Name": "editor"
+  },
+  "4": {
+    "RolesId": 4,
+    "Name": "user"
+  },
+  "5": {
+    "RolesId": 5,
+    "Name": "guest"
+  },
+  "6": {
+    "RolesId": 6,
+    "Name": "auditor"
+  },
+  "7": {
+    "RolesId": 7,
+    "Name": "support"
+  },
+  "8": {
+    "RolesId": 8,
+    "Name": "developer"
+  },
+  "9": {
+    "RolesId": 9,
+    "Name": "operator"
+  },
+  "10": {
+    "RolesId": 10,
+    "Name": "viewer"
+  }
+}

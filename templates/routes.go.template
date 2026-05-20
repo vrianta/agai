@@ -1,12 +1,12 @@
 package main
 
 import (
-	"{{ .app_name }}/controllers/home"
+	"{{ .app_name }}/controllers"
 	"github.com/vrianta/agai/v1"
 )
 
 // Register Routes initializes the routes for the application.
 func init() {
-	agai.CreateRoute[home.Controller]("/")
-	agai.CreateRoute[home.Controller]("/home")
+	agai.CreateRoute[controllers.Home]("/")
+	agai.CreateRoute[controllers.Home]("/home")
 }

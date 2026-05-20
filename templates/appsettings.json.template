@@ -8,6 +8,6 @@
 "StaticFolders": ["static"],
 "CssFolders": ["css"],
 "JsFolders": ["js"],
-"ViewFolder": "views"
+"ViewFolder": "views",
 "PassordCost": 10
 }

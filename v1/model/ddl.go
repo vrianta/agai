@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	DatabaseHandler "github.com/vrianta/agai/v1/database"
+	"github.com/vrianta/agai/v1/internal/flags"
 	"github.com/vrianta/agai/v1/log"
 )
 
@@ -20,6 +21,10 @@ func (m *meta) addField(field *Field) {
 	if databaseObj, err := DatabaseHandler.GetDatabase(); err != nil {
 		panic("Error While Adding new Field to the table" + err.Error())
 	} else {
+		// add migration schemas while SyncDatabaseEnabled enabled
+		if flags.SyncDatabaseEnabled {
+			recordMigrationSchema(query)
+		}
 		if _, sql_err := databaseObj.Exec(query); sql_err != nil {
 			panic("Error While Updating the Table Field" + sql_err.Error() + "\nWith Query : " + query)
 		} else {

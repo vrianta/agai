@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "{{ .controller_name }}/models"
+	_ "{{ .app_name }}/models"
 	agai "github.com/vrianta/agai/v1"
 )
 

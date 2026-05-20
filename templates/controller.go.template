@@ -16,11 +16,11 @@ you only need to set that and you're good to go.
 This setup keeps things simple — define what you need, skip what you don't.
 */
 
-type Controller struct {
+type {{ .controller_name }} struct {
 	agai.Controller
 }
 
-func (c Controller) GET() agai.View {
+func (c *{{ .controller_name }}) GET() agai.View {
 
 	response := &agai.Response{
 		"controller_name": "{{ .controller_name }}",

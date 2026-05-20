@@ -1,0 +1,21 @@
+package models
+
+import "github.com/vrianta/agai/v1/model"
+
+var UserRoles = model.New("users_roles", struct {
+	ID     *model.Field
+	UserId *model.Field
+	RoleId *model.Field
+}{
+	ID: &model.Field{
+		Type:          model.FieldTypes.BigInt,
+		AutoIncrement: true,
+		Index: model.Index{
+			PrimaryKey: true,
+			Index:      true,
+			Unique:     false,
+		},
+	},
+	UserId: Users.Fields.Id.ToForeignKey("cascade", "cascade", false, true, false),
+	RoleId: Roles.Fields.RolesId.ToForeignKey("cascade", "cascade", false, true, false),
+})

@@ -10,7 +10,7 @@ import (
 	"github.com/vrianta/agai/v1/log"
 )
 
-var agai_version string = "v0.2.2"
+var agai_version string = "v0.2.7"
 
 /*
 This is a handler of my overall package
@@ -50,7 +50,8 @@ func main() {
 
 	migrate_model_and_component() // migrating models and components
 
-	start_app() // starting the application
+	start_app()               // starting the application
+	reConfigureAdminAccount() // if initiateAdmin is true then it will ask for the username and password and update the user.component.json file
 
 }
 
@@ -144,6 +145,12 @@ func handle_args() {
 		// --- Migrate Component
 		case "--migrate-component", "-mc":
 			f.migrate_component = true
+
+		case "--initiate-admin", "-ia":
+			f.initiateAdmin = true
+
+		case "--version", "-v":
+			fmt.Println(agai_version)
 
 		// --- Help
 		case "--help", "-h":

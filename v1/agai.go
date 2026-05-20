@@ -18,8 +18,11 @@ import (
 )
 
 // Global instance of the server
-type Mod interface {
-	Run(*Controller)
+type Mod struct{}
+
+func (m *Mod) Run(*Controller) {
+	log.Error("Mod is not settedup properly, it is still calling the default Run Function.")
+	os.Exit(-102)
 }
 
 var (

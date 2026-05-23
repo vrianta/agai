@@ -20,7 +20,7 @@ import (
 // Global instance of the server
 type Mod struct{}
 type modInterface interface {
-	Run(*Controller)
+	Run(controllerInterface)
 }
 
 func (m *Mod) Run(*Controller) {

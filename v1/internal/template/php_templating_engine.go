@@ -2,11 +2,11 @@ package template
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 
-	"github.com/vrianta/agai/v1/config"
+	"github.com/vrianta/agai/v1/log"
+	"github.com/vrianta/agai/v1/utils"
 )
 
 var phpBlockPattern = regexp.MustCompile(`<\?php([\s\S]*?)\?>`)
@@ -265,10 +265,6 @@ func convertPHPExprToGo(expr string) string {
 			return fmt.Sprintf("Upper %s", args)
 		case "strtolower":
 			return fmt.Sprintf("lower %s", args)
-		case "strlen":
-			return fmt.Sprintf("(Strlen %s)", args)
-		case "count":
-			return fmt.Sprintf("(Len %s)", args)
 		case "htmlspecialchars":
 			return fmt.Sprintf("Html %s", args)
 		case "isset":
@@ -277,18 +273,20 @@ func convertPHPExprToGo(expr string) string {
 		case "empty":
 			// empty(x) -> eq x ""
 			return fmt.Sprintf("eq %s \"\"", args)
-		case "print":
-			return fmt.Sprintf("print %s", args)
+		case "print", "date", "len", "upper", "lower", "strlen", "count":
+			return fmt.Sprintf("%s %s", funcName, args)
 		case "array_values":
 			return fmt.Sprintf("values %s", args)
 		case "array_keys":
 			return fmt.Sprintf("keys %s", args)
 		case "include":
-			content, err := include(args)
-			if err != nil {
-				panic("Error including template: " + err.Error())
+			_tInfo, ok := _templateInfo[args]
+			if !ok {
+				log.Error("Template not found: %s", args)
+				return fmt.Sprintf("include %s .", args)
 			}
-			return content
+			content := string(utils.ReadFromFile(_tInfo.folderPath))
+			return fmt.Sprintf("include %s .", content)
 		default:
 			// unknown: call .foo arg1 arg2 ...
 			if args != "" {
@@ -616,17 +614,4 @@ func convertPHPVarsToGo(expr string) string {
 	expr = stripOuterParens(expr)
 
 	return strings.TrimSpace(expr)
-}
-
-// read the file and convert it to string and return it
-func include(templateName string) (string, error) {
-	// template name will be pass as path1.path2, path3, etc. if there are more than 1
-	// have to create a filder structure out of it which will be config.ViewsDir/path1/path2/path3.php
-	parts := strings.Split(templateName, ".")
-	path := config.GetWebConfig().ViewFolder + "/" + strings.Join(parts, "/") + ".php"
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return "", fmt.Errorf("<!-- Error including template '%s': %v -->", templateName, err)
-	}
-	return PHPToGoTemplate(string(content)), nil
 }

@@ -69,7 +69,7 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 	c.IsLoggedIn() // also initializes the session for the user
 	// First run all mods before handling the request
 	for _, mod := range modsStorage {
-		mod.Run(c.(*Controller))
+		mod.Run(c)
 	}
 	// Running the middlewares
 	for _, middleware := range middlewareFuncs {

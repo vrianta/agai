@@ -3,8 +3,6 @@ package template
 import (
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/vrianta/agai/v1/config"
 	"github.com/vrianta/agai/v1/log"
@@ -12,6 +10,7 @@ import (
 )
 
 var view_folder = utils.JoinPath(".", config.GetViewFolder())
+var _templateInfo = make(map[string]templateInfo)
 
 // each folder is a theme and it will be store as theme name in the template registry
 func init() {
@@ -22,31 +21,36 @@ func init() {
 	} else {
 		for _, object := range objects {
 			if !object.IsDir() {
-				full_file_name := object.Name()                                    // name of file ex. hello.go
-				file_type := strings.TrimPrefix(filepath.Ext(full_file_name), ".") // File extension/type
-				file_name := full_file_name[:len(full_file_name)-len(file_type)-1] // Name without extension
-				folder_path := utils.JoinPath(view_folder, full_file_name)
+				full_file_name := object.Name()          // name of file ex. hello.go
+				_fileInfo := GetFileData(full_file_name) // get file info
 
-				templateComponents[file_name] = createTemplateContext(folder_path, full_file_name, file_type)
+				// templateComponents[_fileInfo.fileName] = nil
 
-				if file_name == "404" {
-					http.HandleFunc("/404/", func(w http.ResponseWriter, r *http.Request) {
-						t, _ := templateComponents[file_name]
-						if !config.GetWebConfig().Build {
-							// log.WriteLogf("Updating the Template")
-							t.Update()
-						}
-
-						buf, _ := t.Execute("")
-						w.Write(buf)
-
-					})
+				if _fileInfo.fileName == "404" {
+					_fileInfo.Uri = "/404/"
 				}
+				_templateInfo[_fileInfo.fileName] = _fileInfo
+
 			} else { // register themes
 				folder_name := object.Name()
 				RegisterTheme(folder_name)
 			}
+		}
+		for key, fileInfo := range _templateInfo {
+			templateComponents[key] = createTemplateContext(fileInfo.folderPath, fileInfo.fileName, fileInfo.fileType)
+			if fileInfo.fileName == "404" {
+				http.HandleFunc(fileInfo.Uri, func(w http.ResponseWriter, r *http.Request) {
+					t, _ := templateComponents[key]
+					if !config.GetWebConfig().Build {
+						// log.WriteLogf("Updating the Template")
+						t.Update()
+					}
 
+					buf, _ := t.Execute("")
+					w.Write(buf)
+
+				})
+			}
 		}
 	}
 }
@@ -64,30 +68,18 @@ func RegisterTheme(theme_folder string) {
 			if object.IsDir() {
 				RegisterTheme(utils.JoinPath(theme_folder, object.Name()))
 			} else {
-				full_file_name := object.Name()                                    // name of file ex. hello.go
-				file_type := strings.TrimPrefix(filepath.Ext(full_file_name), ".") // File extension/type
-				file_name := full_file_name[:len(full_file_name)-len(file_type)-1] // Name without extension
+				full_file_name := object.Name()          // name of file ex. hello.go
+				_fileInfo := GetFileData(full_file_name) // get file info
 
-				file_full_path := utils.JoinPath(full_theme_path, full_file_name)
+				// templateRegistry[utils.JoinPath(theme_folder, _fileInfo.fileName)] = createTemplateContext(file_full_path, full_file_name, _fileInfo.fileType)
+				// templateComponents[theme_folder+"."+_fileInfo.fileName] = createTemplateContext(file_full_path, full_file_name, _fileInfo.fileType)
 
-				// templateRegistry[utils.JoinPath(theme_folder, file_name)] = createTemplateContext(file_full_path, full_file_name, file_type)
-				templateComponents[theme_folder+"."+file_name] = createTemplateContext(file_full_path, full_file_name, file_type)
-
-				if file_name == "404" {
+				if _fileInfo.fileName == "404" {
 					found_404 = true
-					http.HandleFunc("/"+utils.JoinPath(theme_folder, file_name), func(w http.ResponseWriter, r *http.Request) {
-						t, _ := templateComponents[file_name]
-
-						if !config.GetWebConfig().Build {
-							// log.WriteLogf("Updating the Template")
-							t.Update()
-						}
-
-						buf, _ := t.Execute("")
-						w.Write(buf)
-
-					})
+					_fileInfo.Uri = "/" + utils.JoinPath(theme_folder, _fileInfo.fileName)
 				}
+				_fileInfo.folderPath = utils.JoinPath(full_theme_path, full_file_name) // changing it because for themes full_file_name needs to be pass as fileName
+				_templateInfo[theme_folder+"."+_fileInfo.fileName] = _fileInfo
 
 			}
 		}

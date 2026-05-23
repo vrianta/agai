@@ -57,7 +57,7 @@ func CreateRoute[T any, PT interface {
 			}
 			var tempController PT = new(T)
 			tempController.init(w, r)
-			runRequest(w, r, tempController, nil)
+			runRequest(w, r, tempController)
 		})
 		return
 	}
@@ -72,7 +72,7 @@ func CreateRoute[T any, PT interface {
 			}
 			var tempController PT = new(T)
 			tempController.init(w, r)
-			runRequest(w, r, tempController, nil)
+			runRequest(w, r, tempController)
 		})
 
 		http.HandleFunc(rootPath, func(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +86,7 @@ func CreateRoute[T any, PT interface {
 		http.HandleFunc(actual_route, func(w http.ResponseWriter, r *http.Request) {
 			var tempController PT = new(T)
 			tempController.init(w, r)
-			runRequest(w, r, tempController, nil)
+			runRequest(w, r, tempController)
 		})
 
 		http.HandleFunc(redirected_route, func(w http.ResponseWriter, r *http.Request) {
@@ -126,16 +126,18 @@ func CreateRouteWithFunc[T any, PT interface {
 
 	redirected_route := rootPath + "/" + strings.Join(route, "/")
 	actual_route := rootPath + "/" + strings.Join(route, "/") + "/"
-	var tempController PT = new(T)
-	method, err := CallMethodByName(tempController, method_name, nil)
-	printMethods(new(T))
-	if err != nil {
-		log.Error("Error calling method: %v", err)
-		return
-	}
+
+	// printMethods(new(T))
+
 	http.HandleFunc(actual_route, func(w http.ResponseWriter, r *http.Request) {
-		tempController.init(w, r)
-		runRequest(w, r, tempController, method)
+		// copy the controller
+		var tempController PT = new(T)
+		method, err := CallMethodByName(tempController, method_name, nil)
+		if err != nil {
+			log.Error("Error calling method: %v", err)
+			return
+		}
+		runRequestForFunction(w, tempController, method)
 	})
 
 	http.HandleFunc(redirected_route, func(w http.ResponseWriter, r *http.Request) {

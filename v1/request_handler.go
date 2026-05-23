@@ -40,13 +40,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if _c, found := agai.routeTable[r.URL.Path]; found {
 		tempController := _c()
 		tempController.init(w, r)
-		runRequest(w, r, tempController, nil)
+		runRequest(w, r, tempController)
 	} else {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
 	}
 }
 
-func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface, defFunc func() View) {
+func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 
 	execute_template := func(view *view) {
 		__template, ok := template.GetTemplate(view.name)
@@ -78,13 +78,6 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface, d
 		execute_template(view)
 	}
 	c.IsLoggedIn()
-	if defFunc != nil {
-		log.WriteLogf("Getting Default Method")
-		if vfunc := defFunc(); vfunc != nil {
-			executeView(vfunc()) // GET method of controller returns a view
-		}
-		return
-	}
 	switch r.Method {
 	case "GET":
 		if vfunc := c.GET(); vfunc != nil {
@@ -122,6 +115,46 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface, d
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+func runRequestForFunction(w http.ResponseWriter, c controllerInterface, defFunc func() View) {
+
+	execute_template := func(view *view) {
+		__template, ok := template.GetTemplate(view.name)
+
+		if !ok {
+			log.Error("No Template Available as such name %s", view.name)
+			return
+		}
+
+		if !config.GetWebConfig().Build {
+			// log.WriteLogf("Updating the Template")
+			__template.Update()
+		}
+		if err := executeTemplate(w, __template, view.response); err != nil {
+			log.Error("Error rendering template: %T\n", err)
+			panic(err.Error())
+		}
+	}
+
+	executeView := func(view *view) {
+		if view == nil {
+			return
+		}
+		if view.asJson {
+			// user want the response to be send as json
+			w.Write(view.ToJson())
+			return
+		}
+		execute_template(view)
+	}
+	c.IsLoggedIn()
+
+	log.WriteLogf("Getting Default Method")
+	if vfunc := defFunc(); vfunc != nil {
+		executeView(vfunc()) // GET method of controller returns a view
+	}
+	return
 }
 
 func executeTemplate(w http.ResponseWriter, _template *template.Context, __response any) error {

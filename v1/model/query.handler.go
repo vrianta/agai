@@ -508,7 +508,6 @@ func (q *queryBuilder) Exec() error {
 		} else {
 			fmt.Printf("[Update] Table: %s | Executed (affected count unknown)\n", q.model.TableName)
 		}
-		return nil
 	case "InsertRow":
 		if len(q.InsertRowFieldTypes) == 0 {
 			return fmt.Errorf("no FieldTypes to InsertRow")
@@ -538,7 +537,6 @@ func (q *queryBuilder) Exec() error {
 		} else {
 			fmt.Printf("[InsertRow] Table: %s | Row InsertRowed\n", q.model.TableName)
 		}
-		return nil
 	case "delete":
 		where := q.buildWhere()
 		limit := q.buildLimit()
@@ -559,10 +557,13 @@ func (q *queryBuilder) Exec() error {
 		} else {
 			fmt.Printf("[Delete] Table: %s | Executed (affected rows unknown)\n", q.model.TableName)
 		}
-		return nil
 	default:
 		return fmt.Errorf("invalid Exec call: unknown operation '%s'", q.operation)
 	}
+
+	q.model.syncComponentWithDB()
+	return nil
+
 }
 
 // Exec executes the InsertRow operation.

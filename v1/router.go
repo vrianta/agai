@@ -1,7 +1,9 @@
 package agai
 
 import (
+	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/vrianta/agai/v1/log"
@@ -55,7 +57,7 @@ func CreateRoute[T any, PT interface {
 			}
 			var tempController PT = new(T)
 			tempController.init(w, r)
-			runRequest(w, r, tempController)
+			runRequest(w, r, tempController, nil)
 		})
 		return
 	}
@@ -70,7 +72,7 @@ func CreateRoute[T any, PT interface {
 			}
 			var tempController PT = new(T)
 			tempController.init(w, r)
-			runRequest(w, r, tempController)
+			runRequest(w, r, tempController, nil)
 		})
 
 		http.HandleFunc(rootPath, func(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +86,7 @@ func CreateRoute[T any, PT interface {
 		http.HandleFunc(actual_route, func(w http.ResponseWriter, r *http.Request) {
 			var tempController PT = new(T)
 			tempController.init(w, r)
-			runRequest(w, r, tempController)
+			runRequest(w, r, tempController, nil)
 		})
 
 		http.HandleFunc(redirected_route, func(w http.ResponseWriter, r *http.Request) {
@@ -95,4 +97,87 @@ func CreateRoute[T any, PT interface {
 		log.Info("[Route] \nRegistered route: %s\nRedirected Route: %s", redirected_route, actual_route)
 	}
 
+}
+
+// TODO : in Future
+// // Function to create Route with getting function as argument
+// last route is the function name
+func CreateRouteWithFunc[T any, PT interface {
+	*T
+	controllerInterface
+}](route ...string) {
+
+	if route[0] == "" {
+		panic("Empty Route not allowed")
+	}
+
+	route_len := len(route)
+	method_name := route[route_len-1]
+
+	if len(route) > 1 && route[0] == "/" {
+		panic("Multiple Route Registration with / not allowed")
+	}
+
+	// for root route registration
+	if route[0] == "/" && rootPath == "" { // for the inital route because we can not have more than one /
+		log.Error("Can not do root registration while creating Route With function, Please make susre the last path you send is the function you want call")
+	}
+	// eg: root path set as /admin and you creating a route for / then it will create a route for /admin/ and /admin
+
+	redirected_route := rootPath + "/" + strings.Join(route, "/")
+	actual_route := rootPath + "/" + strings.Join(route, "/") + "/"
+	var tempController PT = new(T)
+	method, err := CallMethodByName(tempController, method_name, nil)
+	printMethods(new(T))
+	if err != nil {
+		log.Error("Error calling method: %v", err)
+		return
+	}
+	http.HandleFunc(actual_route, func(w http.ResponseWriter, r *http.Request) {
+		tempController.init(w, r)
+		runRequest(w, r, tempController, method)
+	})
+
+	http.HandleFunc(redirected_route, func(w http.ResponseWriter, r *http.Request) {
+		log.Info("Redirecting to Safer Path: %s\n", actual_route)
+		http.Redirect(w, r, actual_route, int(HttpStatus.SeeOther))
+	})
+
+	log.Info("[Route] \nRegistered route: %s\nRedirected Route: %s", redirected_route, actual_route)
+
+}
+
+func CallMethodByName(obj any, methodName string, args ...interface{}) (func() View, error) {
+	v := reflect.ValueOf(obj)
+	// printMethods(obj)
+	method := v.MethodByName(methodName)
+
+	if !method.IsValid() {
+		return nil, fmt.Errorf("method %s not found", methodName)
+	}
+
+	// Convert args to reflect.Value
+	in := make([]reflect.Value, len(args))
+	for i, arg := range args {
+		in[i] = reflect.ValueOf(arg)
+	}
+
+	return method.Interface().(func() View), nil
+}
+func printMethods(obj interface{}) {
+	t := reflect.TypeOf(obj)
+	fmt.Println("Type:", t)
+
+	for i := 0; i < t.NumMethod(); i++ {
+		m := t.Method(i)
+		fmt.Println("Method:", m.Name)
+	}
+
+	if t.Kind() != reflect.Ptr {
+		tp := reflect.PointerTo(t)
+		for i := 0; i < tp.NumMethod(); i++ {
+			m := tp.Method(i)
+			fmt.Println("Ptr method:", m.Name)
+		}
+	}
 }

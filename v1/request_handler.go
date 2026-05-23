@@ -40,15 +40,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if _c, found := agai.routeTable[r.URL.Path]; found {
 		tempController := _c()
 		tempController.init(w, r)
-		runRequest(w, r, tempController)
+		runRequest(w, r, tempController, nil)
 	} else {
 		http.Error(w, "404 Error : Route not found ", http.StatusNotFound)
 	}
 }
 
-func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
+func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface, defFunc func() View) {
 
-	// lamda to run templates
 	execute_template := func(view *view) {
 		__template, ok := template.GetTemplate(view.name)
 
@@ -66,128 +65,62 @@ func runRequest(w http.ResponseWriter, r *http.Request, c controllerInterface) {
 			panic(err.Error())
 		}
 	}
-	c.IsLoggedIn() // also initializes the session for the user
-	// First run all mods before handling the request
-	for _, mod := range modsStorage {
-		mod.Run(c)
+
+	executeView := func(view *view) {
+		if view == nil {
+			return
+		}
+		if view.asJson {
+			// user want the response to be send as json
+			w.Write(view.ToJson())
+			return
+		}
+		execute_template(view)
 	}
-	// Running the middlewares
-	for _, middleware := range middlewareFuncs {
-		middleware()
+	c.IsLoggedIn()
+	if defFunc != nil {
+		log.WriteLogf("Getting Default Method")
+		if vfunc := defFunc(); vfunc != nil {
+			executeView(vfunc()) // GET method of controller returns a view
+		}
+		return
 	}
 	switch r.Method {
 	case "GET":
 		if vfunc := c.GET(); vfunc != nil {
-
-			view := vfunc() // GET method of controller returns a view
-			if view == nil {
-				return
-			}
-			if view.asJson {
-				// user want the response to be send as json
-				w.Write(view.ToJson())
-				return
-			}
-			execute_template(view)
+			executeView(vfunc()) // GET method of controller returns a view
 		}
 
 	case "POST":
 		if vfunc := c.POST(); vfunc != nil {
-			view := vfunc() // GET method of controller returns a view
-			if view == nil {
-				return
-			}
-			if view.asJson {
-				// user want the response to be send as json
-				w.Write(view.ToJson())
-				return
-			}
-			execute_template(view)
+			executeView(vfunc()) // GET method of controller returns a view
 		}
 
 	case "DELETE":
 		if vfunc := c.DELETE(); vfunc != nil {
-			view := vfunc() // GET method of controller returns a view
-			if view == nil {
-				return
-			}
-			if view.asJson {
-				// user want the response to be send as json
-				w.Write(view.ToJson())
-				return
-			}
-			execute_template(view)
+			executeView(vfunc()) // GET method of controller returns a view
 		}
 
 	case "PATCH":
 		if vfunc := c.PATCH(); vfunc != nil {
-			view := vfunc() // GET method of controller returns a view
-			if view == nil {
-				return
-			}
-			if view.asJson {
-				// user want the response to be send as json
-				w.Write(view.ToJson())
-				return
-			}
-			execute_template(view)
+			executeView(vfunc()) // GET method of controller returns a view
 		}
 
 	case "PUT":
 		if vfunc := c.PUT(); vfunc != nil {
-			view := vfunc() // GET method of controller returns a view
-			if view == nil {
-				return
-			}
-			if view.asJson {
-				// user want the response to be send as json
-				w.Write(view.ToJson())
-				return
-			}
-			execute_template(view)
+			executeView(vfunc()) // GET method of controller returns a view
 		}
 
 	case "HEAD":
 		if vfunc := c.HEAD(); vfunc != nil {
-			view := vfunc() // GET method of controller returns a view
-			if view == nil {
-				return
-			}
-			if view.asJson {
-				// user want the response to be send as json
-				w.Write(view.ToJson())
-				return
-			}
-			execute_template(view)
+			executeView(vfunc()) // GET method of controller returns a view
 		}
 	case "OPTIONS":
 		if vfunc := c.OPTIONS(); vfunc != nil {
-			view := vfunc() // GET method of controller returns a view
-			if view == nil {
-				return
-			}
-			if view.asJson {
-				// user want the response to be send as json
-				w.Write(view.ToJson())
-				return
-			}
-			execute_template(view)
+			executeView(vfunc()) // GET method of controller returns a view
 		}
 	default:
-		log.WriteLogf("Getting Default Method")
-		if vfunc := c.GET(); vfunc != nil {
-			view := vfunc() // GET method of controller returns a view
-			if view == nil {
-				return
-			}
-			if view.asJson {
-				// user want the response to be send as json
-				w.Write(view.ToJson())
-				return
-			}
-			execute_template(view)
-		}
-
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
 }
 

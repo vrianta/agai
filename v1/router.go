@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"runtime"
 	"strings"
 
 	"github.com/vrianta/agai/v1/log"
@@ -105,39 +106,25 @@ func CreateRoute[T any, PT interface {
 func CreateRouteWithFunc[T any, PT interface {
 	*T
 	controllerInterface
-}](route ...string) {
+}](handler func(PT) View) {
 
-	if route[0] == "" {
-		panic("Empty Route not allowed")
-	}
+	method_name := getFunctionName(handler)
 
-	route_len := len(route)
-	method_name := route[route_len-1]
-
-	if len(route) > 1 && route[0] == "/" {
-		panic("Multiple Route Registration with / not allowed")
-	}
-
-	// for root route registration
-	if route[0] == "/" && rootPath == "" { // for the inital route because we can not have more than one /
-		log.Error("Can not do root registration while creating Route With function, Please make susre the last path you send is the function you want call")
-	}
-	// eg: root path set as /admin and you creating a route for / then it will create a route for /admin/ and /admin
-
-	redirected_route := rootPath + "/" + strings.Join(route, "/")
-	actual_route := rootPath + "/" + strings.Join(route, "/") + "/"
+	redirected_route := rootPath + "/" + method_name
+	actual_route := rootPath + "/" + method_name + "/"
 
 	// printMethods(new(T))
 
 	http.HandleFunc(actual_route, func(w http.ResponseWriter, r *http.Request) {
 		// copy the controller
 		var tempController PT = new(T)
-		method, err := CallMethodByName(tempController, method_name, nil)
-		if err != nil {
-			log.Error("Error calling method: %v", err)
-			return
+		tempController.init(w, r)
+
+		vfunc := func() View {
+			return handler(tempController)
 		}
-		runRequestForFunction(w, tempController, method)
+
+		runRequestForFunction(w, tempController, vfunc)
 	})
 
 	http.HandleFunc(redirected_route, func(w http.ResponseWriter, r *http.Request) {
@@ -182,4 +169,10 @@ func printMethods(obj interface{}) {
 			fmt.Println("Ptr method:", m.Name)
 		}
 	}
+}
+
+func getFunctionName(i any) string {
+
+	t := strings.Split(runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name(), ".")
+	return t[len(t)-1]
 }

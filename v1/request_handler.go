@@ -154,7 +154,6 @@ func runRequestForFunction(w http.ResponseWriter, c controllerInterface, defFunc
 	if vfunc := defFunc(); vfunc != nil {
 		executeView(vfunc()) // GET method of controller returns a view
 	}
-	return
 }
 
 func executeTemplate(w http.ResponseWriter, _template *template.Context, __response any) error {

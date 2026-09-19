@@ -1,5 +1,5 @@
-github.com/vrianta/gonfig v1.0.1 h1:6Lcg7JatXyoqZFd0mE9fGpuENoseLuqTL7zBjRnobho=
-github.com/vrianta/gonfig v1.0.1/go.mod h1:WSltFTrctfaTAPBj/nJt9EFcwS83eS2w1SVrefHyE60=
+github.com/vrianta/gonfig v1.1.1 h1:S6X8MxH7eTOshv1/ANMPAGVc3dSvDDvRtinbwvxi7Ak=
+github.com/vrianta/gonfig v1.1.1/go.mod h1:pwOoWKBH4iqEz9LagQMO/EeFaF/23rKBeKq68kJGDo8=
 github.com/vrianta/gulog v1.0.1 h1:59JIwV397orHfsP+/FIQTtJZW7EyHlpMEpkufWzO1pI=
 github.com/vrianta/gulog v1.0.1/go.mod h1:4P9KGMqZI9K38BkwEpQtgRlQJhmdhuOyv3rZH5nmK1s=
 golang.org/x/crypto v0.54.0 h1:YLIA59K4fiNzHzjnZt2tUJQjQtUWfWbeHBqKtk3eScw=

@@ -6,86 +6,126 @@ import (
 	"reflect"
 )
 
+// New creates and populates a configuration value of type T.
+//
+// The value is populated from environment variables, command-line arguments,
+// and default tags in that order. If crashOnFail is true, a missing required
+// field causes New to panic. When crashOnFail is false, parsing errors are not
+// returned; use Parse when the caller needs to inspect errors.
 func New[T any](crashOnFail bool) T {
 	var cfg T
-
-	Parse(&cfg, crashOnFail)
-
+	_, _ = Parse(&cfg, crashOnFail)
 	return cfg
 }
 
-/*
-Function wchich will get a any struct and loop thorugh it veriables.
-look for env tag and populate it
-*/
+// Parse populates the exported fields of a struct from its configuration tags.
+//
+// ctx must be a non-nil pointer to a struct. Environment variables take
+// precedence over command-line arguments, which take precedence over default
+// values. Nested structs are processed recursively, and pointer fields are
+// allocated when a value is provided.
+//
+// Parse returns an error for invalid input, unexported fields, and missing
+// required fields. If crashOnFail is true, a missing required field causes a
+// panic instead of returning an error.
 func Parse[T any](ctx *T, crashOnFail bool) (*T, error) {
-	// 1. Ensure we passed a pointer, otherwise we cannot mutate the struct
+
 	val := reflect.ValueOf(ctx)
-	if val.Kind() != reflect.Ptr || val.IsNil() {
+
+	// Ensure we were passed a non-nil pointer
+	if val.Kind() != reflect.Pointer || val.IsNil() {
 		return nil, errors.New("must pass a non-nil pointer to a struct")
 	}
 
-	if err := perserValue(val, crashOnFail); err != nil {
+	elem := val.Elem()
+	if elem.Kind() != reflect.Struct {
+		return nil, errors.New("provided value is not a pointer to a struct")
+	}
+
+	_, printHelp := lookupArg("help")
+	var records []help_record
+
+	if err := parseStructValue(elem, crashOnFail, printHelp, &records); err != nil {
 		return nil, err
+	}
+
+	if printHelp {
+		help(records)
 	}
 
 	return ctx, nil
 }
 
-func perserValue(val reflect.Value, crashOnFail bool) error {
-	// 2. Get the underlying struct value and type
-	val = val.Elem()
-	if val.Kind() != reflect.Struct {
-		return errors.New("provided value is not a pointer to a struct")
-	}
-
+func parseStructValue(val reflect.Value, crashOnFail, printHelp bool, records *[]help_record) error {
 	typ := val.Type()
 
-	// 3. Loop through all fields of the struct
 	for i := 0; i < val.NumField(); i++ {
 		fieldVal := val.Field(i)
 		fieldType := typ.Field(i)
 
+		// Handle nested struct recursively (must pass addressable value)
 		if fieldVal.Kind() == reflect.Struct {
-			if err := perserValue(fieldVal, crashOnFail); err != nil {
-				return err
+			if fieldVal.CanAddr() {
+				if err := parseStructValue(fieldVal, crashOnFail, printHelp, records); err != nil {
+					return err
+				}
 			}
 			continue
 		}
 
+		// Ensure unexported/private fields are rejected early
 		if !fieldVal.CanSet() {
 			return fmt.Errorf("field %s is not public", fieldType.Name)
 		}
 
-		if envKey, hasTag := fieldType.Tag.Lookup("env"); hasTag && envKey != "" {
+		rec := help_record{field: fieldType.Name}
+		var matched bool
+
+		// 1. Process Environment Variables
+		if envKey, ok := fieldType.Tag.Lookup("env"); ok && envKey != "" {
+			rec.env = envKey
 			if err := parseEnv(envKey, &fieldVal, &fieldType); err == nil {
-				continue
+				matched = true
 			}
 		}
 
-		if argName, hasTag := fieldType.Tag.Lookup("arg"); hasTag && argName != "" {
-			if err := parseArg(argName, &fieldVal, &fieldType); err == nil {
-				continue
-			}
-		}
-
-		if def, hasTag := fieldType.Tag.Lookup("default"); hasTag && def != "" {
-			if err := parseDefault(def, &fieldVal, &fieldType); err == nil {
-				continue
-			}
-		}
-
-		// 3. Process Required Validation Last
-		if _, isRequired := fieldType.Tag.Lookup("required"); isRequired {
-			// If the tag is present, check if the field was left at its zero-value
-			if fieldVal.IsZero() {
-				if crashOnFail {
-					panic("field " + fieldType.Name + "is required but has no value")
+		// 2. Process Command-Line Arguments
+		if !matched {
+			if argName, ok := fieldType.Tag.Lookup("arg"); ok && argName != "" {
+				rec.args = argName
+				if err := parseArg(argName, &fieldVal, &fieldType); err == nil {
+					matched = true
 				}
-				return fmt.Errorf("field %s is required but has no value", fieldType.Name)
 			}
 		}
 
+		// 3. Fallback to Default Value
+		if !matched {
+			if defVal, ok := fieldType.Tag.Lookup("default"); ok && defVal != "" {
+				rec.def = defVal
+				_ = parseDefault(defVal, &fieldVal, &fieldType)
+			}
+		}
+
+		// Extract description tag for help text
+		if desc, ok := fieldType.Tag.Lookup("description"); ok {
+			rec.description = desc
+		}
+
+		// 4. Validate Required Constraints
+		if _, isRequired := fieldType.Tag.Lookup("required"); isRequired {
+			if fieldVal.IsZero() {
+				errMsg := fmt.Sprintf("field %s is required but has no value", fieldType.Name)
+				if crashOnFail && !printHelp {
+					panic(errMsg)
+				}
+				return errors.New(errMsg)
+			}
+		}
+
+		if printHelp {
+			*records = append(*records, rec)
+		}
 	}
 
 	return nil

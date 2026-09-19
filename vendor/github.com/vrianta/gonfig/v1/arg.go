@@ -9,11 +9,14 @@ import (
 	"time"
 )
 
+var args map[string]string = make(map[string]string) // args
+var args_scanned bool = false                        // it keeps a track if we already gone through all the args
+
 // parseArg processes CLI arguments based on the "flag" tag.
 func parseArg(flagKey string, fieldVal *reflect.Value, fieldType *reflect.StructField) error {
 	argValue, exists := lookupArg(flagKey)
 	if !exists || argValue == "" {
-		return nil // Skip if the CLI argument wasn't provided
+		return fmt.Errorf("Did not find the element %s in the argument", flagKey) // Skip if the CLI argument wasn't provided
 	}
 
 	if !fieldVal.CanSet() {
@@ -21,6 +24,17 @@ func parseArg(flagKey string, fieldVal *reflect.Value, fieldType *reflect.Struct
 	}
 
 	switch fieldVal.Kind() {
+	case reflect.Pointer:
+		// 1. Allocate memory if the pointer is currently nil
+		if fieldVal.IsNil() {
+			fieldVal.Set(reflect.New(fieldVal.Type().Elem()))
+		}
+
+		// 2. Dereference the pointer to get the underlying value
+		elem := fieldVal.Elem()
+
+		// 3. Parse into the underlying value recursively
+		return parseArg(flagKey, &elem, fieldType)
 	case reflect.String:
 		fieldVal.SetString(argValue)
 
@@ -77,29 +91,53 @@ func parseArg(flagKey string, fieldVal *reflect.Value, fieldType *reflect.Struct
 	return nil
 }
 
-// lookupArg manually scans os.Args for a specific flag safely.
-func lookupArg(flagName string) (string, bool) {
-	prefix1 := "--" + flagName
-	prefix2 := "-" + flagName
+// ParseOSArgs scans os.Args and caches command-line arguments for Parse and New.
+//
+// It supports --flag=value, -flag=value, --flag value, -flag value, and
+// boolean flags such as --debug. Arguments without a leading dash are ignored.
+// Calling ParseOSArgs more than once has no effect after the first scan.
+func ParseOSArgs() {
+	if args_scanned {
+		return
+	}
 
 	for i := 1; i < len(os.Args); i++ {
 		arg := os.Args[i]
 
-		// Match: --flag=value or -flag=value
-		if strings.HasPrefix(arg, prefix1+"=") || strings.HasPrefix(arg, prefix2+"=") {
-			parts := strings.SplitN(arg, "=", 2)
-			return parts[1], true
+		// Ignore arguments that don't start with "-" or "--"
+		if !strings.HasPrefix(arg, "-") {
+			continue
 		}
 
-		// Match: --flag value or -flag value
-		if arg == prefix1 || arg == prefix2 {
-			// Check if the next argument is the value (and not another flag)
-			if i+1 < len(os.Args) && !strings.HasPrefix(os.Args[i+1], "-") {
-				return os.Args[i+1], true
-			}
-			// If no value follows, assume it's a boolean flag (e.g., --verbose)
-			return "true", true
+		// Trim leading dashes (handles both "-" and "--")
+		trimmed := strings.TrimLeft(arg, "-")
+
+		// Case 1: Key=Value format (e.g., --port=8080 or -port=8080)
+		if key, value, found := strings.Cut(trimmed, "="); found {
+			args[key] = value
+			continue
 		}
+
+		// Case 2: Space-separated format (e.g., --port 8080)
+		if i+1 < len(os.Args) && !strings.HasPrefix(os.Args[i+1], "-") {
+			args[trimmed] = os.Args[i+1]
+			i++ // Skip next index since it was consumed as a value
+			continue
+		}
+
+		// Case 3: Boolean flag format (e.g., --debug or -v)
+		args[trimmed] = "true"
 	}
-	return "", false
+
+	args_scanned = true
+}
+
+// lookupArg now becomes a lightweight O(1) query function
+func lookupArg(flagName string) (string, bool) {
+	if !args_scanned {
+		ParseOSArgs()
+	}
+
+	flagV, ok := args[flagName]
+	return flagV, ok
 }

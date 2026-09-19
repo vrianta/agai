@@ -11,6 +11,18 @@ import (
 func parseDefault(defaultValue string, fieldVal *reflect.Value, fieldType *reflect.StructField) error {
 
 	switch fieldVal.Kind() {
+	case reflect.Pointer:
+		// 1. Allocate memory if the pointer is currently nil
+		if fieldVal.IsNil() {
+			fieldVal.Set(reflect.New(fieldVal.Type().Elem()))
+		}
+
+		// 2. Dereference the pointer to get the underlying value
+		elem := fieldVal.Elem()
+
+		// 3. Parse into the underlying value recursively
+		return parseDefault(defaultValue, &elem, fieldType)
+
 	case reflect.String:
 		fieldVal.SetString(defaultValue)
 
@@ -22,7 +34,8 @@ func parseDefault(defaultValue string, fieldVal *reflect.Value, fieldType *refle
 		fieldVal.SetBool(b)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if fieldType.Type.String() == "time.Duration" {
+		// Check for time.Duration explicitly (type alias for int64)
+		if fieldVal.Type() == reflect.TypeOf(time.Duration(0)) {
 			d, err := time.ParseDuration(defaultValue)
 			if err != nil {
 				return fmt.Errorf("field %s: cannot parse default %q as time.Duration: %w", fieldType.Name, defaultValue, err)

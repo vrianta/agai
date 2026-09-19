@@ -6,4 +6,4 @@ require golang.org/x/crypto v0.54.0
 
 require github.com/vrianta/gulog v1.0.1
 
-require github.com/vrianta/gonfig v1.0.1 // indirect
+require github.com/vrianta/gonfig v1.1.1 // indirect

@@ -18,6 +18,17 @@ func parseEnv(envKey string, fieldVal *reflect.Value, fieldType *reflect.StructF
 	}
 
 	switch fieldVal.Kind() {
+	case reflect.Pointer:
+		// 1. Allocate memory if the pointer is currently nil
+		if fieldVal.IsNil() {
+			fieldVal.Set(reflect.New(fieldVal.Type().Elem()))
+		}
+
+		// 2. Dereference the pointer to get the underlying value
+		elem := fieldVal.Elem()
+
+		// 3. Parse into the underlying value recursively
+		return parseEnv(envKey, &elem, fieldType)
 	case reflect.String:
 		fieldVal.SetString(envValue)
 
